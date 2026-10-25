@@ -11,7 +11,134 @@ const io = new Server(server, {
     maxHttpBufferSize: 10e6 // 10 MB para soportar imágenes y avatares
 });
 
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
+
+// ============================================================
+// BASE DE DATOS DE USUARIOS (REGISTRO Y LOGIN)
+// ============================================================
+const USERS_FILE = process.env.USERS_FILE || path.join(__dirname, 'users-db.json');
+let registeredUsers = {}; // username_lower -> { username, salt, hash, token, uid, avatar, bio, createdAt }
+
+function loadUsersData() {
+    try {
+        if (fs.existsSync(USERS_FILE)) {
+            registeredUsers = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')) || {};
+        }
+    } catch (e) {
+        console.error('Error al cargar users-db.json:', e.message);
+        registeredUsers = {};
+    }
+}
+loadUsersData();
+
+let saveUsersTimer = null;
+function saveUsersData() {
+    clearTimeout(saveUsersTimer);
+    saveUsersTimer = setTimeout(() => {
+        fs.writeFile(USERS_FILE, JSON.stringify(registeredUsers, null, 2), (err) => {
+            if (err) console.error('Error guardando users-db.json:', err.message);
+        });
+    }, 400);
+}
+
+function hashPassword(password, salt) {
+    return crypto.scryptSync(password, salt, 64).toString('hex');
+}
+
+function verifyPassword(password, salt, storedHash) {
+    try {
+        const hash = hashPassword(password, salt);
+        return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(storedHash, 'hex'));
+    } catch (e) {
+        return false;
+    }
+}
+
+// Rutas de autenticación HTTP
+app.post('/api/auth/register', (req, res) => {
+    const { username, password, avatar, bio } = req.body || {};
+    const name = cleanName(username);
+    if (!name || name.length < 3) {
+        return res.status(400).json({ error: 'El nombre debe tener al menos 3 caracteres.' });
+    }
+    if (!password || password.length < 4) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres.' });
+    }
+
+    const key = name.toLowerCase();
+    if (registeredUsers[key]) {
+        return res.status(409).json({ error: 'Este nombre de usuario ya está registrado.' });
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = hashPassword(password, salt);
+    const token = crypto.randomBytes(24).toString('hex');
+    const uid = uidFromToken(token);
+
+    const newUser = {
+        username: name,
+        salt,
+        hash,
+        token,
+        uid,
+        avatar: cleanAvatar(avatar),
+        bio: cleanBio(bio),
+        createdAt: Date.now()
+    };
+
+    registeredUsers[key] = newUser;
+    saveUsersData();
+
+    // Sincronizar con el perfil público
+    profiles[uid] = {
+        nickname: name,
+        avatar: newUser.avatar,
+        color: getUniqueColor(),
+        bio: newUser.bio,
+        memberSince: newUser.createdAt,
+        lastSeen: Date.now()
+    };
+    saveFriendsData();
+
+    res.json({
+        success: true,
+        user: {
+            uid: newUser.uid,
+            token: newUser.token,
+            nickname: newUser.username,
+            avatar: newUser.avatar,
+            bio: newUser.bio,
+            memberSince: newUser.createdAt
+        }
+    });
+});
+
+app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body || {};
+    const key = String(username || '').trim().toLowerCase();
+
+    if (!key || !password) {
+        return res.status(400).json({ error: 'Ingresa usuario y contraseña.' });
+    }
+
+    const user = registeredUsers[key];
+    if (!user || !verifyPassword(password, user.salt, user.hash)) {
+        return res.status(401).json({ error: 'Usuario o contraseña incorrectos.' });
+    }
+
+    res.json({
+        success: true,
+        user: {
+            uid: user.uid,
+            token: user.token,
+            nickname: user.username,
+            avatar: user.avatar,
+            bio: user.bio,
+            memberSince: user.createdAt
+        }
+    });
+});
 
 // ============================================================
 // GIFs: proxy en el servidor
@@ -288,26 +415,30 @@ function getUniqueColor() {
 
 io.on('connection', (socket) => {
     socket.on('join', (userData) => {
-        const nickname = (userData && userData.nickname) ? (cleanName(userData.nickname) || 'Anónimo') : 'Anónimo';
-        const avatar = (userData && userData.avatar) ? cleanAvatar(userData.avatar) : null;
-        const bio = (userData && userData.bio) ? cleanBio(userData.bio) : '';
-
         let token = (userData && typeof userData.token === 'string' && userData.token.length >= 8) ? userData.token : null;
+        
+        // Buscar si pertenece a un usuario registrado
+        const regUser = token ? Object.values(registeredUsers).find(u => u.token === token) : null;
+        
+        const nickname = regUser ? regUser.username : ((userData && userData.nickname) ? (cleanName(userData.nickname) || 'Anónimo') : 'Anónimo');
+        const avatar = regUser && regUser.avatar ? regUser.avatar : ((userData && userData.avatar) ? cleanAvatar(userData.avatar) : null);
+        const bio = regUser && regUser.bio ? regUser.bio : ((userData && userData.bio) ? cleanBio(userData.bio) : '');
+
         if (!token) {
             token = crypto.randomBytes(16).toString('hex');
         }
-        const uid = uidFromToken(token);
+        const uid = regUser ? regUser.uid : uidFromToken(token);
         socket.uid = uid;
 
         // Informar al cliente de inmediato cuál es su UID verificado
-        socket.emit('session', { uid: uid });
+        socket.emit('session', { uid: uid, token: token });
 
-        let memberSince = Number(userData && userData.memberSince);
+        let memberSince = regUser ? regUser.createdAt : Number(userData && userData.memberSince);
         if (!isFinite(memberSince) || memberSince < 1577836800000 || memberSince > Date.now()) memberSince = Date.now();
 
         socket.nickname = nickname;
         const isFirst = Object.keys(users).length === 0;
-        socket.userColor = isFirst ? '#ffcc00' : getUniqueColor();
+        socket.userColor = (profiles[uid] && profiles[uid].color) ? profiles[uid].color : (isFirst ? '#ffcc00' : getUniqueColor());
 
         users[socket.id] = {
             nickname: socket.nickname,
@@ -403,6 +534,17 @@ io.on('connection', (socket) => {
             if (a) u.avatar = a;
         }
         if (typeof p.bio === 'string') u.bio = cleanBio(p.bio);
+
+        // Si es usuario registrado, actualizar también su registro en users-db
+        if (u.uid) {
+            const regUser = Object.values(registeredUsers).find(user => user.uid === u.uid);
+            if (regUser) {
+                if (newName) regUser.username = newName;
+                if (p.avatar !== undefined) regUser.avatar = u.avatar;
+                if (typeof p.bio === 'string') regUser.bio = u.bio;
+                saveUsersData();
+            }
+        }
 
         if (newName && newName !== oldName) {
             io.emit('system-message', `${oldName} ahora se llama ${newName}.`);
