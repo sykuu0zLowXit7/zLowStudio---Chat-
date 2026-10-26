@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Online</title>
+    <title>zLowStudio - Chat</title>
+    <meta name="description" content="Aplicación de chat en tiempo real con canales, mensajes directos, notas de voz, imágenes, GIFs y perfiles personalizables." />
+    <meta property="og:title" content="zLowStudio - Chat" />
+    <meta property="og:description" content="Aplicación de chat en tiempo real con canales, mensajes directos, notas de voz, imágenes, GIFs y perfiles personalizables." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -1288,6 +1293,236 @@
         }
         .mini-toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+        /* NOTIFICACIÓN SUPERIOR (TOP NOTIFICATION) */
+        .top-notification {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translate(-50%, -130px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 320px;
+            max-width: 90vw;
+            padding: 10px 16px;
+            border-radius: 14px;
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px var(--glow-color);
+            cursor: pointer;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .top-notification.show {
+            transform: translate(-50%, 0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .top-notif-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .top-notif-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .top-notif-initial {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #fff;
+        }
+        .top-notif-main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .top-notif-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .top-notif-sender {
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .top-notif-tag {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            opacity: 0.85;
+        }
+        .top-notif-badge {
+            margin-left: auto;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(0, 123, 255, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid rgba(0, 123, 255, 0.3);
+        }
+        .top-notif-body {
+            font-size: 0.83rem;
+            color: var(--text-sub);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .notif-media-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .top-notif-close {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+            line-height: 1;
+            transition: color 0.15s, background 0.15s;
+        }
+        .top-notif-close:hover {
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.15);
+        }
+
+        /* INSIGNIA DE MENSAJES NO LEÍDOS (9+) */
+        .friend-unread-badge {
+            margin-left: auto;
+            background: #ff4757;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 12px;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+            animation: unreadPulse 2s infinite;
+        }
+        @keyframes unreadPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* ESCRIBIENDO EN EL PANEL DE AMIGOS */
+        .friend-item.is-typing {
+            background: rgba(46, 213, 115, 0.1) !important;
+            border-left: 3px solid #2ed573;
+        }
+        .typing-text-accent {
+            color: #2ed573 !important;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .friend-tag-small {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            opacity: 0.75;
+            margin-left: 4px;
+        }
+
+        /* ID EN LA CUENTA / HEADER */
+        .my-account-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            margin-left: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .my-account-pill:hover {
+            border-color: var(--accent-blue);
+            background: var(--hover-bg);
+        }
+        .my-account-pill strong {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+        .user-item-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .user-item-code {
+            font-size: 0.68rem;
+            color: var(--text-sub);
+            opacity: 0.8;
+        }
+
+        /* PERFIL CARD ID */
+        .profile-id-chip {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            background: rgba(0, 123, 255, 0.12);
+            border: 1px solid rgba(0, 123, 255, 0.3);
+            padding: 2px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-left: 6px;
+            transition: background 0.15s, transform 0.15s;
+        }
+        .profile-id-chip:hover {
+            background: rgba(0, 123, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        /* MODAL DE SESIÓN DUPLICADA */
+        .duplicate-modal-box {
+            border-color: #ff4757 !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(255, 71, 87, 0.4) !important;
+            text-align: center;
+        }
+        .duplicate-modal-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            animation: iconShake 0.6s ease;
+        }
+        @keyframes iconShake {
+            0%, 100% { transform: rotate(0); }
+            20%, 60% { transform: rotate(-8deg); }
+            40%, 80% { transform: rotate(8deg); }
+        }
+
         /* --- PERFIL MODAL --- */
         .modal-overlay.profile-overlay { background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(6px); }
 
@@ -1988,6 +2223,27 @@
             <h2 style="color: #dc3545;">¡Has sido Expulsado!</h2>
             <p id="kicked-reason-text">El administrador te ha sacado de la sala.</p>
             <button class="main-btn" id="reconnect-btn" style="background: #dc3545;">Volver a Conectarte</button>
+    <!-- NOTIFICACIÓN SUPERIOR (DESDE ARRIBA CON IMAGEN) -->
+    <div id="top-notification" class="top-notification">
+        <div class="top-notif-avatar" id="top-notif-avatar"></div>
+        <div class="top-notif-main">
+            <div class="top-notif-header">
+                <span class="top-notif-sender" id="top-notif-sender"></span>
+                <span class="top-notif-tag" id="top-notif-tag"></span>
+                <span class="top-notif-badge">Mensaje privado</span>
+            </div>
+            <div class="top-notif-body" id="top-notif-body"></div>
+        </div>
+        <button type="button" class="top-notif-close" id="top-notif-close" title="Cerrar">&times;</button>
+    </div>
+
+    <!-- MODAL SESIÓN DUPLICADA -->
+    <div id="duplicate-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box duplicate-modal-box">
+            <div class="duplicate-modal-icon">⚠️</div>
+            <h2 id="duplicate-modal-title" style="color: #ff4757;">Sesión Duplicada</h2>
+            <p id="duplicate-modal-msg" style="margin: 12px 0 20px; font-size: 0.92rem; line-height: 1.5; color: var(--text-sub);"></p>
+            <button class="main-btn" id="duplicate-reconnect-btn" style="background: #ff4757;">Entendido / Cambiar Apodo</button>
         </div>
     </div>
 
@@ -2072,7 +2328,10 @@
             <div class="chat-header">
                 <div class="header-title">
                     <span id="current-channel-title">Chat Online</span>
-                    
+                    <div class="my-account-pill" id="my-account-pill" title="Tu ID de perfil - Clic para copiar">
+                        <span style="opacity: 0.7;">ID:</span>
+                        <strong id="my-account-code">#----</strong>
+                    </div>
                     <div class="status-dropdown-container">
                         <div class="online-badge" id="current-status-badge">
                             <span class="status-icon online" id="current-status-icon"></span>
@@ -2213,7 +2472,12 @@
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script>
+      if (typeof io === "undefined") {
+        document.write("<script src=\"/socket.io/socket.io.js\"><\/script>");
+      }
+    </script>
     <script>
         const socket = io();
 
@@ -2526,7 +2790,7 @@
                 }
                 triggerHapticFeedback(800, 0.1);
             } catch (err) {
-                alert('No se pudo acceder al micrófono.');
+                showToast('No se pudo acceder al micrófono.');
             }
         }
 
@@ -2852,6 +3116,7 @@
                     <div class="profile-name-row">
                         <span class="profile-name"></span>
                         <span class="profile-chip you">Tú</span>
+                        <span class="profile-id-chip" id="profile-card-id-chip" title="Clic para copiar ID"></span>
                     </div>
                     <div class="profile-chips">
                         <span class="profile-chip founder">👑 Fundador</span>
@@ -2867,6 +3132,23 @@
                     <div class="profile-actions"></div>
                 </div>
             `;
+
+            const userCodeVal = (live && live.userCode) || fb.userCode || (isSelf ? myUserCode : '');
+            const idChip = profileCard.querySelector('#profile-card-id-chip');
+            if (userCodeVal) {
+                idChip.textContent = `ID: ${userCodeVal}`;
+                idChip.style.display = 'inline-block';
+                idChip.onclick = (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(userCodeVal).then(() => {
+                        showToast(`¡ID ${userCodeVal} copiado!`);
+                    }).catch(() => {
+                        showToast(`ID: ${userCodeVal}`);
+                    });
+                };
+            } else {
+                idChip.style.display = 'none';
+            }
 
             const rel = (uid && !isSelf) ? friendRelation(uid) : 'none';
             const nameEl = profileCard.querySelector('.profile-name');
@@ -2958,7 +3240,11 @@
 
         // ====== CAMBIAR ENTRE CHAT GLOBAL Y CHAT PRIVADO ======
         function switchToGlobalChat() {
+            if (currentDmUser) {
+                socket.emit('private typing', { targetUid: currentDmUser.uid, isTyping: false });
+            }
             currentDmUser = null;
+            typingIndicator.style.display = 'none';
             currentChannelTitle.textContent = 'Chat Online';
             btnGlobalChat.classList.add('active');
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
@@ -2979,12 +3265,15 @@
             if (!uid) return;
             currentDmUser = Object.assign({}, friendData, { uid: uid });
 
+            unreadDms[uid] = 0;
+            updateFriendUnreadBadge(uid);
+
             btnGlobalChat.classList.remove('active');
             document.querySelectorAll('.friend-item').forEach(el => {
                 el.classList.toggle('active', el.dataset.uid === uid);
             });
 
-            currentChannelTitle.textContent = `💬 ${currentDmUser.nickname}`;
+            currentChannelTitle.textContent = `💬 ${currentDmUser.nickname}${currentDmUser.userCode ? ' (' + currentDmUser.userCode + ')' : ''}`;
 
             // Configurar panel derecho como Perfil del Amigo
             usersPanelView.style.display = 'none';
@@ -3038,7 +3327,11 @@
         // --- SISTEMA DE AMIGOS Y LISTA LATERAL IZQUIERDA ---
         let friendsState = { friends: [], incoming: [], outgoing: [] };
         let myUid = null;
+        let myUserCode = null;
         let friendsStateReady = false;
+        const unreadDms = {}; // uid -> count
+        const friendTypingMap = {}; // uid -> boolean
+        let topNotifTimer = null;
 
         const friendsSidebar = document.getElementById('friends-sidebar');
         const friendsList = document.getElementById('friends-list');
@@ -3050,6 +3343,7 @@
         const requestsPanel = document.getElementById('requests-panel');
         const requestsList = document.getElementById('requests-list');
         const miniToast = document.getElementById('mini-toast');
+        const topNotificationEl = document.getElementById('top-notification');
         let toastTimer = null;
 
         function showToast(text) {
@@ -3057,6 +3351,107 @@
             miniToast.classList.add('show');
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => miniToast.classList.remove('show'), 3800);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        function updateFriendUnreadBadge(uid) {
+            const li = friendsList.querySelector(`.friend-item[data-uid="${uid}"]`);
+            if (!li) return;
+            let badge = li.querySelector('.friend-unread-badge');
+            const count = unreadDms[uid] || 0;
+            if (count > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'friend-unread-badge';
+                    li.appendChild(badge);
+                }
+                badge.textContent = count > 9 ? '9+' : String(count);
+                badge.style.display = 'inline-block';
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+
+        function showTopNotification(info) {
+            if (!topNotificationEl) return;
+            const avBox = document.getElementById('top-notif-avatar');
+            const senderEl = document.getElementById('top-notif-sender');
+            const tagEl = document.getElementById('top-notif-tag');
+            const bodyEl = document.getElementById('top-notif-body');
+
+            avBox.innerHTML = '';
+            if (info.avatar) {
+                const img = document.createElement('img');
+                img.src = info.avatar;
+                img.className = 'top-notif-img';
+                img.alt = info.sender;
+                avBox.appendChild(img);
+            } else {
+                const div = document.createElement('div');
+                div.className = 'top-notif-initial';
+                div.style.background = safeColor(info.color || '#007bff');
+                div.textContent = info.sender ? info.sender.charAt(0).toUpperCase() : '?';
+                avBox.appendChild(div);
+            }
+
+            senderEl.textContent = info.sender;
+            if (tagEl) tagEl.textContent = info.userCode || '';
+
+            let preview = '';
+            if (info.image) {
+                preview = `<span class="notif-media-pill">📷 Foto</span> ${info.text ? escapeHtml(info.text) : 'Te ha enviado una foto'}`;
+            } else if (info.audio) {
+                preview = `<span class="notif-media-pill">🎙️ Audio</span> (${info.duration ? info.duration + 's' : 'Nota de voz'})`;
+            } else {
+                preview = escapeHtml(info.text || 'Nuevo mensaje privado');
+            }
+            bodyEl.innerHTML = preview;
+
+            topNotificationEl.onclick = (e) => {
+                if (e.target.closest('#top-notif-close')) return;
+                topNotificationEl.classList.remove('show');
+                const friendObj = friendsState.friends.find(f => f.uid === info.uid) || {
+                    uid: info.uid,
+                    nickname: info.sender,
+                    avatar: info.avatar,
+                    color: info.color,
+                    userCode: info.userCode
+                };
+                switchToDmChat(friendObj, info.uid);
+            };
+
+            topNotificationEl.classList.add('show');
+            clearTimeout(topNotifTimer);
+            topNotifTimer = setTimeout(() => {
+                topNotificationEl.classList.remove('show');
+            }, 4500);
+        }
+
+        const topNotifCloseBtn = document.getElementById('top-notif-close');
+        if (topNotifCloseBtn) {
+            topNotifCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (topNotificationEl) topNotificationEl.classList.remove('show');
+            });
+        }
+
+        const myAccPill = document.getElementById('my-account-pill');
+        if (myAccPill) {
+            myAccPill.addEventListener('click', () => {
+                if (myUserCode) {
+                    navigator.clipboard.writeText(myUserCode).then(() => {
+                        showToast(`¡Tu ID ${myUserCode} fue copiado!`);
+                    }).catch(() => {
+                        showToast(`Tu ID: ${myUserCode}`);
+                    });
+                }
+            });
         }
 
         function friendRelation(uid) {
@@ -3101,18 +3496,36 @@
                     const nm = document.createElement('span');
                     nm.className = 'friend-name';
                     nm.textContent = f.nickname;
+                    if (f.userCode) {
+                        const tagSpan = document.createElement('span');
+                        tagSpan.className = 'friend-tag-small';
+                        tagSpan.textContent = ` ${f.userCode}`;
+                        nm.appendChild(tagSpan);
+                    }
 
-                    // Muestra hace cuánto se desconectó si está offline
                     const sub = document.createElement('span');
                     sub.className = 'friend-sub';
-                    sub.textContent = f.status === 'offline'
-                        ? (f.lastSeen ? fmtAgo(f.lastSeen) : 'Desconectado')
-                        : (STATUS_LABELS[f.status] || 'En línea');
+                    if (friendTypingMap[f.uid]) {
+                        li.classList.add('is-typing');
+                        sub.innerHTML = `<span class="typing-text-accent">✍️ Escribiendo<span class="typing-dots">...</span></span>`;
+                    } else {
+                        sub.textContent = f.status === 'offline'
+                            ? (f.lastSeen ? fmtAgo(f.lastSeen) : 'Desconectado')
+                            : (STATUS_LABELS[f.status] || 'En línea');
+                    }
 
                     txt.appendChild(nm);
                     txt.appendChild(sub);
                     li.appendChild(av);
                     li.appendChild(txt);
+
+                    const unreadCount = unreadDms[f.uid] || 0;
+                    if (unreadCount > 0) {
+                        const badge = document.createElement('span');
+                        badge.className = 'friend-unread-badge';
+                        badge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
+                        li.appendChild(badge);
+                    }
 
                     li.addEventListener('click', () => switchToDmChat(f, f.uid));
                     friendsList.appendChild(li);
@@ -3614,6 +4027,25 @@
         });
 
         socket.on('private typing update', ({ fromUid, fromName, isTyping }) => {
+            friendTypingMap[fromUid] = !!isTyping;
+            const friendEl = friendsList.querySelector(`.friend-item[data-uid="${fromUid}"]`);
+            if (friendEl) {
+                const sub = friendEl.querySelector('.friend-sub');
+                if (sub) {
+                    if (isTyping) {
+                        friendEl.classList.add('is-typing');
+                        sub.innerHTML = `<span class="typing-text-accent">✍️ Escribiendo<span class="typing-dots">...</span></span>`;
+                    } else {
+                        friendEl.classList.remove('is-typing');
+                        const fObj = friendsState.friends.find(x => x.uid === fromUid);
+                        const status = fObj ? fObj.status : 'offline';
+                        sub.textContent = status === 'offline'
+                            ? (fObj && fObj.lastSeen ? fmtAgo(fObj.lastSeen) : 'Desconectado')
+                            : (STATUS_LABELS[status] || 'En línea');
+                    }
+                }
+            }
+
             if (currentDmUser && currentDmUser.uid === fromUid) {
                 typingIndicator.style.display = isTyping ? 'flex' : 'none';
                 typingText.textContent = `${fromName} está escribiendo...`;
@@ -3851,9 +4283,52 @@
                 messages.appendChild(renderMessageNode(data, true));
                 messages.scrollTop = messages.scrollHeight;
             } else {
-                showToast(`Nuevo mensaje privado de ${data.user}`);
+                // Aumentar contador de mensajes no leídos del amigo
+                unreadDms[otherUid] = (unreadDms[otherUid] || 0) + 1;
+                updateFriendUnreadBadge(otherUid);
+
+                // Mostrar notificación superior con foto del usuario
+                showTopNotification({
+                    uid: otherUid,
+                    sender: data.user,
+                    avatar: data.avatar,
+                    color: data.color,
+                    text: data.text,
+                    image: data.image,
+                    audio: data.audio,
+                    duration: data.duration,
+                    userCode: data.senderUserCode
+                });
             }
         });
+
+        // SESIÓN Y USUARIO
+        socket.on('session', ({ uid, userCode }) => {
+            myUid = uid;
+            myUserCode = userCode;
+            const codeEl = document.getElementById('my-account-code');
+            if (codeEl) codeEl.textContent = userCode || '#0000';
+        });
+
+        // DETECCIÓN DE SESIÓN DUPLICADA / MISMA CUENTA
+        socket.on('duplicate-session', (data) => {
+            const dupModal = document.getElementById('duplicate-modal');
+            const dupTitle = document.getElementById('duplicate-modal-title');
+            const dupMsg = document.getElementById('duplicate-modal-msg');
+            if (dupTitle && data.title) dupTitle.textContent = data.title;
+            if (dupMsg && data.message) dupMsg.textContent = data.message;
+            if (dupModal) dupModal.style.display = 'flex';
+        });
+
+        const dupReconnectBtn = document.getElementById('duplicate-reconnect-btn');
+        if (dupReconnectBtn) {
+            dupReconnectBtn.addEventListener('click', () => {
+                document.getElementById('duplicate-modal').style.display = 'none';
+                welcomeModalOverlay.style.display = 'flex';
+                nicknameInput.focus();
+                nicknameInput.select();
+            });
+        }
 
         // REACCIONES
         socket.on('update reactions', ({ msgId, reactions }) => updateMessageReactions(msgId, reactions));
@@ -3954,7 +4429,10 @@
                 leftDiv.innerHTML = `
                     ${avatarHtml}
                     <span class="status-icon ${uData.status || 'online'}"></span>
-                    <span style="color: ${uData.color}; font-weight: bold;">${uData.nickname}</span>
+                    <div class="user-item-info">
+                        <span style="color: ${uData.color}; font-weight: bold;">${uData.nickname}</span>
+                        <span class="user-item-code">${uData.userCode || ''}</span>
+                    </div>
                 `;
                 li.appendChild(leftDiv);
                 leftDiv.addEventListener('click', () => openProfile(id));
