@@ -1,4 +1,3 @@
-html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -65,6 +64,19 @@ html
             --text-main: #0f172a;
             --text-sub: #64748b;
             --accent-blue: #2563eb;
+        }
+
+        body.theme-esmeralda {
+            --bg-body: #0e1015;
+            --bg-container: #14171f;
+            --bg-sidebar: #181b24;
+            --bg-modal: #161922;
+            --bg-input: #1e222d;
+            --border-color: #282d3c;
+            --glow-color: rgba(225, 29, 72, 0.45);
+            --text-main: #f3f4f6;
+            --text-sub: #9ca3af;
+            --accent-blue: #e11d48;
         }
 
         * {
@@ -141,16 +153,16 @@ html
         }
 
         .welcome-sub {
-            font-size: 0.88rem;
+            font-size: 0.9rem;
             color: var(--text-sub);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .avatar-picker-wrapper {
             position: relative;
-            width: 95px;
-            height: 95px;
-            margin: 0 auto 18px auto;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px auto;
         }
 
         .avatar-preview-img {
@@ -164,7 +176,7 @@ html
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.6rem;
+            font-size: 2.8rem;
             user-select: none;
         }
 
@@ -191,42 +203,18 @@ html
             background: #0056b3;
         }
 
-        .welcome-box input[type="text"],
-        .welcome-box input[type="password"] {
+        .welcome-box input[type="text"] {
             width: 100%;
             padding: 13px 15px;
             border-radius: 10px;
             border: 1px solid var(--border-color);
             background: var(--bg-input);
             color: var(--text-main);
-            margin-bottom: 12px;
+            margin-bottom: 20px;
             outline: none;
             font-size: 0.95rem;
             text-align: center;
             transition: border-color 0.2s;
-        }
-
-        .welcome-box input[type="text"]:focus,
-        .welcome-box input[type="password"]:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .auth-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .auth-error {
-            color: #ff4757;
-            font-size: 0.82rem;
-            margin-bottom: 12px;
-            background: rgba(255, 71, 87, 0.1);
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            padding: 8px 12px;
-            border-radius: 8px;
-            display: none;
-            font-weight: 500;
         }
 
         .top-right-controls {
@@ -551,7 +539,9 @@ html
             border-left: 3px solid transparent;
         }
 
-        #messages li:hover { background-color: rgba(255, 255, 255, 0.03); }
+        #messages li:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
 
         #messages li.mentioned-me {
             background-color: var(--mention-bg) !important;
@@ -1096,6 +1086,7 @@ html
             border-right: none !important;
         }
 
+        /* Sección de canales/salas estilo servidor */
         .server-channel-btn {
             display: flex;
             align-items: center;
@@ -1460,7 +1451,7 @@ html
         .profile-btn.soon { opacity: 0.55; cursor: not-allowed; }
         .profile-btn.danger:hover { color: #ff4757; border-color: #ff4757; }
 
-        /* --- BARRA LATERAL DERECHA --- */
+        /* --- BARRA LATERAL DERECHA (Conectados o Perfil DM) --- */
         .users-sidebar {
             width: 290px;
             background: var(--bg-sidebar);
@@ -1945,6 +1936,7 @@ html
                         <button class="opt-btn theme-opt" data-val="cyberpunk">Cyber</button>
                         <button class="opt-btn theme-opt" data-val="midnight">Midnight</button>
                         <button class="opt-btn theme-opt" data-val="light">Claro</button>
+                        <button class="opt-btn theme-opt" data-val="esmeralda">Esmeralda</button>
                     </div>
                 </div>
 
@@ -2033,32 +2025,21 @@ html
         </div>
     </div>
 
-    <!-- PANTALLA DE AUTENTICACIÓN (LOGIN / REGISTRO) -->
+    <!-- PANTALLA DE BIENVENIDA -->
     <div id="welcome-modal-overlay" class="modal-overlay">
         <div class="welcome-box">
-            <h2 class="welcome-title" id="auth-title">Iniciar Sesión</h2>
-            <p class="welcome-sub" id="auth-sub">Accede a tu cuenta para entrar al chat</p>
+            <h2 class="welcome-title">¡Bienvenido al Chat!</h2>
+            <p class="welcome-sub">Personaliza tu perfil para comenzar a conversar</p>
 
-            <div class="auth-tabs">
-                <button type="button" class="opt-btn active" id="tab-login-btn">Iniciar Sesión</button>
-                <button type="button" class="opt-btn" id="tab-register-btn">Registrarse</button>
+            <input type="file" id="avatar-file-input" accept="image/png, image/jpeg, image/webp" style="display: none;" />
+
+            <div class="avatar-picker-wrapper">
+                <div class="avatar-preview-img" id="avatar-preview-box">👤</div>
+                <button type="button" class="pencil-btn" id="pencil-avatar-btn" title="Cambiar foto de perfil">✏️</button>
             </div>
 
-            <div class="auth-error" id="auth-error-msg"></div>
-
-            <!-- Sección de Avatar (Solo se muestra en Registro) -->
-            <div id="auth-avatar-section" style="display: none;">
-                <input type="file" id="avatar-file-input" accept="image/png, image/jpeg, image/webp" style="display: none;" />
-                <div class="avatar-picker-wrapper">
-                    <div class="avatar-preview-img" id="avatar-preview-box">👤</div>
-                    <button type="button" class="pencil-btn" id="pencil-avatar-btn" title="Subir avatar">✏️</button>
-                </div>
-            </div>
-
-            <input type="text" id="auth-username" placeholder="Nombre de usuario..." autocomplete="username" maxlength="20">
-            <input type="password" id="auth-password" placeholder="Contraseña..." autocomplete="current-password" maxlength="50">
-            
-            <button class="main-btn" id="auth-submit-btn">Entrar al Chat</button>
+            <input type="text" id="nickname-input" placeholder="Escribe tu apodo aquí..." autocomplete="off" maxlength="20">
+            <button class="main-btn" id="join-btn">Entrar al Chat</button>
         </div>
     </div>
 
@@ -2219,12 +2200,15 @@ html
 
         <!-- BARRA DERECHA: CONECTADOS (EN GLOBAL) O PERFIL DEL AMIGO (EN DM) -->
         <div class="users-sidebar" id="sidebar">
+            <!-- VISTA 1: Lista de Conectados Globales -->
             <div id="users-panel-view">
                 <div class="sidebar-header-row">
                     <h3 id="txt-sidebar-title">Conectados (<span id="user-count">0</span>)</h3>
                 </div>
                 <ul id="users-list"></ul>
             </div>
+
+            <!-- VISTA 2: Perfil del Amigo en Chat Privado -->
             <div id="dm-profile-panel-view" class="dm-profile-side" style="display: none;"></div>
         </div>
     </div>
@@ -2233,23 +2217,14 @@ html
     <script>
         const socket = io();
 
+        // Control de canales: null = Chat Global, string = UID del amigo en privado
         let currentDmUser = null;
         let globalMessagesBackup = [];
-        const privateCache = {};
+        const privateCache = {}; // targetUid -> []
 
-        // ELEMENTOS DE AUTENTICACIÓN
         const welcomeModalOverlay = document.getElementById('welcome-modal-overlay');
-        const authTitle = document.getElementById('auth-title');
-        const authSub = document.getElementById('auth-sub');
-        const tabLoginBtn = document.getElementById('tab-login-btn');
-        const tabRegisterBtn = document.getElementById('tab-register-btn');
-        const authErrorMsg = document.getElementById('auth-error-msg');
-        const authAvatarSection = document.getElementById('auth-avatar-section');
-        const authUsername = document.getElementById('auth-username');
-        const authPassword = document.getElementById('auth-password');
-        const authSubmitBtn = document.getElementById('auth-submit-btn');
-        let currentAuthTab = 'login'; // 'login' o 'register'
-
+        const nicknameInput = document.getElementById('nickname-input');
+        const joinBtn = document.getElementById('join-btn');
         const avatarFileInput = document.getElementById('avatar-file-input');
         const pencilAvatarBtn = document.getElementById('pencil-avatar-btn');
         const avatarPreviewBox = document.getElementById('avatar-preview-box');
@@ -2325,7 +2300,6 @@ html
 
         let myNickname = '';
         let myAvatarBase64 = null;
-        let myToken = null;
         let isAdmin = false;
         let currentUsersData = {};
         let selectedTargetId = null;
@@ -2372,13 +2346,14 @@ html
             } catch (e) {}
         }
 
+        // ====== TIEMPO TRANSCURRIDO FORMATEADO (Exacto como se solicitó) ======
         function fmtAgo(ts) {
             if (!ts) return 'hace un momento';
             const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
             if (s < 60) return `hace ${Math.max(1, s)}s`;
             const m = Math.floor(s / 60);
             if (m < 60) return `hace ${m}m`;
-            const h = Math.floor(m / 24);
+            const h = Math.floor(m / 60);
             if (h < 24) return `hace ${h}h`;
             const d = Math.floor(h / 24);
             return `hace ${d}d`;
@@ -2730,29 +2705,7 @@ html
             render();
         }
 
-        // ====== GESTIÓN DE AUTENTICACIÓN (LOGIN & REGISTRO) ======
-        tabLoginBtn.addEventListener('click', () => {
-            currentAuthTab = 'login';
-            tabLoginBtn.classList.add('active');
-            tabRegisterBtn.classList.remove('active');
-            authTitle.textContent = 'Iniciar Sesión';
-            authSub.textContent = 'Accede a tu cuenta para entrar al chat';
-            authAvatarSection.style.display = 'none';
-            authSubmitBtn.textContent = 'Entrar al Chat';
-            authErrorMsg.style.display = 'none';
-        });
-
-        tabRegisterBtn.addEventListener('click', () => {
-            currentAuthTab = 'register';
-            tabRegisterBtn.classList.add('active');
-            tabLoginBtn.classList.remove('active');
-            authTitle.textContent = 'Crear Cuenta';
-            authSub.textContent = 'Elige tu usuario, avatar y contraseña';
-            authAvatarSection.style.display = 'block';
-            authSubmitBtn.textContent = 'Crear Cuenta y Entrar';
-            authErrorMsg.style.display = 'none';
-        });
-
+        // ====== FOTO DE PERFIL & LOGIN ======
         pencilAvatarBtn.addEventListener('click', () => avatarFileInput.click());
         avatarFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -2770,76 +2723,14 @@ html
                 : '👤';
         }
 
-        function showAuthError(msg) {
-            authErrorMsg.textContent = msg;
-            authErrorMsg.style.display = 'block';
-        }
-
-        async function submitAuth() {
-            authErrorMsg.style.display = 'none';
-            const username = authUsername.value.trim();
-            const password = authPassword.value;
-
-            if (!username) return showAuthError('Por favor ingresa un nombre de usuario.');
-            if (!password) return showAuthError('Por favor ingresa una contraseña.');
-
-            const endpoint = currentAuthTab === 'register' ? '/api/auth/register' : '/api/auth/login';
-            const body = { username, password };
-            if (currentAuthTab === 'register') {
-                body.avatar = myAvatarBase64;
-                body.bio = '';
-            }
-
-            try {
-                authSubmitBtn.disabled = true;
-                authSubmitBtn.textContent = 'Verificando...';
-
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-
-                if (!res.ok) {
-                    showAuthError(data.error || 'Ocurrió un error al procesar la solicitud.');
-                    authSubmitBtn.disabled = false;
-                    authSubmitBtn.textContent = currentAuthTab === 'register' ? 'Crear Cuenta y Entrar' : 'Entrar al Chat';
-                    return;
-                }
-
-                // Éxito: Guardar sesión y entrar
-                myNickname = data.user.nickname;
-                myAvatarBase64 = data.user.avatar || null;
-                myToken = data.user.token;
-
-                localStorage.setItem('chat_token', myToken);
-                localStorage.setItem('chat_nickname', myNickname);
-                if (myAvatarBase64) localStorage.setItem('chat_avatar', myAvatarBase64);
-                else localStorage.removeItem('chat_avatar');
-
-                socket.emit('join', buildJoinPayload());
-                welcomeModalOverlay.style.display = 'none';
-                logoutBtn.style.display = 'block';
-            } catch (err) {
-                showAuthError('Error conectando con el servidor.');
-            } finally {
-                authSubmitBtn.disabled = false;
-                authSubmitBtn.textContent = currentAuthTab === 'register' ? 'Crear Cuenta y Entrar' : 'Entrar al Chat';
-            }
-        }
-
-        authSubmitBtn.addEventListener('click', submitAuth);
-        authPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') submitAuth(); });
-        authUsername.addEventListener('keypress', (e) => { if (e.key === 'Enter') authPassword.focus(); });
-
         function checkAutoLogin() {
-            const savedToken = localStorage.getItem('chat_token');
             const savedNickname = localStorage.getItem('chat_nickname');
-            if (savedToken && savedNickname) {
-                myToken = savedToken;
+            const savedAvatar = localStorage.getItem('chat_avatar');
+            if (savedNickname) {
                 myNickname = savedNickname;
-                myAvatarBase64 = localStorage.getItem('chat_avatar') || null;
+                myAvatarBase64 = savedAvatar || null;
+                nicknameInput.value = myNickname;
+                renderAvatarPreview(myAvatarBase64);
                 socket.emit('join', buildJoinPayload());
                 welcomeModalOverlay.style.display = 'none';
                 logoutBtn.style.display = 'block';
@@ -2849,12 +2740,28 @@ html
             }
         }
 
+        function joinChat() {
+            const name = nicknameInput.value.trim();
+            if (name !== '') {
+                myNickname = name;
+                localStorage.setItem('chat_nickname', myNickname);
+                if (myAvatarBase64) localStorage.setItem('chat_avatar', myAvatarBase64);
+                else localStorage.removeItem('chat_avatar');
+                socket.emit('join', buildJoinPayload());
+                welcomeModalOverlay.style.display = 'none';
+                logoutBtn.style.display = 'block';
+            }
+        }
+
+        joinBtn.addEventListener('click', joinChat);
+        nicknameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') joinChat(); });
+
         logoutBtn.addEventListener('click', () => {
             localStorage.clear();
             window.location.reload();
         });
 
-        // ====== PERFILES Y AMIGOS ======
+        // ====== PERFIL Y AMIGOS ======
         let myBio = '';
         let myMemberSince = 0;
         const BIO_MAX = 200;
@@ -2864,13 +2771,12 @@ html
             myBio = localStorage.getItem('chat_bio') || '';
             myMemberSince = Number(localStorage.getItem('chat_member_since')) || Date.now();
             localStorage.setItem('chat_member_since', String(myMemberSince));
-            return {
-                nickname: myNickname,
-                avatar: myAvatarBase64,
-                bio: myBio,
-                memberSince: myMemberSince,
-                token: myToken
-            };
+            let token = localStorage.getItem('chat_token');
+            if (!token) {
+                token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36));
+                localStorage.setItem('chat_token', token);
+            }
+            return { nickname: myNickname, avatar: myAvatarBase64, bio: myBio, memberSince: myMemberSince, token: token };
         }
 
         function resizeAvatar(file, size) {
@@ -3050,16 +2956,18 @@ html
             });
         });
 
-        // ====== NAVEGACIÓN CHAT GLOBAL / PRIVADO ======
+        // ====== CAMBIAR ENTRE CHAT GLOBAL Y CHAT PRIVADO ======
         function switchToGlobalChat() {
             currentDmUser = null;
             currentChannelTitle.textContent = 'Chat Online';
             btnGlobalChat.classList.add('active');
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
 
+            // Cambiar panel derecho
             usersPanelView.style.display = 'block';
             dmProfilePanelView.style.display = 'none';
 
+            // Restaurar mensajes globales
             messages.innerHTML = '';
             globalMessagesBackup.forEach(node => messages.appendChild(node));
             messages.scrollTop = messages.scrollHeight;
@@ -3078,10 +2986,12 @@ html
 
             currentChannelTitle.textContent = `💬 ${currentDmUser.nickname}`;
 
+            // Configurar panel derecho como Perfil del Amigo
             usersPanelView.style.display = 'none';
             dmProfilePanelView.style.display = 'flex';
             renderDmProfileRight(currentDmUser);
 
+            // Cargar mensajes privados
             messages.innerHTML = '';
             socket.emit('get private history', { targetUid: uid });
         }
@@ -3125,7 +3035,7 @@ html
             dmProfilePanelView.querySelector('.profile-avatar-wrap').insertBefore(avatarEl, dmProfilePanelView.querySelector('.profile-avatar-wrap').firstChild);
         }
 
-        // --- SISTEMA DE AMIGOS ---
+        // --- SISTEMA DE AMIGOS Y LISTA LATERAL IZQUIERDA ---
         let friendsState = { friends: [], incoming: [], outgoing: [] };
         let myUid = null;
         let friendsStateReady = false;
@@ -3192,6 +3102,7 @@ html
                     nm.className = 'friend-name';
                     nm.textContent = f.nickname;
 
+                    // Muestra hace cuánto se desconectó si está offline
                     const sub = document.createElement('span');
                     sub.className = 'friend-sub';
                     sub.textContent = f.status === 'offline'
@@ -3267,11 +3178,6 @@ html
                 requestsList.appendChild(row);
             });
         }
-
-        socket.on('session', (ses) => {
-            if (ses && ses.uid) myUid = ses.uid;
-            if (ses && ses.token) myToken = ses.token;
-        });
 
         socket.on('friends state', (st) => {
             const prevCount = friendsState.incoming.length;
@@ -3785,7 +3691,7 @@ html
             return formattedText;
         }
 
-        // ====== RENDERIZADO DE MENSAJES ======
+        // ====== RENDERIZADO DE MENSAJES (UNIFICADO) ======
         function renderMessageNode(data, isPrivate = false) {
             const item = document.createElement('li');
             item.id = data.id;
