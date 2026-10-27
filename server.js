@@ -11,8 +11,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
+
+// Audit #7: Limitar tamaño de buffer a 4MB
 const io = new Server(server, {
-  maxHttpBufferSize: 10e6, // 10 MB para audios e imágenes
+  maxHttpBufferSize: 4e6,
   cors: { origin: '*' },
 });
 
@@ -24,19 +26,64 @@ if (!fs.existsSync(DATA_DIR)) {
 const FRIENDS_FILE = path.join(DATA_DIR, 'friends-data.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages-data.json');
 
-app.use(express.json({ limit: '10mb' }));
+// Audit #14: Usar rutas absolutas
+app.use(express.json({ limit: '4mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// GIFs: proxy en el servidor
-const GIF_API_KEY = process.env.GIF_API_KEY || 'EqKveKya673SGDNK1vWqZlqCeczfAYPbRC3KDD9WDW8cVMQKPG6wTnMWcEoqOglk';
-const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'klipy').toLowerCase();
+// Audit #3: No exponer clave por defecto en el código
+const GIF_API_KEY = process.env.GIF_API_KEY || '';
+const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'giphy').toLowerCase();
 const GIF_PAGE_SIZE = 24;
 const GIF_CACHE_TTL = 5 * 60 * 1000;
 const gifCache = new Map();
 
+// Audit #1: Contraseña de admin desde variable de entorno
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1509';
+
+// Audit #6: Dominios de imágenes autorizados para prevenir IP logging o SSRF
+const ALLOWED_IMAGE_HOSTS = new Set([
+  'giphy.com',
+  'media.giphy.com',
+  'media0.giphy.com',
+  'media1.giphy.com',
+  'media2.giphy.com',
+  'media3.giphy.com',
+  'media4.giphy.com',
+  'i.giphy.com',
+  'klipy.com',
+  'api.klipy.com',
+  'static.klipy.com',
+  'tenor.com',
+  'c.tenor.com',
+  'media.tenor.com',
+  'images.unsplash.com',
+  'localhost',
+  '127.0.0.1',
+]);
+
 function isHttps(u) {
   return typeof u === 'string' && /^https:\/\//i.test(u);
+}
+
+function isValidImageUrl(url) {
+  if (typeof url !== 'string' || !url) return false;
+  if (/^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(url)) {
+    return url.length <= 4 * 1024 * 1024;
+  }
+  if (!/^https:\/\//i.test(url)) return false;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    for (const allowed of ALLOWED_IMAGE_HOSTS) {
+      if (host === allowed || host.endsWith('.' + allowed)) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }
 
 function normalizeKlipy(json) {
@@ -51,7 +98,7 @@ function normalizeKlipy(json) {
       if (!small || !medium || !isHttps(small.url) || !isHttps(medium.url)) return null;
       return {
         id: String(g.slug || g.id),
-        title: g.title || 'GIF',
+        title: String(g.title || 'GIF'),
         preview: small.url,
         url: medium.url,
         w: small.width || 0,
@@ -73,7 +120,7 @@ function normalizeGiphy(json, offset) {
       if (!small || !medium || !isHttps(small.url) || !isHttps(medium.url)) return null;
       return {
         id: String(g.id),
-        title: g.title || 'GIF',
+        title: String(g.title || 'GIF'),
         preview: small.url,
         url: medium.url,
         w: Number(small.width) || 0,
@@ -87,35 +134,42 @@ function normalizeGiphy(json, offset) {
 }
 
 app.get('/api/gifs', async (req, res) => {
-  if (!GIF_API_KEY) return res.status(503).json({ error: 'no-key' });
+  if (!GIF_API_KEY) {
+    return res.json({
+      items: [],
+      hasNext: false,
+      provider: GIF_PROVIDER.toUpperCase(),
+      message: 'GIF API key not configured. Set GIF_API_KEY in environment variables.',
+    });
+  }
 
   const q = String(req.query.q || '').trim().slice(0, 80);
-  const page = Math.min(Math.max(parseInt(req.query.page, 10) || 1, 1), 50);
+  const page = Math.min(Math.max(parseInt(String(req.query.page), 10) || 1, 1), 50);
   const cid = /^[\w-]{1,64}$/.test(String(req.query.cid || '')) ? String(req.query.cid) : 'anon';
 
   const cacheKey = `${GIF_PROVIDER}|${q.toLowerCase()}|${page}`;
   const cached = gifCache.get(cacheKey);
   if (cached && Date.now() - cached.t < GIF_CACHE_TTL) return res.json(cached.data);
 
-  let url;
+  let url = '';
   if (GIF_PROVIDER === 'giphy') {
     const params = new URLSearchParams({
       api_key: GIF_API_KEY,
-      limit: GIF_PAGE_SIZE,
-      offset: (page - 1) * GIF_PAGE_SIZE,
+      limit: String(GIF_PAGE_SIZE),
+      offset: String((page - 1) * GIF_PAGE_SIZE),
       rating: 'g',
     });
     if (q) params.set('q', q);
-    url = `https://api.giphy.com/v1/gifs/${q ? 'search' : 'trending'}?${params}`;
+    url = `https://api.giphy.com/v1/gifs/${q ? 'search' : 'trending'}?${params.toString()}`;
   } else {
-    const params = new URLSearchParams({ page, per_page: GIF_PAGE_SIZE, customer_id: cid });
+    const params = new URLSearchParams({ page: String(page), per_page: String(GIF_PAGE_SIZE), customer_id: cid });
     if (q) params.set('q', q);
-    url = `https://api.klipy.com/api/v1/${encodeURIComponent(GIF_API_KEY)}/gifs/${q ? 'search' : 'trending'}?${params}`;
+    url = `https://api.klipy.com/api/v1/${encodeURIComponent(GIF_API_KEY)}/gifs/${q ? 'search' : 'trending'}?${params.toString()}`;
   }
 
   try {
     const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!resp.ok) return res.status(502).json({ error: 'provider-' + resp.status });
+    if (!resp.ok) return res.status(502).json({ error: 'provider-' + resp.status, items: [] });
     const json = await resp.json();
 
     const parsed =
@@ -128,8 +182,8 @@ app.get('/api/gifs', async (req, res) => {
     if (gifCache.size > 300) gifCache.clear();
     gifCache.set(cacheKey, { t: Date.now(), data });
     res.json(data);
-  } catch (err) {
-    res.status(502).json({ error: 'fetch-failed' });
+  } catch {
+    res.status(502).json({ error: 'fetch-failed', items: [] });
   }
 });
 
@@ -154,11 +208,57 @@ const recordingUsers = new Set();
 let profiles = {};
 const friendsMap = {};
 const requestsMap = {};
-const onlineByUid = {};
+
+// Audit #11: Map de Sets para múltiples pestañas simultáneas
+const onlineSocketsByUid = new Map();
+
+function getSocketsForUid(uid) {
+  const s = onlineSocketsByUid.get(uid);
+  return s ? Array.from(s) : [];
+}
+
+function isUidOnline(uid) {
+  const s = onlineSocketsByUid.get(uid);
+  return Boolean(s && s.size > 0);
+}
+
+function addSocketForUid(uid, socketId) {
+  if (!onlineSocketsByUid.has(uid)) {
+    onlineSocketsByUid.set(uid, new Set());
+  }
+  onlineSocketsByUid.get(uid).add(socketId);
+}
+
+function removeSocketForUid(uid, socketId) {
+  const s = onlineSocketsByUid.get(uid);
+  if (s) {
+    s.delete(socketId);
+    if (s.size === 0) {
+      onlineSocketsByUid.delete(uid);
+      return true;
+    }
+  }
+  return false;
+}
 
 let messageIdCounter = 0;
 let messagesStore = {};
 const privateMessagesStore = {};
+
+// Audit #7: Rate limiting
+const messageTimestampsBySocket = new Map();
+
+function checkRateLimit(socketId) {
+  const now = Date.now();
+  const timestamps = messageTimestampsBySocket.get(socketId) || [];
+  const recent = timestamps.filter((t) => now - t < 3000);
+  if (recent.length >= 5) {
+    return false;
+  }
+  recent.push(now);
+  messageTimestampsBySocket.set(socketId, recent);
+  return true;
+}
 
 function getDmRoomId(uid1, uid2) {
   return [String(uid1), String(uid2)].sort().join('__');
@@ -183,14 +283,50 @@ function getOrGenerateUserCode(uid) {
   return code;
 }
 
+// Audit #2: Sanitización
 function cleanName(n) {
-  return String(n || '').replace(/[<>]/g, '').trim().slice(0, 24);
+  return String(n || '')
+    .replace(/[<>\u0000-\u001F\u007F-\u009F]/g, '')
+    .trim()
+    .slice(0, 24);
 }
+
 function cleanBio(b) {
-  return String(b || '').replace(/[<>]/g, '').trim().slice(0, 200);
+  return String(b || '')
+    .replace(/[<>\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '')
+    .trim()
+    .slice(0, 200);
 }
+
 function cleanAvatar(a) {
-  return typeof a === 'string' && a.startsWith('data:image/') && a.length <= 8000000 ? a : null;
+  if (typeof a === 'string') {
+    if (a.startsWith('data:image/') && a.length <= 300000) return a;
+    if (isValidImageUrl(a)) return a;
+  }
+  return null;
+}
+
+function cleanMessageText(text) {
+  return String(text || '')
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '')
+    .trim()
+    .slice(0, 2000);
+}
+
+function formatServerTime(ts) {
+  const d = new Date(ts);
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+// Audit #14: Escritura atómica
+function atomicWriteFile(filePath, data) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const tempPath = filePath + '.' + crypto.randomBytes(6).toString('hex') + '.tmp';
+  fs.writeFileSync(tempPath, data, 'utf8');
+  fs.renameSync(tempPath, filePath);
 }
 
 function loadData() {
@@ -206,7 +342,11 @@ function loadData() {
       });
     }
   } catch (e) {
-    console.warn('Error leyendo friends-data:', e.message);
+    console.error('Error leyendo friends-data:', e.message);
+    try {
+      const corruptBackup = FRIENDS_FILE + '.corrupt.' + Date.now();
+      if (fs.existsSync(FRIENDS_FILE)) fs.copyFileSync(FRIENDS_FILE, corruptBackup);
+    } catch {}
   }
 
   try {
@@ -219,67 +359,79 @@ function loadData() {
       messageIdCounter = Number(raw.messageIdCounter) || Object.keys(messagesStore).length;
     }
   } catch (e) {
-    console.warn('Error leyendo messages-data:', e.message);
+    console.error('Error leyendo messages-data:', e.message);
+    try {
+      const corruptBackup = MESSAGES_FILE + '.corrupt.' + Date.now();
+      if (fs.existsSync(MESSAGES_FILE)) fs.copyFileSync(MESSAGES_FILE, corruptBackup);
+    } catch {}
   }
 }
 loadData();
 
 let saveFriendsTimer = null;
 function saveFriendsData() {
-  clearTimeout(saveFriendsTimer);
+  if (saveFriendsTimer) clearTimeout(saveFriendsTimer);
   saveFriendsTimer = setTimeout(() => {
-    const keep = new Set();
-    const friends = {};
-    const requests = {};
-    Object.entries(friendsMap).forEach(([k, set]) => {
-      if (set.size) {
-        friends[k] = [...set];
-        keep.add(k);
-        set.forEach((x) => keep.add(x));
-      }
-    });
-    Object.entries(requestsMap).forEach(([k, set]) => {
-      if (set.size) {
-        requests[k] = [...set];
-        keep.add(k);
-        set.forEach((x) => keep.add(x));
-      }
-    });
-    const outProfiles = {};
-    keep.forEach((id) => {
-      const p = profiles[id];
-      if (p) {
-        outProfiles[id] = {
-          ...p,
-          avatar: p.avatar && p.avatar.length <= 300000 ? p.avatar : null,
-        };
-      }
-    });
-    fs.writeFile(
-      FRIENDS_FILE,
-      JSON.stringify({ profiles: outProfiles, friends, requests }, null, 2),
-      (err) => {
-        if (err) console.error('Error guardando amigos:', err.message);
-      }
-    );
+    try {
+      const keep = new Set();
+      const friends = {};
+      const requests = {};
+      Object.entries(friendsMap).forEach(([k, set]) => {
+        if (set.size) {
+          friends[k] = [...set];
+          keep.add(k);
+          set.forEach((x) => keep.add(x));
+        }
+      });
+      Object.entries(requestsMap).forEach(([k, set]) => {
+        if (set.size) {
+          requests[k] = [...set];
+          keep.add(k);
+          set.forEach((x) => keep.add(x));
+        }
+      });
+      const outProfiles = {};
+      keep.forEach((id) => {
+        const p = profiles[id];
+        if (p) {
+          outProfiles[id] = {
+            ...p,
+            avatar: p.avatar && p.avatar.length <= 300000 ? p.avatar : null,
+          };
+        }
+      });
+      atomicWriteFile(
+        FRIENDS_FILE,
+        JSON.stringify({ profiles: outProfiles, friends, requests }, null, 2)
+      );
+    } catch (err) {
+      console.error('Error guardando amigos:', err.message);
+    }
   }, 600);
 }
 
 let saveMessagesTimer = null;
 function saveMessagesData() {
-  clearTimeout(saveMessagesTimer);
+  if (saveMessagesTimer) clearTimeout(saveMessagesTimer);
   saveMessagesTimer = setTimeout(() => {
-    const entries = Object.entries(messagesStore);
-    if (entries.length > 250) {
-      messagesStore = Object.fromEntries(entries.slice(entries.length - 250));
-    }
-    fs.writeFile(
-      MESSAGES_FILE,
-      JSON.stringify({ messageIdCounter, messagesStore, privateMessagesStore }, null, 2),
-      (err) => {
-        if (err) console.error('Error guardando mensajes:', err.message);
+    try {
+      const entries = Object.entries(messagesStore);
+      if (entries.length > 200) {
+        messagesStore = Object.fromEntries(entries.slice(entries.length - 200));
       }
-    );
+      Object.keys(privateMessagesStore).forEach((room) => {
+        if (privateMessagesStore[room] && privateMessagesStore[room].length > 100) {
+          privateMessagesStore[room] = privateMessagesStore[room].slice(privateMessagesStore[room].length - 100);
+        }
+      });
+
+      atomicWriteFile(
+        MESSAGES_FILE,
+        JSON.stringify({ messageIdCounter, messagesStore, privateMessagesStore }, null, 2)
+      );
+    } catch (err) {
+      console.error('Error guardando mensajes:', err.message);
+    }
   }, 1000);
 }
 
@@ -290,15 +442,19 @@ function hasRelations(id) {
 }
 
 function friendStatus(id) {
-  const sid = onlineByUid[id];
-  const u = sid && users[sid];
-  return u ? u.status || 'online' : 'offline';
+  if (!isUidOnline(id)) return 'offline';
+  const sids = getSocketsForUid(id);
+  for (const sid of sids) {
+    if (users[sid] && users[sid].status) return users[sid].status;
+  }
+  return 'online';
 }
 
 function friendEntry(id) {
-  const p = profiles[id] || { nickname: 'Usuario' };
-  const sid = onlineByUid[id];
-  const src = (sid && users[sid]) || p;
+  const p = profiles[id] || { nickname: 'Usuario', avatar: null, color: '#888888', bio: '', memberSince: 0, lastSeen: 0 };
+  const sids = getSocketsForUid(id);
+  const activeUser = sids.length > 0 && users[sids[0]] ? users[sids[0]] : null;
+  const src = activeUser || p;
   const userCode = src.userCode || p.userCode || getOrGenerateUserCode(id);
   return {
     uid: id,
@@ -326,8 +482,8 @@ function buildFriendsState(id) {
 }
 
 function pushFriendsState(id) {
-  const sid = onlineByUid[id];
-  if (sid) io.to(sid).emit('friends state', buildFriendsState(id));
+  const sids = getSocketsForUid(id);
+  sids.forEach((sid) => io.to(sid).emit('friends state', buildFriendsState(id)));
 }
 
 function notifyFriendsOf(id) {
@@ -336,8 +492,8 @@ function notifyFriendsOf(id) {
 }
 
 function notifyUid(id, text) {
-  const sid = onlineByUid[id];
-  if (sid) io.to(sid).emit('friend notice', { text });
+  const sids = getSocketsForUid(id);
+  sids.forEach((sid) => io.to(sid).emit('friend notice', { text }));
 }
 
 function acceptFriendship(me, other) {
@@ -386,6 +542,19 @@ function broadcastRecordingStatus() {
 
 // Socket.IO Events
 io.on('connection', (socket) => {
+  socket.isAdmin = false;
+
+  // Audit #1: Verificación de admin en servidor
+  socket.on('admin auth', ({ password }) => {
+    const inputPass = String(password || '');
+    if (inputPass.length > 0 && inputPass === ADMIN_PASSWORD) {
+      socket.isAdmin = true;
+      socket.emit('admin auth result', { success: true, message: 'Autenticación exitosa' });
+    } else {
+      socket.emit('admin auth result', { success: false, message: 'Contraseña de administrador incorrecta' });
+    }
+  });
+
   socket.on('join', (userData) => {
     const nickname = userData && userData.nickname ? cleanName(userData.nickname) || 'Anónimo' : 'Anónimo';
     const avatar = userData && userData.avatar ? cleanAvatar(userData.avatar) : null;
@@ -397,25 +566,14 @@ io.on('connection', (socket) => {
     }
     const uid = uidFromToken(token);
     const userCode = getOrGenerateUserCode(uid);
+
     socket.uid = uid;
     socket.userCode = userCode;
 
-    // 1. Detección de sesión duplicada (misma cuenta abierta en otra pestaña)
-    const existingSocketIdByUid = onlineByUid[uid];
-    if (existingSocketIdByUid && existingSocketIdByUid !== socket.id) {
-      const oldSocket = io.sockets.sockets.get(existingSocketIdByUid);
-      if (oldSocket) {
-        oldSocket.emit('duplicate-session', {
-          title: 'Sesión Duplicada Detectada',
-          message: 'Has iniciado sesión con tu cuenta desde otra pestaña o dispositivo. Por seguridad, esta sesión ha sido cerrada.',
-          reason: 'same_account',
-          userCode,
-        });
-        oldSocket.disconnect(true);
-      }
-    }
+    // Audit #11: Soporte para múltiples pestañas simultáneas
+    const wasAlreadyOnline = isUidOnline(uid);
+    addSocketForUid(uid, socket.id);
 
-    // 2. Detección de apodo duplicado
     const duplicateNickEntry = Object.entries(users).find(
       ([sid, u]) => sid !== socket.id && u.uid !== uid && u.nickname.toLowerCase() === nickname.toLowerCase()
     );
@@ -426,11 +584,12 @@ io.on('connection', (socket) => {
         reason: 'nickname_taken',
         userCode,
       });
+      removeSocketForUid(uid, socket.id);
       socket.disconnect(true);
       return;
     }
 
-    socket.emit('session', { uid, userCode });
+    socket.emit('session', { uid, userCode, token });
 
     let memberSince = Number(userData && userData.memberSince);
     if (!isFinite(memberSince) || memberSince < 1577836800000 || memberSince > Date.now()) {
@@ -454,13 +613,13 @@ io.on('connection', (socket) => {
       userCode,
     };
 
-    onlineByUid[uid] = socket.id;
     syncProfileFromSocket(socket.id);
 
-    io.emit('system-message', `${socket.nickname} (${userCode}) ha entrado al chat.`);
+    if (!wasAlreadyOnline) {
+      io.emit('system-message', `${socket.nickname} (${userCode}) ha entrado al chat.`);
+    }
     io.emit('update-users', users);
 
-    // Replay recent public messages
     Object.values(messagesStore).forEach((msg) => {
       socket.emit('chat message', msg);
     });
@@ -554,62 +713,73 @@ io.on('connection', (socket) => {
 
   socket.on('change status', (status) => {
     if (users[socket.id]) {
-      users[socket.id].status = status;
+      const validStatuses = ['online', 'dnd', 'idle', 'offline'];
+      users[socket.id].status = validStatuses.includes(status) ? status : 'online';
       io.emit('update-users', users);
       if (users[socket.id].uid) notifyFriendsOf(users[socket.id].uid);
     }
   });
 
-  // --- Mensajes Públicos ---
   socket.on('chat message', (data) => {
-    if (users[socket.id]) {
-      messageIdCounter++;
-      const msgId = 'msg_' + messageIdCounter + '_' + Date.now();
+    if (!users[socket.id]) return;
 
-      typingUsers.delete(socket.id);
-      broadcastTypingStatus();
-      if (recordingUsers.delete(socket.id)) broadcastRecordingStatus();
-
-      let image = data.image || null;
-      if (typeof image !== 'string' || !(image.startsWith('data:image/') || /^https:\/\//i.test(image))) {
-        image = null;
-      }
-
-      let audio = data.audio || null;
-      if (typeof audio !== 'string' || !audio.startsWith('data:audio/')) audio = null;
-
-      let waveform = null;
-      if (Array.isArray(data.waveform) && data.waveform.length > 0 && data.waveform.length <= 100) {
-        waveform = data.waveform.map((n) => Math.min(100, Math.max(0, Math.round(Number(n) || 0))));
-      }
-      let duration = Number(data.duration);
-      duration = isFinite(duration) && duration > 0 && duration < 3600 ? Math.round(duration * 10) / 10 : 0;
-
-      const msgData = {
-        id: msgId,
-        senderId: socket.id,
-        senderUid: users[socket.id].uid || null,
-        senderUserCode: users[socket.id].userCode,
-        user: users[socket.id].nickname,
-        avatar: users[socket.id].avatar,
-        color: users[socket.id].color,
-        text: data.text || '',
-        image,
-        audio,
-        waveform: audio ? waveform : null,
-        duration: audio ? duration : 0,
-        time: data.time,
-        replyTo: data.replyTo || null,
-        reactions: {},
-      };
-
-      messagesStore[msgId] = msgData;
-      saveMessagesData();
-      io.emit('chat message', msgData);
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('action error', { message: 'Estás enviando mensajes demasiado rápido. Espera un momento.' });
+      return;
     }
+
+    messageIdCounter++;
+    const msgId = 'msg_' + messageIdCounter + '_' + Date.now();
+
+    typingUsers.delete(socket.id);
+    broadcastTypingStatus();
+    if (recordingUsers.delete(socket.id)) broadcastRecordingStatus();
+
+    let image = data && data.image;
+    if (!isValidImageUrl(image)) {
+      image = null;
+    }
+
+    let audio = data && data.audio;
+    if (typeof audio !== 'string' || !audio.startsWith('data:audio/')) audio = null;
+
+    let waveform = null;
+    if (Array.isArray(data && data.waveform) && data.waveform.length > 0 && data.waveform.length <= 100) {
+      waveform = data.waveform.map((n) => Math.min(100, Math.max(0, Math.round(Number(n) || 0))));
+    }
+    let duration = Number(data && data.duration);
+    duration = isFinite(duration) && duration > 0 && duration < 3600 ? Math.round(duration * 10) / 10 : 0;
+
+    const cleanedText = cleanMessageText(data && data.text);
+    const serverFormattedTime = formatServerTime(Date.now());
+
+    const msgData = {
+      id: msgId,
+      senderId: socket.id,
+      senderUid: users[socket.id].uid,
+      senderUserCode: users[socket.id].userCode,
+      user: users[socket.id].nickname,
+      avatar: users[socket.id].avatar,
+      color: users[socket.id].color,
+      text: cleanedText,
+      image,
+      audio,
+      waveform: audio ? waveform : null,
+      duration: audio ? duration : 0,
+      time: serverFormattedTime,
+      replyTo: data && data.replyTo ? {
+        user: cleanName(data.replyTo.user),
+        text: cleanMessageText(data.replyTo.text),
+        color: String(data.replyTo.color || '#ffffff'),
+      } : null,
+      reactions: {},
+    };
+
+    messagesStore[msgId] = msgData;
+    saveMessagesData();
+    io.emit('chat message', msgData);
   });
 
-  // --- Mensajes Privados / DMs ---
   socket.on('get private history', ({ targetUid }) => {
     const me = socket.uid;
     if (!me || !targetUid) return;
@@ -624,24 +794,32 @@ io.on('connection', (socket) => {
     const u = users[socket.id];
     if (!me || !toUid || !u) return;
 
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('action error', { message: 'Estás enviando mensajes demasiado rápido. Espera un momento.' });
+      return;
+    }
+
     messageIdCounter++;
     const msgId = 'dm_' + messageIdCounter + '_' + Date.now();
     const roomId = getDmRoomId(me, toUid);
 
-    let image = data.image || null;
-    if (typeof image !== 'string' || !(image.startsWith('data:image/') || /^https:\/\//i.test(image))) {
+    let image = data && data.image;
+    if (!isValidImageUrl(image)) {
       image = null;
     }
 
-    let audio = data.audio || null;
+    let audio = data && data.audio;
     if (typeof audio !== 'string' || !audio.startsWith('data:audio/')) audio = null;
 
     let waveform = null;
-    if (Array.isArray(data.waveform) && data.waveform.length > 0 && data.waveform.length <= 100) {
+    if (Array.isArray(data && data.waveform) && data.waveform.length > 0 && data.waveform.length <= 100) {
       waveform = data.waveform.map((n) => Math.min(100, Math.max(0, Math.round(Number(n) || 0))));
     }
-    let duration = Number(data.duration);
+    let duration = Number(data && data.duration);
     duration = isFinite(duration) && duration > 0 && duration < 3600 ? Math.round(duration * 10) / 10 : 0;
+
+    const cleanedText = cleanMessageText(data && data.text);
+    const serverFormattedTime = formatServerTime(Date.now());
 
     const msgData = {
       id: msgId,
@@ -652,59 +830,68 @@ io.on('connection', (socket) => {
       user: u.nickname,
       avatar: u.avatar,
       color: u.color,
-      text: data.text || '',
+      text: cleanedText,
       image,
       audio,
       waveform: audio ? waveform : null,
       duration: audio ? duration : 0,
-      time: data.time,
-      replyTo: data.replyTo || null,
+      time: serverFormattedTime,
+      replyTo: data && data.replyTo ? {
+        user: cleanName(data.replyTo.user),
+        text: cleanMessageText(data.replyTo.text),
+        color: String(data.replyTo.color || '#ffffff'),
+      } : null,
       reactions: {},
     };
 
     if (!privateMessagesStore[roomId]) privateMessagesStore[roomId] = [];
     privateMessagesStore[roomId].push(msgData);
-    if (privateMessagesStore[roomId].length > 150) privateMessagesStore[roomId].shift();
+    if (privateMessagesStore[roomId].length > 100) privateMessagesStore[roomId].shift();
     saveMessagesData();
 
-    socket.emit('private message', msgData);
+    const mySockets = getSocketsForUid(me);
+    mySockets.forEach((sid) => io.to(sid).emit('private message', msgData));
 
-    const destSocketId = onlineByUid[toUid];
-    if (destSocketId && destSocketId !== socket.id) {
-      io.to(destSocketId).emit('private message', msgData);
-      io.to(destSocketId).emit('private typing update', {
+    const destSockets = getSocketsForUid(toUid);
+    destSockets.forEach((destSid) => {
+      io.to(destSid).emit('private message', msgData);
+      io.to(destSid).emit('private typing update', {
         fromUid: me,
         fromName: u.nickname,
         isTyping: false,
       });
-    }
+    });
   });
 
   socket.on('private typing', ({ targetUid, isTyping }) => {
-    const destSocketId = onlineByUid[targetUid];
-    if (destSocketId && users[socket.id]) {
-      io.to(destSocketId).emit('private typing update', {
-        fromUid: socket.uid,
-        fromName: users[socket.id].nickname,
-        isTyping: !!isTyping,
+    const destSockets = getSocketsForUid(targetUid);
+    if (destSockets.length > 0 && users[socket.id]) {
+      destSockets.forEach((destSid) => {
+        io.to(destSid).emit('private typing update', {
+          fromUid: socket.uid,
+          fromName: users[socket.id].nickname,
+          isTyping: !!isTyping,
+        });
       });
     }
   });
 
   socket.on('private recording', ({ targetUid, isRecording }) => {
-    const destSocketId = onlineByUid[targetUid];
-    if (destSocketId && users[socket.id]) {
-      io.to(destSocketId).emit('private recording update', {
-        fromUid: socket.uid,
-        fromName: users[socket.id].nickname,
-        isRecording: !!isRecording,
+    const destSockets = getSocketsForUid(targetUid);
+    if (destSockets.length > 0 && users[socket.id]) {
+      destSockets.forEach((destSid) => {
+        io.to(destSid).emit('private recording update', {
+          fromUid: socket.uid,
+          fromName: users[socket.id].nickname,
+          isRecording: !!isRecording,
+        });
       });
     }
   });
 
   socket.on('add private reaction', ({ targetUid, msgId, emoji }) => {
     const me = socket.uid;
-    if (!me || !targetUid || !users[socket.id]) return;
+    if (!me || !targetUid || !users[socket.id] || !emoji) return;
     const roomId = getDmRoomId(me, targetUid);
     const list = privateMessagesStore[roomId] || [];
     const msg = list.find((m) => m.id === msgId);
@@ -736,79 +923,95 @@ io.on('connection', (socket) => {
     }
 
     saveMessagesData();
-    const payload = { targetUid, msgId, reactions: msg.reactions };
-    socket.emit('update private reactions', payload);
-    const destSocketId = onlineByUid[targetUid];
-    if (destSocketId && destSocketId !== socket.id) {
-      io.to(destSocketId).emit('update private reactions', { targetUid: me, msgId, reactions: msg.reactions });
-    }
+    const mySockets = getSocketsForUid(me);
+    mySockets.forEach((sid) => io.to(sid).emit('update private reactions', { targetUid, msgId, reactions: msg.reactions }));
+
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => io.to(sid).emit('update private reactions', { targetUid: me, msgId, reactions: msg.reactions }));
   });
 
   socket.on('delete private message', ({ targetUid, msgId }) => {
     const me = socket.uid;
-    if (!me || !targetUid) return;
+    if (!me || !targetUid || !msgId) return;
     const roomId = getDmRoomId(me, targetUid);
-    if (privateMessagesStore[roomId]) {
-      privateMessagesStore[roomId] = privateMessagesStore[roomId].filter((m) => m.id !== msgId);
-      saveMessagesData();
+    const list = privateMessagesStore[roomId] || [];
+    const msg = list.find((m) => m.id === msgId);
+    if (!msg) return;
+
+    if (msg.senderUid !== me && !socket.isAdmin) {
+      socket.emit('action error', { message: 'Solo puedes eliminar tus propios mensajes.' });
+      return;
     }
-    socket.emit('private message deleted', { targetUid, msgId });
-    const destSocketId = onlineByUid[targetUid];
-    if (destSocketId) {
-      io.to(destSocketId).emit('private message deleted', { targetUid: me, msgId });
-    }
+
+    privateMessagesStore[roomId] = list.filter((m) => m.id !== msgId);
+    saveMessagesData();
+
+    const mySockets = getSocketsForUid(me);
+    mySockets.forEach((sid) => io.to(sid).emit('private message deleted', { targetUid, msgId }));
+
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => io.to(sid).emit('private message deleted', { targetUid: me, msgId }));
   });
 
   socket.on('edit private message', ({ targetUid, msgId, newText }) => {
     const me = socket.uid;
-    if (!me || !targetUid) return;
+    if (!me || !targetUid || !msgId) return;
     const roomId = getDmRoomId(me, targetUid);
     const msg = (privateMessagesStore[roomId] || []).find((m) => m.id === msgId);
-    if (msg) {
-      msg.text = newText;
-      saveMessagesData();
+    if (!msg) return;
+
+    if (msg.senderUid !== me && !socket.isAdmin) {
+      socket.emit('action error', { message: 'Solo puedes editar tus propios mensajes.' });
+      return;
     }
 
-    socket.emit('private message edited', { targetUid, msgId, newText });
-    const destSocketId = onlineByUid[targetUid];
-    if (destSocketId) {
-      io.to(destSocketId).emit('private message edited', { targetUid: me, msgId, newText });
-    }
+    const sanitizedText = cleanMessageText(newText);
+    if (!sanitizedText) return;
+
+    msg.text = sanitizedText;
+    msg.editedAt = Date.now();
+    saveMessagesData();
+
+    const mySockets = getSocketsForUid(me);
+    mySockets.forEach((sid) => io.to(sid).emit('private message edited', { targetUid, msgId, newText: sanitizedText }));
+
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => io.to(sid).emit('private message edited', { targetUid: me, msgId, newText: sanitizedText }));
   });
 
-  // --- Reacciones Públicas ---
   socket.on('add reaction', ({ msgId, emoji }) => {
     const user = users[socket.id];
     const msg = messagesStore[msgId];
-    if (user && msg) {
-      if (!msg.reactions) msg.reactions = {};
+    if (!user || !msg || !emoji) return;
+    const myUid = user.uid;
 
-      let alreadyReacted = false;
-      Object.keys(msg.reactions).forEach((e) => {
-        msg.reactions[e] = msg.reactions[e].filter((item) => {
-          if (item.id === socket.id && e === emoji) {
-            alreadyReacted = true;
-            return false;
-          }
-          if (item.id === socket.id) return false;
-          return true;
-        });
-        if (msg.reactions[e].length === 0) delete msg.reactions[e];
+    if (!msg.reactions) msg.reactions = {};
+
+    let alreadyReacted = false;
+    Object.keys(msg.reactions).forEach((e) => {
+      msg.reactions[e] = msg.reactions[e].filter((item) => {
+        if (item.uid === myUid && e === emoji) {
+          alreadyReacted = true;
+          return false;
+        }
+        return item.uid !== myUid;
       });
+      if (msg.reactions[e].length === 0) delete msg.reactions[e];
+    });
 
-      if (!alreadyReacted) {
-        if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
-        msg.reactions[emoji].push({
-          id: socket.id,
-          nickname: user.nickname,
-          avatar: user.avatar,
-          color: user.color,
-        });
-      }
-
-      saveMessagesData();
-      io.emit('update reactions', { msgId, reactions: msg.reactions });
+    if (!alreadyReacted) {
+      if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+      msg.reactions[emoji].push({
+        id: socket.id,
+        uid: myUid,
+        nickname: user.nickname,
+        avatar: user.avatar,
+        color: user.color,
+      });
     }
+
+    saveMessagesData();
+    io.emit('update reactions', { msgId, reactions: msg.reactions });
   });
 
   socket.on('typing', (isTyping) => {
@@ -827,30 +1030,60 @@ io.on('connection', (socket) => {
   });
 
   socket.on('delete message', (msgId) => {
+    const msg = messagesStore[msgId];
+    if (!msg) return;
+
+    const myUid = users[socket.id] && users[socket.id].uid;
+    const isAuthor = (myUid && msg.senderUid === myUid) || msg.senderId === socket.id;
+
+    if (!isAuthor && !socket.isAdmin) {
+      socket.emit('action error', { message: 'No tienes permiso para eliminar este mensaje.' });
+      return;
+    }
+
     delete messagesStore[msgId];
     saveMessagesData();
     io.emit('message deleted', msgId);
   });
 
   socket.on('edit message', ({ msgId, newText }) => {
-    if (messagesStore[msgId]) {
-      messagesStore[msgId].text = newText;
-      saveMessagesData();
+    const msg = messagesStore[msgId];
+    if (!msg) return;
+
+    const myUid = users[socket.id] && users[socket.id].uid;
+    const isAuthor = (myUid && msg.senderUid === myUid) || msg.senderId === socket.id;
+
+    if (!isAuthor && !socket.isAdmin) {
+      socket.emit('action error', { message: 'No tienes permiso para editar este mensaje.' });
+      return;
     }
-    io.emit('message edited', { msgId, newText });
+
+    const sanitizedText = cleanMessageText(newText);
+    if (!sanitizedText) return;
+
+    msg.text = sanitizedText;
+    msg.editedAt = Date.now();
+    saveMessagesData();
+    io.emit('message edited', { msgId, newText: sanitizedText });
   });
 
   socket.on('admin update user', ({ targetId, newName, newColor }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+
     if (users[targetId]) {
-      if (newName && newName.trim() !== '') {
-        users[targetId].nickname = newName.trim();
+      if (newName && String(newName).trim() !== '') {
+        const cleaned = cleanName(newName);
+        users[targetId].nickname = cleaned;
         const targetSocket = io.sockets.sockets.get(targetId);
-        if (targetSocket) targetSocket.nickname = newName.trim();
+        if (targetSocket) targetSocket.nickname = cleaned;
       }
       if (newColor) {
-        users[targetId].color = newColor;
+        users[targetId].color = String(newColor);
         const targetSocket = io.sockets.sockets.get(targetId);
-        if (targetSocket) targetSocket.userColor = newColor;
+        if (targetSocket) targetSocket.userColor = String(newColor);
       }
       io.emit('update-users', users);
       syncProfileFromSocket(targetId);
@@ -858,10 +1091,15 @@ io.on('connection', (socket) => {
   });
 
   socket.on('kick user', ({ targetId, adminName }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+
     if (users[targetId]) {
       const targetSocket = io.sockets.sockets.get(targetId);
       if (targetSocket) {
-        targetSocket.emit('kicked', adminName);
+        targetSocket.emit('kicked', adminName || 'Administrador');
         targetSocket.disconnect(true);
       }
     }
@@ -870,28 +1108,33 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     if (users[socket.id]) {
       const name = users[socket.id].nickname;
+      const leavingUid = users[socket.id].uid;
+
       typingUsers.delete(socket.id);
       broadcastTypingStatus();
       recordingUsers.delete(socket.id);
-
-      const leavingUid = users[socket.id].uid;
-      delete users[socket.id];
       broadcastRecordingStatus();
 
-      if (leavingUid && onlineByUid[leavingUid] === socket.id) {
-        delete onlineByUid[leavingUid];
-        if (profiles[leavingUid]) profiles[leavingUid].lastSeen = Date.now();
-        if (hasRelations(leavingUid)) saveFriendsData();
-        notifyFriendsOf(leavingUid);
+      messageTimestampsBySocket.delete(socket.id);
+      delete users[socket.id];
+
+      if (leavingUid) {
+        const wentOffline = removeSocketForUid(leavingUid, socket.id);
+        if (wentOffline) {
+          if (profiles[leavingUid]) profiles[leavingUid].lastSeen = Date.now();
+          if (hasRelations(leavingUid)) saveFriendsData();
+          notifyFriendsOf(leavingUid);
+          io.emit('system-message', `${name} ha salido del chat.`);
+        }
       }
-      io.emit('system-message', `${name} ha salido del chat.`);
+
       io.emit('update-users', users);
     }
   });
 });
 
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
