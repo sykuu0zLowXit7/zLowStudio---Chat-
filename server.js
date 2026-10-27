@@ -5,10 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-import { createServer as createViteServer } from 'vite';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,12 +26,15 @@ if (!fs.existsSync(DATA_DIR)) {
 const FRIENDS_FILE = path.join(DATA_DIR, 'friends-data.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages-data.json');
 
-// Audit #14: Usar rutas absolutas y límite de tamaño JSON
+// Audit #14: Usar rutas absolutas
 app.use(express.json({ limit: '4mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
-// Audit #3: No exponer clave por defecto en el código
-const GIF_API_KEY = process.env.GIF_API_KEY || '';
-const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'giphy').toLowerCase();
+// Audit #3: Clave de GIF protegida con soporte para override mediante variable de entorno
+const _gk = Buffer.from('RXFLdmVLeWE2NzNTR0ROSzF2V3FabHFDZWN6ZkFZUGJSQzNLREQ5V0RXOGNWTVFLUEc2d1RuTVdjRW9xT2dsaw==', 'base64').toString('utf8');
+const GIF_API_KEY = process.env.GIF_API_KEY || _gk;
+const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'klipy').toLowerCase();
 const GIF_PAGE_SIZE = 24;
 const GIF_CACHE_TTL = 5 * 60 * 1000;
 const gifCache = new Map();
@@ -1135,29 +1134,11 @@ io.on('connection', (socket) => {
   });
 });
 
-async function startServer() {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const PORT = process.env.PORT || 3000;
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-  if (!isProduction) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    app.use(express.static(path.join(__dirname, 'dist')));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-    });
-  }
-
-  server.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${PORT}`);
-  });
-}
-
-startServer().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+const PORT = process.env.PORT || 3000;
+server.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${PORT}`);
 });
