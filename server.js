@@ -1135,7 +1135,15 @@ io.on('connection', (socket) => {
 });
 
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const rootIndex = path.join(__dirname, 'index.html');
+  if (fs.existsSync(rootIndex)) {
+    return res.sendFile(rootIndex);
+  }
+  const publicIndex = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(publicIndex)) {
+    return res.sendFile(publicIndex);
+  }
+  res.status(404).send('index.html no encontrado');
 });
 
 const PORT = process.env.PORT || 3000;
