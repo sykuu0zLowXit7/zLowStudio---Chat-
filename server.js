@@ -5,6 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import { createServer as createViteServer } from 'vite';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,10 +30,8 @@ if (!fs.existsSync(DATA_DIR)) {
 const FRIENDS_FILE = path.join(DATA_DIR, 'friends-data.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages-data.json');
 
-// Audit #14: Usar rutas absolutas
+// Audit #14: Usar rutas absolutas y límite de tamaño JSON
 app.use(express.json({ limit: '4mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(__dirname));
 
 // Audit #3: No exponer clave por defecto en el código
 const GIF_API_KEY = process.env.GIF_API_KEY || '';
@@ -1133,11 +1135,29 @@ io.on('connection', (socket) => {
   });
 });
 
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+async function startServer() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const PORT = process.env.PORT || 3000;
 
-const PORT = process.env.PORT || 3000;
-server.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${PORT}`);
+  if (!isProduction) {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static(path.join(__dirname, 'dist')));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    });
+  }
+
+  server.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${PORT}`);
+  });
+}
+
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
