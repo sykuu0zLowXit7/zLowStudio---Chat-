@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>zLowStudio - Chat</title>
-    <meta name="description" content="Aplicación de chat en tiempo real con canales, mensajes directos, notas de voz, imágenes, GIFs y perfiles personalizables." />
-    <meta property="og:title" content="zLowStudio - Chat" />
-    <meta property="og:description" content="Aplicación de chat en tiempo real con canales, mensajes directos, notas de voz, imágenes, GIFs y perfiles personalizables." />
+    <title>zLowStudio Chat</title>
+    <meta name="description" content="Chat en tiempo real con canales globales, mensajes directos, perfiles, multimedia y seguridad auditada." />
+    <meta property="og:title" content="zLowStudio Chat" />
+    <meta property="og:description" content="Chat en tiempo real con canales globales, mensajes directos, perfiles, multimedia y seguridad auditada." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2137,6 +2137,36 @@
         .edit-btn { background: #17a2b8; color: #fff; border: none; padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
         .color-picker-input { width: 22px; height: 22px; border: none; border-radius: 50%; cursor: pointer; background: transparent; }
         .kick-btn { background: #ffc107; color: #000; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+
+        /* Audit #15: Animaciones keyframes y estilos faltantes */
+        @keyframes sentBubble {
+            0% { opacity: 0; transform: translateY(10px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes receivedBubble {
+            0% { opacity: 0; transform: translateY(10px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes dissolveOut {
+            0% { opacity: 1; transform: scale(1); max-height: 200px; }
+            100% { opacity: 0; transform: scale(0.85); max-height: 0; margin: 0; padding: 0; }
+        }
+
+        @keyframes slideDownReply {
+            0% { opacity: 0; transform: translateY(-8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounceDot {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .ring {
+            box-shadow: 0 0 0 3px var(--glow-color);
+        }
     </style>
 </head>
 <body>
@@ -2485,8 +2515,12 @@
 
         // Control de canales: null = Chat Global, string = UID del amigo en privado
         let currentDmUser = null;
-        let globalMessagesBackup = [];
+        // Audit #9: Map estructurado en vez de array de nodos DOM estáticos
+        const globalMessagesMap = new Map();
         const privateCache = {}; // targetUid -> []
+        let hasJoined = false;
+        let myUid = '';
+        let myUserCode = '';
 
         const welcomeModalOverlay = document.getElementById('welcome-modal-overlay');
         const nicknameInput = document.getElementById('nickname-input');
@@ -2594,10 +2628,82 @@
         });
         window.addEventListener('blur', () => { isWindowFocused = false; });
 
+        // Audit #15: Singleton de AudioContext para no agotar instancias en sesiones largas
+        let sharedAudioCtx = null;
+        function getAudioCtx() {
+            try {
+                if (!sharedAudioCtx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) sharedAudioCtx = new AudioCtx();
+                }
+                if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+                    sharedAudioCtx.resume().catch(() => {});
+                }
+                return sharedAudioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Audit #2: Sanitización y escape HTML para prevención absoluta de XSS
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Audit #5: Escapar caracteres especiales para RegExp de menciones
+        function escapeRegExp(string) {
+            return String(string || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Audit #6: Dominios seguros permitidos para imágenes y GIFs
+        const ALLOWED_IMAGE_HOSTS = [
+            'giphy.com',
+            'media.giphy.com',
+            'media0.giphy.com',
+            'media1.giphy.com',
+            'media2.giphy.com',
+            'media3.giphy.com',
+            'media4.giphy.com',
+            'i.giphy.com',
+            'klipy.com',
+            'api.klipy.com',
+            'static.klipy.com',
+            'tenor.com',
+            'c.tenor.com',
+            'media.tenor.com',
+            'images.unsplash.com',
+            window.location.hostname
+        ];
+
+        function isValidImageUrl(url) {
+            if (typeof url !== 'string' || !url) return false;
+            if (/^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(url)) {
+                return url.length <= 4 * 1024 * 1024;
+            }
+            if (!/^https:\/\//i.test(url)) return false;
+            try {
+                const parsed = new URL(url);
+                const host = parsed.hostname.toLowerCase();
+                for (const allowed of ALLOWED_IMAGE_HOSTS) {
+                    if (host === allowed || host.endsWith('.' + allowed)) return true;
+                }
+            } catch (e) {
+                return false;
+            }
+            return false;
+        }
+
         function triggerHapticFeedback(frequency = 600, duration = 0.08) {
             if (navigator.vibrate) navigator.vibrate(40);
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = getAudioCtx();
+                if (!ctx) return;
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
