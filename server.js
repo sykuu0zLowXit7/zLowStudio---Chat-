@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-// Audit #7: Limitar tamaño de buffer a 4MB
+// Buffer de 4MB seguro para adjuntos
 const io = new Server(server, {
   maxHttpBufferSize: 4e6,
   cors: { origin: '*' },
@@ -25,13 +25,13 @@ if (!fs.existsSync(DATA_DIR)) {
 
 const FRIENDS_FILE = path.join(DATA_DIR, 'friends-data.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages-data.json');
+const ADMIN_DATA_FILE = path.join(DATA_DIR, 'admin-data.json');
 
-// Audit #14: Usar rutas absolutas
 app.use(express.json({ limit: '4mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// Audit #3: Clave de GIF protegida con soporte para override mediante variable de entorno
+// Clave por defecto de Klipy protegida/obfuscada
 const _gk = Buffer.from('RXFLdmVLeWE2NzNTR0ROSzF2V3FabHFDZWN6ZkFZUGJSQzNLREQ5V0RXOGNWTVFLUEc2d1RuTVdjRW9xT2dsaw==', 'base64').toString('utf8');
 const GIF_API_KEY = process.env.GIF_API_KEY || _gk;
 const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'klipy').toLowerCase();
@@ -39,10 +39,10 @@ const GIF_PAGE_SIZE = 24;
 const GIF_CACHE_TTL = 5 * 60 * 1000;
 const gifCache = new Map();
 
-// Audit #1: Contraseña de admin desde variable de entorno
+// Contraseña de administrador
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1509';
 
-// Audit #6: Dominios de imágenes autorizados para prevenir IP logging o SSRF
+// Dominios seguros permitidos para imágenes
 const ALLOWED_IMAGE_HOSTS = new Set([
   'giphy.com',
   'media.giphy.com',
@@ -140,7 +140,7 @@ app.get('/api/gifs', async (req, res) => {
       items: [],
       hasNext: false,
       provider: GIF_PROVIDER.toUpperCase(),
-      message: 'GIF API key not configured. Set GIF_API_KEY in environment variables.',
+      message: 'GIF API key not configured.',
     });
   }
 
@@ -210,8 +210,19 @@ let profiles = {};
 const friendsMap = {};
 const requestsMap = {};
 
-// Audit #11: Map de Sets para múltiples pestañas simultáneas
+// Sockets activos indexados por UID (soporte multi-pestaña)
 const onlineSocketsByUid = new Map();
+
+// --- ESTADOS DE ADMINISTRACIÓN Y MODERACIÓN ---
+let mutes = {}; // uid -> { until, minutes, reason, by, mutedAt, nickname }
+let bans = {};  // uid -> { reason, by, bannedAt, userCode, nickname }
+let warnings = {}; // uid -> Array<{ id, text, time, by }>
+let auditLog = []; // [{ id, action, targetName, targetUid, byName, reason, time, details }]
+let chatSettings = { slowmode: 0, paused: false }; // slowmode en segundos, paused booleano
+const lastMessageTimeByUid = new Map(); // uid -> timestamp para slowmode
+
+// Seguimiento de llamadas WebRTC activas
+const activeCalls = new Map(); // callKey -> { callerUid, targetUid, startedAt }
 
 function getSocketsForUid(uid) {
   const s = onlineSocketsByUid.get(uid);
@@ -242,11 +253,81 @@ function removeSocketForUid(uid, socketId) {
   return false;
 }
 
+function isUserMuted(uid) {
+  if (!uid || !mutes[uid]) return null;
+  const info = mutes[uid];
+  if (info.until === 0) return info; // Permanente
+  if (Date.now() < info.until) return info;
+  // Expiró
+  delete mutes[uid];
+  saveAdminData();
+  return null;
+}
+
+function isUserBanned(uid) {
+  return (uid && bans[uid]) ? bans[uid] : null;
+}
+
+function addAuditLog(action, targetName, targetUid, byName, reason = '', details = '') {
+  const entry = {
+    id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    action,
+    targetName: cleanName(targetName) || 'Usuario',
+    targetUid: String(targetUid || ''),
+    byName: cleanName(byName) || 'Admin',
+    reason: cleanBio(reason) || 'Sin motivo especificado',
+    details: String(details || ''),
+    time: Date.now(),
+  };
+  auditLog.unshift(entry);
+  if (auditLog.length > 200) auditLog.pop();
+  saveAdminData();
+  broadcastAdminUpdate();
+}
+
+function broadcastAdminUpdate() {
+  io.sockets.sockets.forEach((s) => {
+    if (s.isAdmin) {
+      s.emit('admin:dashboard_data', buildAdminDashboardPayload());
+    }
+  });
+}
+
+function buildAdminDashboardPayload() {
+  const activeUserList = Object.entries(users).map(([sid, u]) => ({
+    socketId: sid,
+    uid: u.uid,
+    userCode: u.userCode,
+    nickname: u.nickname,
+    avatar: u.avatar,
+    color: u.color,
+    status: u.status,
+    connectedAt: u.connectedAt,
+    isMuted: Boolean(isUserMuted(u.uid)),
+    muteInfo: isUserMuted(u.uid),
+    warningsCount: (warnings[u.uid] || []).length,
+  }));
+
+  return {
+    users: activeUserList,
+    mutes: Object.entries(mutes).map(([uid, m]) => ({ uid, ...m })),
+    bans: Object.entries(bans).map(([uid, b]) => ({ uid, ...b })),
+    auditLog: auditLog.slice(0, 100),
+    chatSettings,
+    stats: {
+      totalOnline: Object.keys(users).length,
+      totalProfiles: Object.keys(profiles).length,
+      totalMessages: Object.keys(messagesStore).length,
+      uptime: Math.round(process.uptime()),
+    },
+  };
+}
+
 let messageIdCounter = 0;
 let messagesStore = {};
 const privateMessagesStore = {};
 
-// Audit #7: Rate limiting
+// Rate limiting
 const messageTimestampsBySocket = new Map();
 
 function checkRateLimit(socketId) {
@@ -284,7 +365,6 @@ function getOrGenerateUserCode(uid) {
   return code;
 }
 
-// Audit #2: Sanitización
 function cleanName(n) {
   return String(n || '')
     .replace(/[<>\u0000-\u001F\u007F-\u009F]/g, '')
@@ -321,7 +401,7 @@ function formatServerTime(ts) {
   return `${hours}:${minutes}`;
 }
 
-// Audit #14: Escritura atómica
+// Escritura atómica
 function atomicWriteFile(filePath, data) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -365,6 +445,19 @@ function loadData() {
       const corruptBackup = MESSAGES_FILE + '.corrupt.' + Date.now();
       if (fs.existsSync(MESSAGES_FILE)) fs.copyFileSync(MESSAGES_FILE, corruptBackup);
     } catch {}
+  }
+
+  try {
+    if (fs.existsSync(ADMIN_DATA_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(ADMIN_DATA_FILE, 'utf8'));
+      mutes = raw.mutes || {};
+      bans = raw.bans || {};
+      warnings = raw.warnings || {};
+      auditLog = raw.auditLog || [];
+      chatSettings = raw.chatSettings || { slowmode: 0, paused: false };
+    }
+  } catch (e) {
+    console.error('Error leyendo admin-data:', e.message);
   }
 }
 loadData();
@@ -434,6 +527,21 @@ function saveMessagesData() {
       console.error('Error guardando mensajes:', err.message);
     }
   }, 1000);
+}
+
+let saveAdminTimer = null;
+function saveAdminData() {
+  if (saveAdminTimer) clearTimeout(saveAdminTimer);
+  saveAdminTimer = setTimeout(() => {
+    try {
+      atomicWriteFile(
+        ADMIN_DATA_FILE,
+        JSON.stringify({ mutes, bans, warnings, auditLog, chatSettings }, null, 2)
+      );
+    } catch (err) {
+      console.error('Error guardando admin data:', err.message);
+    }
+  }, 600);
 }
 
 function hasRelations(id) {
@@ -541,37 +649,50 @@ function broadcastRecordingStatus() {
   io.emit('recording update', names);
 }
 
-// Socket.IO Events
+// Sockets Events
 io.on('connection', (socket) => {
   socket.isAdmin = false;
 
-  // Audit #1: Verificación de admin en servidor
+  // Autenticación de admin en servidor
   socket.on('admin auth', ({ password }) => {
     const inputPass = String(password || '');
     if (inputPass.length > 0 && inputPass === ADMIN_PASSWORD) {
       socket.isAdmin = true;
       socket.emit('admin auth result', { success: true, message: 'Autenticación exitosa' });
+      socket.emit('admin:dashboard_data', buildAdminDashboardPayload());
+      addAuditLog('admin_login', users[socket.id]?.nickname || 'Admin', socket.uid, users[socket.id]?.nickname || 'Admin', 'Inicio de sesión con clave');
     } else {
       socket.emit('admin auth result', { success: false, message: 'Contraseña de administrador incorrecta' });
     }
   });
 
   socket.on('join', (userData) => {
-    const nickname = userData && userData.nickname ? cleanName(userData.nickname) || 'Anónimo' : 'Anónimo';
-    const avatar = userData && userData.avatar ? cleanAvatar(userData.avatar) : null;
-    const bio = userData && userData.bio ? cleanBio(userData.bio) : '';
-
     let token = userData && typeof userData.token === 'string' && userData.token.length >= 8 ? userData.token : null;
     if (!token) {
       token = crypto.randomBytes(16).toString('hex');
     }
     const uid = uidFromToken(token);
+
+    // Comprobar si está baneado
+    const banInfo = isUserBanned(uid);
+    if (banInfo) {
+      socket.emit('banned', {
+        reason: banInfo.reason || 'Has sido baneado permanentemente del servidor.',
+        by: banInfo.by || 'Administración',
+        date: banInfo.bannedAt,
+      });
+      socket.disconnect(true);
+      return;
+    }
+
+    const nickname = userData && userData.nickname ? cleanName(userData.nickname) || 'Anónimo' : 'Anónimo';
+    const avatar = userData && userData.avatar ? cleanAvatar(userData.avatar) : null;
+    const bio = userData && userData.bio ? cleanBio(userData.bio) : '';
     const userCode = getOrGenerateUserCode(uid);
 
     socket.uid = uid;
     socket.userCode = userCode;
 
-    // Audit #11: Soporte para múltiples pestañas simultáneas
     const wasAlreadyOnline = isUidOnline(uid);
     addSocketForUid(uid, socket.id);
 
@@ -591,6 +712,18 @@ io.on('connection', (socket) => {
     }
 
     socket.emit('session', { uid, userCode, token });
+    socket.emit('chat_settings_updated', chatSettings);
+
+    // Notificar si está silenciado
+    const muteInfo = isUserMuted(uid);
+    if (muteInfo) {
+      socket.emit('moderation:mute_status', {
+        muted: true,
+        until: muteInfo.until,
+        reason: muteInfo.reason,
+        by: muteInfo.by,
+      });
+    }
 
     let memberSince = Number(userData && userData.memberSince);
     if (!isFinite(memberSince) || memberSince < 1577836800000 || memberSince > Date.now()) {
@@ -620,6 +753,7 @@ io.on('connection', (socket) => {
       io.emit('system-message', `${socket.nickname} (${userCode}) ha entrado al chat.`);
     }
     io.emit('update-users', users);
+    broadcastAdminUpdate();
 
     Object.values(messagesStore).forEach((msg) => {
       socket.emit('chat message', msg);
@@ -710,6 +844,7 @@ io.on('connection', (socket) => {
     }
     io.emit('update-users', users);
     syncProfileFromSocket(socket.id);
+    broadcastAdminUpdate();
   });
 
   socket.on('change status', (status) => {
@@ -718,11 +853,41 @@ io.on('connection', (socket) => {
       users[socket.id].status = validStatuses.includes(status) ? status : 'online';
       io.emit('update-users', users);
       if (users[socket.id].uid) notifyFriendsOf(users[socket.id].uid);
+      broadcastAdminUpdate();
     }
   });
 
+  // --- MENSAJES PÚBLICOS ---
   socket.on('chat message', (data) => {
     if (!users[socket.id]) return;
+
+    const myUid = users[socket.id].uid;
+
+    // Verificar si está silenciado
+    const muteInfo = isUserMuted(myUid);
+    if (muteInfo) {
+      const timeStr = muteInfo.until === 0 ? 'indefinido' : `hasta las ${new Date(muteInfo.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      socket.emit('action error', { message: `Estás silenciado (${timeStr}). Motivo: ${muteInfo.reason || 'Sin motivo'}` });
+      return;
+    }
+
+    // Verificar si el chat está pausado
+    if (chatSettings.paused && !socket.isAdmin) {
+      socket.emit('action error', { message: 'El chat general está pausado por la administración.' });
+      return;
+    }
+
+    // Verificar Slowmode
+    if (chatSettings.slowmode > 0 && !socket.isAdmin) {
+      const last = lastMessageTimeByUid.get(myUid) || 0;
+      const passed = Math.floor((Date.now() - last) / 1000);
+      if (passed < chatSettings.slowmode) {
+        const remaining = chatSettings.slowmode - passed;
+        socket.emit('action error', { message: `Modo lento activo: espera ${remaining}s para volver a escribir.` });
+        return;
+      }
+      lastMessageTimeByUid.set(myUid, Date.now());
+    }
 
     if (!checkRateLimit(socket.id)) {
       socket.emit('action error', { message: 'Estás enviando mensajes demasiado rápido. Espera un momento.' });
@@ -794,6 +959,14 @@ io.on('connection', (socket) => {
     const toUid = data && data.targetUid;
     const u = users[socket.id];
     if (!me || !toUid || !u) return;
+
+    // Verificar si está silenciado
+    const muteInfo = isUserMuted(me);
+    if (muteInfo) {
+      const timeStr = muteInfo.until === 0 ? 'indefinido' : `hasta las ${new Date(muteInfo.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      socket.emit('action error', { message: `Estás silenciado (${timeStr}). No puedes enviar mensajes privados.` });
+      return;
+    }
 
     if (!checkRateLimit(socket.id)) {
       socket.emit('action error', { message: 'Estás enviando mensajes demasiado rápido. Espera un momento.' });
@@ -1068,48 +1241,436 @@ io.on('connection', (socket) => {
     io.emit('message edited', { msgId, newText: sanitizedText });
   });
 
-  socket.on('admin update user', ({ targetId, newName, newColor }) => {
+  // ========================================================
+  // --- PANEL DE ADMINISTRACIÓN FULL PROFESIONAL & MODERACIÓN ---
+  // ========================================================
+  socket.on('admin:get_dashboard', () => {
     if (!socket.isAdmin) {
       socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
       return;
     }
-
-    if (users[targetId]) {
-      if (newName && String(newName).trim() !== '') {
-        const cleaned = cleanName(newName);
-        users[targetId].nickname = cleaned;
-        const targetSocket = io.sockets.sockets.get(targetId);
-        if (targetSocket) targetSocket.nickname = cleaned;
-      }
-      if (newColor) {
-        users[targetId].color = String(newColor);
-        const targetSocket = io.sockets.sockets.get(targetId);
-        if (targetSocket) targetSocket.userColor = String(newColor);
-      }
-      io.emit('update-users', users);
-      syncProfileFromSocket(targetId);
-    }
+    socket.emit('admin:dashboard_data', buildAdminDashboardPayload());
   });
 
-  socket.on('kick user', ({ targetId, adminName }) => {
+  // Silenciar usuario por minutos
+  socket.on('admin:mute', ({ targetUid, minutes, reason }) => {
     if (!socket.isAdmin) {
       socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
       return;
     }
+    if (!targetUid) return;
 
-    if (users[targetId]) {
-      const targetSocket = io.sockets.sockets.get(targetId);
+    const targetUser = Object.values(users).find((u) => u.uid === targetUid);
+    const targetNick = targetUser?.nickname || profiles[targetUid]?.nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    const cleanRsn = cleanBio(reason) || 'Incumplimiento de las normas';
+    const mins = Math.max(0, parseInt(minutes, 10) || 0);
+
+    const until = mins === 0 ? 0 : Date.now() + mins * 60 * 1000;
+    mutes[targetUid] = {
+      until,
+      minutes: mins,
+      reason: cleanRsn,
+      by: adminName,
+      mutedAt: Date.now(),
+      nickname: targetNick,
+    };
+    saveAdminData();
+
+    // Notificar al usuario afectado en todos sus sockets
+    const targetSockets = getSocketsForUid(targetUid);
+    targetSockets.forEach((sid) => {
+      io.to(sid).emit('moderation:mute_status', {
+        muted: true,
+        until,
+        reason: cleanRsn,
+        by: adminName,
+      });
+      io.to(sid).emit('action error', {
+        message: `Has sido silenciado ${mins > 0 ? 'por ' + mins + ' min' : 'permanentemente'}. Motivo: ${cleanRsn}`,
+      });
+    });
+
+    const timeLabel = mins > 0 ? `${mins} minuto(s)` : 'tiempo indefinido';
+    io.emit('system-message', `[Moderación] ${targetNick} fue silenciado (${timeLabel}). Motivo: ${cleanRsn}`);
+    addAuditLog('mute', targetNick, targetUid, adminName, cleanRsn, `Duración: ${timeLabel}`);
+    broadcastAdminUpdate();
+  });
+
+  // Quitar silencio
+  socket.on('admin:unmute', ({ targetUid }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    if (!targetUid || !mutes[targetUid]) return;
+
+    const targetNick = mutes[targetUid].nickname || profiles[targetUid]?.nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+
+    delete mutes[targetUid];
+    saveAdminData();
+
+    const targetSockets = getSocketsForUid(targetUid);
+    targetSockets.forEach((sid) => {
+      io.to(sid).emit('moderation:mute_status', { muted: false });
+      io.to(sid).emit('action error', { message: 'Se ha levantado tu sanción de silencio.' });
+    });
+
+    io.emit('system-message', `[Moderación] Se ha retirado el silencio a ${targetNick}.`);
+    addAuditLog('unmute', targetNick, targetUid, adminName, 'Silencio levantado');
+    broadcastAdminUpdate();
+  });
+
+  // Expulsar usuario (Kick)
+  socket.on('admin:kick', ({ targetUid, reason }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    if (!targetUid) return;
+
+    const targetUser = Object.values(users).find((u) => u.uid === targetUid);
+    const targetNick = targetUser?.nickname || profiles[targetUid]?.nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    const cleanRsn = cleanBio(reason) || 'Expulsado por moderación';
+
+    const targetSockets = getSocketsForUid(targetUid);
+    targetSockets.forEach((sid) => {
+      const targetSocket = io.sockets.sockets.get(sid);
       if (targetSocket) {
-        targetSocket.emit('kicked', adminName || 'Administrador');
+        targetSocket.emit('kicked', `${adminName} (Motivo: ${cleanRsn})`);
         targetSocket.disconnect(true);
       }
+    });
+
+    io.emit('system-message', `[Moderación] ${targetNick} fue expulsado. Motivo: ${cleanRsn}`);
+    addAuditLog('kick', targetNick, targetUid, adminName, cleanRsn);
+    broadcastAdminUpdate();
+  });
+
+  // Banear usuario
+  socket.on('admin:ban', ({ targetUid, reason }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
     }
+    if (!targetUid) return;
+
+    const targetUser = Object.values(users).find((u) => u.uid === targetUid);
+    const targetNick = targetUser?.nickname || profiles[targetUid]?.nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    const cleanRsn = cleanBio(reason) || 'Sanción permanente';
+
+    bans[targetUid] = {
+      reason: cleanRsn,
+      by: adminName,
+      bannedAt: Date.now(),
+      userCode: profiles[targetUid]?.userCode || targetUser?.userCode || '',
+      nickname: targetNick,
+    };
+    saveAdminData();
+
+    const targetSockets = getSocketsForUid(targetUid);
+    targetSockets.forEach((sid) => {
+      const targetSocket = io.sockets.sockets.get(sid);
+      if (targetSocket) {
+        targetSocket.emit('banned', { reason: cleanRsn, by: adminName, date: Date.now() });
+        targetSocket.disconnect(true);
+      }
+    });
+
+    io.emit('system-message', `[Moderación] ${targetNick} ha sido baneado permanentemente. Motivo: ${cleanRsn}`);
+    addAuditLog('ban', targetNick, targetUid, adminName, cleanRsn);
+    broadcastAdminUpdate();
+  });
+
+  // Desbanear usuario
+  socket.on('admin:unban', ({ targetUid }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    if (!targetUid || !bans[targetUid]) return;
+
+    const targetNick = bans[targetUid].nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+
+    delete bans[targetUid];
+    saveAdminData();
+
+    addAuditLog('unban', targetNick, targetUid, adminName, 'Desbaneado por el admin');
+    broadcastAdminUpdate();
+  });
+
+  // Advertir usuario (Warn)
+  socket.on('admin:warn', ({ targetUid, reason }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    if (!targetUid) return;
+
+    const targetUser = Object.values(users).find((u) => u.uid === targetUid);
+    const targetNick = targetUser?.nickname || profiles[targetUid]?.nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    const cleanRsn = cleanBio(reason) || 'Advertencia de comportamiento';
+
+    if (!warnings[targetUid]) warnings[targetUid] = [];
+    warnings[targetUid].push({
+      id: 'warn_' + Date.now(),
+      text: cleanRsn,
+      time: Date.now(),
+      by: adminName,
+    });
+    saveAdminData();
+
+    const targetSockets = getSocketsForUid(targetUid);
+    targetSockets.forEach((sid) => {
+      io.to(sid).emit('moderation:warned', {
+        reason: cleanRsn,
+        by: adminName,
+        time: Date.now(),
+        count: warnings[targetUid].length,
+      });
+    });
+
+    addAuditLog('warn', targetNick, targetUid, adminName, cleanRsn, `Total advertencias: ${warnings[targetUid].length}`);
+    broadcastAdminUpdate();
+  });
+
+  // Purgar mensajes de un usuario en el chat general
+  socket.on('admin:purge_user_messages', ({ targetUid }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    if (!targetUid) return;
+
+    const deletedIds = [];
+    Object.entries(messagesStore).forEach(([id, m]) => {
+      if (m.senderUid === targetUid) {
+        deletedIds.push(id);
+        delete messagesStore[id];
+      }
+    });
+
+    saveMessagesData();
+    if (deletedIds.length > 0) {
+      io.emit('bulk messages deleted', { msgIds: deletedIds });
+    }
+
+    const targetNick = profiles[targetUid]?.nickname || 'Usuario';
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    addAuditLog('purge_messages', targetNick, targetUid, adminName, `Se purgaron ${deletedIds.length} mensaje(s)`);
+    broadcastAdminUpdate();
+  });
+
+  // Vaciar todo el chat
+  socket.on('admin:clear_all_chat', () => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    messagesStore = {};
+    saveMessagesData();
+    io.emit('chat cleared');
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    addAuditLog('clear_chat', 'Todos los mensajes', '', adminName, 'Vaciado total del chat');
+    io.emit('system-message', `[Moderación] ${adminName} ha vaciado el historial de mensajes de la sala.`);
+  });
+
+  // Configurar modo lento
+  socket.on('admin:set_slowmode', ({ seconds }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    const secs = Math.max(0, Math.min(120, parseInt(seconds, 10) || 0));
+    chatSettings.slowmode = secs;
+    saveAdminData();
+    io.emit('chat_settings_updated', chatSettings);
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    addAuditLog('set_slowmode', 'Sala General', '', adminName, secs > 0 ? `${secs}s de espera` : 'Desactivado');
+    io.emit('system-message', secs > 0 ? `[Aviso] Modo lento activado: ${secs}s entre mensajes.` : `[Aviso] Modo lento desactivado.`);
+    broadcastAdminUpdate();
+  });
+
+  // Pausar / Reanudar chat
+  socket.on('admin:set_paused', ({ paused }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    chatSettings.paused = !!paused;
+    saveAdminData();
+    io.emit('chat_settings_updated', chatSettings);
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    addAuditLog('set_paused', 'Sala General', '', adminName, chatSettings.paused ? 'Chat pausado' : 'Chat reanudado');
+    io.emit('system-message', chatSettings.paused ? `[Aviso] ${adminName} ha pausado el chat general (Solo administradores pueden enviar mensajes).` : `[Aviso] ${adminName} ha reanudado el chat general.`);
+    broadcastAdminUpdate();
+  });
+
+  // Enviar anuncio oficial destacado
+  socket.on('admin:broadcast', ({ text, title }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    const cleanTxt = cleanMessageText(text);
+    if (!cleanTxt) return;
+    const cleanTtl = cleanName(title) || 'Anuncio Oficial del Administrador';
+    const adminName = users[socket.id]?.nickname || 'Owner';
+
+    io.emit('admin:announcement', {
+      title: cleanTtl,
+      text: cleanTxt,
+      by: adminName,
+      time: Date.now(),
+    });
+    addAuditLog('broadcast', cleanTtl, '', adminName, cleanTxt);
+  });
+
+  // Editar usuario por UID (nombre y color)
+  socket.on('admin:edit_user', ({ targetUid, newNickname, newColor }) => {
+    if (!socket.isAdmin) {
+      socket.emit('action error', { message: 'Se requieren permisos de administrador.' });
+      return;
+    }
+    if (!targetUid) return;
+
+    const cleanedNick = newNickname ? cleanName(newNickname) : null;
+    const colorStr = newColor ? String(newColor) : null;
+
+    if (profiles[targetUid]) {
+      if (cleanedNick) profiles[targetUid].nickname = cleanedNick;
+      if (colorStr) profiles[targetUid].color = colorStr;
+    }
+
+    // Actualizar sockets activos del usuario
+    const sids = getSocketsForUid(targetUid);
+    sids.forEach((sid) => {
+      if (users[sid]) {
+        if (cleanedNick) {
+          users[sid].nickname = cleanedNick;
+          const s = io.sockets.sockets.get(sid);
+          if (s) s.nickname = cleanedNick;
+        }
+        if (colorStr) {
+          users[sid].color = colorStr;
+          const s = io.sockets.sockets.get(sid);
+          if (s) s.userColor = colorStr;
+        }
+      }
+    });
+
+    saveFriendsData();
+    io.emit('update-users', users);
+    notifyFriendsOf(targetUid);
+    broadcastAdminUpdate();
+    const adminName = users[socket.id]?.nickname || 'Administrador';
+    addAuditLog('edit_user', cleanedNick || profiles[targetUid]?.nickname || 'Usuario', targetUid, adminName, 'Nombre o color modificado');
+  });
+
+  // ========================================================
+  // --- SISTEMA DE LLAMADAS WEBRTC PARA CHATS PRIVADOS ---
+  // ========================================================
+  socket.on('call:initiate', ({ targetUid }) => {
+    const callerUid = socket.uid;
+    const callerUser = users[socket.id];
+    if (!callerUid || !targetUid || !callerUser) return;
+
+    if (callerUid === targetUid) {
+      socket.emit('action error', { message: 'No puedes llamarte a ti mismo.' });
+      return;
+    }
+
+    const destSockets = getSocketsForUid(targetUid);
+    if (!destSockets.length) {
+      socket.emit('call:rejected', { targetUid, reason: 'offline', message: 'El usuario no está conectado actualmente.' });
+      return;
+    }
+
+    const callKey = [callerUid, targetUid].sort().join('__');
+    activeCalls.set(callKey, { callerUid, targetUid, startedAt: Date.now() });
+
+    // Enviar evento de llamada entrante a todas las pestañas del receptor
+    destSockets.forEach((sid) => {
+      io.to(sid).emit('call:incoming', {
+        callerUid,
+        callerName: callerUser.nickname,
+        callerAvatar: callerUser.avatar,
+        callerColor: callerUser.color,
+        callerCode: callerUser.userCode,
+      });
+    });
+  });
+
+  socket.on('call:accept', ({ callerUid }) => {
+    const myUid = socket.uid;
+    if (!myUid || !callerUid) return;
+
+    const callerSockets = getSocketsForUid(callerUid);
+    callerSockets.forEach((sid) => {
+      io.to(sid).emit('call:accepted', { targetUid: myUid });
+    });
+  });
+
+  socket.on('call:reject', ({ callerUid, reason }) => {
+    const myUid = socket.uid;
+    if (!myUid || !callerUid) return;
+
+    const callKey = [callerUid, myUid].sort().join('__');
+    activeCalls.delete(callKey);
+
+    const callerSockets = getSocketsForUid(callerUid);
+    callerSockets.forEach((sid) => {
+      io.to(sid).emit('call:rejected', {
+        targetUid: myUid,
+        reason: reason || 'declined',
+        message: 'Llamada rechazada.',
+      });
+    });
+  });
+
+  socket.on('call:end', ({ targetUid }) => {
+    const myUid = socket.uid;
+    if (!myUid || !targetUid) return;
+
+    const callKey = [myUid, targetUid].sort().join('__');
+    activeCalls.delete(callKey);
+
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => {
+      io.to(sid).emit('call:ended', { fromUid: myUid });
+    });
+  });
+
+  // Reenvío de señalización WebRTC (Offer, Answer, ICE Candidates)
+  socket.on('call:signal', ({ targetUid, signal }) => {
+    const myUid = socket.uid;
+    if (!myUid || !targetUid || !signal) return;
+
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => {
+      io.to(sid).emit('call:signal', { fromUid: myUid, signal });
+    });
   });
 
   socket.on('disconnect', () => {
     if (users[socket.id]) {
       const name = users[socket.id].nickname;
       const leavingUid = users[socket.id].uid;
+
+      // Si estaba en una llamada, avisar a la contraparte
+      activeCalls.forEach((call, key) => {
+        if (call.callerUid === leavingUid || call.targetUid === leavingUid) {
+          const otherUid = call.callerUid === leavingUid ? call.targetUid : call.callerUid;
+          const destSockets = getSocketsForUid(otherUid);
+          destSockets.forEach((sid) => io.to(sid).emit('call:ended', { fromUid: leavingUid }));
+          activeCalls.delete(key);
+        }
+      });
 
       typingUsers.delete(socket.id);
       broadcastTypingStatus();
@@ -1130,6 +1691,7 @@ io.on('connection', (socket) => {
       }
 
       io.emit('update-users', users);
+      broadcastAdminUpdate();
     }
   });
 });
