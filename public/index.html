@@ -2167,6 +2167,444 @@
         .ring {
             box-shadow: 0 0 0 3px var(--glow-color);
         }
+
+        /* ADMIN ACCESS EN PERFIL */
+        .admin-access-box {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.08), rgba(255, 165, 2, 0.08));
+            border: 1px solid rgba(255, 165, 2, 0.35);
+            text-align: left;
+        }
+        .admin-access-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .admin-access-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #ffa502;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .admin-access-badge {
+            background: #ffa502;
+            color: #000;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .admin-btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        .admin-btn-grid .adm-btn-full {
+            grid-column: span 2;
+        }
+        .adm-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .adm-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.15);
+        }
+        .adm-btn.warn { background: rgba(255, 165, 2, 0.15); border-color: #ffa502; color: #ffa502; }
+        .adm-btn.mute { background: rgba(255, 107, 129, 0.15); border-color: #ff6b81; color: #ff6b81; }
+        .adm-btn.unmute { background: rgba(46, 213, 115, 0.15); border-color: #2ed573; color: #2ed573; }
+        .adm-btn.kick { background: rgba(255, 71, 87, 0.15); border-color: #ff4757; color: #ff4757; }
+        .adm-btn.ban { background: #d63031; border-color: #d63031; color: #fff; }
+        .adm-btn.purge { background: rgba(112, 161, 255, 0.15); border-color: #70a1ff; color: #70a1ff; }
+        .adm-btn.edit-name { background: rgba(0, 206, 201, 0.15); border-color: #00cec9; color: #00cec9; }
+
+        /* DASHBOARD ADMIN MODAL FULL */
+        .admin-dashboard-box {
+            width: 95%;
+            max-width: 900px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+            overflow: hidden;
+            animation: modalFadeIn 0.2s ease-out;
+            color: var(--text-main);
+        }
+        .admin-dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.25);
+        }
+        .admin-dashboard-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+        .admin-tabs-bar {
+            display: flex;
+            gap: 4px;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.15);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+        .admin-tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-sub);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+        .admin-tab-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-input);
+        }
+        .admin-tab-btn.active {
+            color: #fff;
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 2px 8px var(--glow-color);
+        }
+        .admin-dashboard-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .admin-tab-content {
+            display: none;
+        }
+        .admin-tab-content.active {
+            display: block;
+        }
+
+        /* TABLAS Y LISTAS ADMIN */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-sub);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .admin-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        .admin-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .adm-row-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .adm-mini-btn {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .adm-mini-btn:hover {
+            filter: brightness(1.2);
+            border-color: var(--accent-blue);
+        }
+        .adm-mini-btn.red { background: #ff4757; color: #fff; border-color: #ff4757; }
+        .adm-mini-btn.orange { background: #ffa502; color: #000; border-color: #ffa502; }
+        .adm-mini-btn.green { background: #2ed573; color: #fff; border-color: #2ed573; }
+
+        /* CONTROL DE SALA */
+        .room-ctrl-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .room-ctrl-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+        }
+        .room-ctrl-card h4 {
+            margin: 0 0 6px 0;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+        .room-ctrl-card p {
+            margin: 0 0 12px 0;
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+        }
+
+        /* LLAMADAS WEBRTC ESTILOS */
+        .call-btn-header {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: #2ed573;
+            color: #fff;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 8px rgba(46, 213, 115, 0.4);
+            margin-right: 6px;
+        }
+        .call-btn-header:hover {
+            background: #26af5f;
+            transform: translateY(-1px);
+        }
+        .call-btn-header.show {
+            display: inline-flex;
+        }
+
+        /* MODAL LLAMADA ENTRANTE */
+        .incoming-call-box {
+            width: 90%;
+            max-width: 360px;
+            background: var(--bg-modal);
+            border: 2px solid var(--accent-blue);
+            border-radius: 16px;
+            padding: 26px 20px;
+            text-align: center;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.8), 0 0 24px var(--glow-color);
+            animation: bounceIn 0.3s ease;
+        }
+        .call-pulse-avatar-wrap {
+            position: relative;
+            width: 84px;
+            height: 84px;
+            margin: 0 auto 16px auto;
+        }
+        .call-pulse-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent-blue);
+            position: relative;
+            z-index: 2;
+        }
+        .call-pulse-initial {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            border: 3px solid var(--accent-blue);
+            position: relative;
+            z-index: 2;
+        }
+        .call-pulse-ring {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-blue);
+            animation: ringPulse 1.6s infinite ease-out;
+            z-index: 1;
+        }
+        @keyframes ringPulse {
+            0% { transform: scale(0.9); opacity: 0.9; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            60% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .call-actions-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .call-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .call-action-btn.accept {
+            background: #2ed573;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(46, 213, 115, 0.4);
+        }
+        .call-action-btn.accept:hover { background: #26af5f; }
+        .call-action-btn.decline {
+            background: #ff4757;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(255, 71, 87, 0.4);
+        }
+        .call-action-btn.decline:hover { background: #e84118; }
+
+        /* VENTANA FLOTANTE DE LLAMADA ACTIVA (ADAPTA AL TEMA) */
+        .active-call-overlay {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 320px;
+            background: var(--bg-modal);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 20px var(--glow-color);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-main);
+            animation: slideInUp 0.25s ease-out;
+        }
+        @keyframes slideInUp {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .active-call-overlay.connected {
+            border-color: #2ed573;
+        }
+        .call-floating-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+        .call-floating-initial {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .call-floating-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .call-floating-status {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+        }
+        .call-floating-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        .call-floating-ctrl-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .call-floating-ctrl-btn:hover {
+            transform: scale(1.08);
+            filter: brightness(1.2);
+        }
+        .call-floating-ctrl-btn.active-muted {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+        .call-floating-ctrl-btn.hangup {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+        .call-floating-ctrl-btn.hangup:hover {
+            background: #d63031;
+        }
+
+        /* MODAL DE ADVERTENCIA MODERACIÓN */
+        .warn-alert-box {
+            width: 90%;
+            max-width: 420px;
+            background: var(--bg-modal);
+            border: 2px solid #ffa502;
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.8), 0 0 24px rgba(255, 165, 2, 0.4);
+            animation: bounceIn 0.25s ease;
+        }
     </style>
 </head>
 <body>
@@ -2184,6 +2622,251 @@
             <input type="password" id="admin-pass-input" placeholder="Contraseña de acceso..." autocomplete="off">
             <button class="main-btn" id="admin-login-btn">Acceder</button>
             <button class="main-btn" id="admin-close-btn" style="background: #333; margin-top: 8px;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- MODAL DASHBOARD ADMIN COMPLETO -->
+    <div id="admin-dashboard-modal" class="modal-overlay" style="display: none; z-index: 9990;">
+        <div class="admin-dashboard-box">
+            <div class="admin-dashboard-header">
+                <div class="admin-dashboard-title">
+                    <span>🛡️</span>
+                    <span>Panel de Control - Administración Owner</span>
+                    <span class="admin-access-badge">ROOT</span>
+                </div>
+                <button type="button" class="profile-close" id="close-admin-dashboard-btn" style="position:static;">✕</button>
+            </div>
+            <div class="admin-tabs-bar">
+                <button type="button" class="admin-tab-btn active" data-tab="adm-users">👥 Usuarios Activos</button>
+                <button type="button" class="admin-tab-btn" data-tab="adm-punishments">🚫 Sanciones</button>
+                <button type="button" class="admin-tab-btn" data-tab="adm-room">⚙️ Control de Sala</button>
+                <button type="button" class="admin-tab-btn" data-tab="adm-broadcast">📢 Anuncio Global</button>
+                <button type="button" class="admin-tab-btn" data-tab="adm-audit">📜 Registro de Auditoría</button>
+            </div>
+            <div class="admin-dashboard-body">
+                <!-- TAB 1: USUARIOS ACTIVOS -->
+                <div class="admin-tab-content active" id="adm-tab-users">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 0.85rem; color: var(--text-sub);">Listado en tiempo real de todos los usuarios conectados</span>
+                        <button type="button" class="adm-mini-btn" id="btn-refresh-admin">🔄 Actualizar</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>ID / Código</th>
+                                    <th>Estado</th>
+                                    <th>Conexión</th>
+                                    <th>Acciones Rápidas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adm-users-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: SANCIONES -->
+                <div class="admin-tab-content" id="adm-tab-punishments">
+                    <h4 style="margin: 0 0 10px 0; color: #ff6b81;">🔇 Usuarios Silenciados (Timeouts)</h4>
+                    <div style="overflow-x: auto; margin-bottom: 24px;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Motivo</th>
+                                    <th>Expira</th>
+                                    <th>Sancionado por</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adm-mutes-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <h4 style="margin: 0 0 10px 0; color: #ff4757;">⛔ Usuarios Baneados</h4>
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>UID / Código</th>
+                                    <th>Motivo</th>
+                                    <th>Fecha</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adm-bans-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 3: CONTROL DE SALA -->
+                <div class="admin-tab-content" id="adm-tab-room">
+                    <div class="room-ctrl-grid">
+                        <div class="room-ctrl-card">
+                            <h4>⏳ Modo Lento (Slowmode)</h4>
+                            <p>Obliga a los usuarios a esperar un intervalo entre cada mensaje enviado al chat global.</p>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select id="adm-slowmode-select" style="flex: 1; padding: 8px; border-radius: 6px; background: var(--bg-modal); color: var(--text-main); border: 1px solid var(--border-color);">
+                                    <option value="0">Desactivado (0s)</option>
+                                    <option value="5">5 segundos</option>
+                                    <option value="10">10 segundos</option>
+                                    <option value="15">15 segundos</option>
+                                    <option value="30">30 segundos</option>
+                                    <option value="60">1 minuto</option>
+                                </select>
+                                <button type="button" class="adm-mini-btn green" id="adm-save-slowmode-btn">Aplicar</button>
+                            </div>
+                        </div>
+
+                        <div class="room-ctrl-card">
+                            <h4>⏸️ Pausar Chat General</h4>
+                            <p>Bloquea temporalmente el envío de mensajes a usuarios normales. Los administradores pueden seguir hablando.</p>
+                            <button type="button" class="main-btn" id="adm-toggle-pause-btn" style="background: #ffa502; color: #000; font-weight: 700;">
+                                Pausar Chat
+                            </button>
+                        </div>
+
+                        <div class="room-ctrl-card" style="grid-column: span 2;">
+                            <h4 style="color: #ff4757;">🧹 Limpieza Total de Mensajes</h4>
+                            <p>Elimina permanentemente todo el historial del chat general para todos los usuarios conectados.</p>
+                            <button type="button" class="main-btn" id="adm-clear-chat-btn" style="background: #d63031; max-width: 250px;">
+                                Vaciar Chat Completo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: ANUNCIO GLOBAL -->
+                <div class="admin-tab-content" id="adm-tab-broadcast">
+                    <div style="max-width: 600px;">
+                        <h4 style="margin: 0 0 6px 0;">📢 Difundir Notificación Destacada</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 14px;">Este mensaje aparecerá en una ventana emergente en pantalla completa a todos los usuarios conectados al instante.</p>
+                        
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Título del Anuncio</label>
+                            <input type="text" id="adm-broadcast-title" placeholder="Ej: Mantenimiento programado / Reglas actualizadas" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main);" />
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Mensaje Oficial</label>
+                            <textarea id="adm-broadcast-text" rows="4" placeholder="Escribe el contenido del comunicado..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); resize: vertical;"></textarea>
+                        </div>
+                        <button type="button" class="main-btn" id="adm-broadcast-btn" style="background: var(--accent-blue); width: auto; padding: 10px 24px;">
+                            🚀 Enviar Anuncio a Todos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 5: REGISTRO DE AUDITORÍA -->
+                <div class="admin-tab-content" id="adm-tab-audit">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 0.85rem; color: var(--text-sub);">Historial inmutable de sanciones, expulsiones y cambios realizados</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Acción</th>
+                                    <th>Objetivo</th>
+                                    <th>Administrador</th>
+                                    <th>Detalles / Motivo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adm-audit-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PROMPT REUTILIZABLE PARA ADMIN (SILENCIAR, ADVERTIR, EXPULSAR, BANEAR) -->
+    <div id="admin-prompt-modal" class="modal-overlay" style="display: none; z-index: 9995;">
+        <div class="modal-box" style="max-width: 440px; text-align: left;">
+            <h3 id="adm-prompt-title" style="margin: 0 0 10px 0;">Acción de Moderación</h3>
+            <p id="adm-prompt-desc" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 14px;"></p>
+            
+            <div id="adm-prompt-minutes-box" style="margin-bottom: 14px; display: none;">
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">Duración del Aislamiento / Silencio:</label>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px;" id="adm-prompt-minute-presets">
+                    <button type="button" class="adm-mini-btn" data-mins="1">1 min</button>
+                    <button type="button" class="adm-mini-btn" data-mins="5">5 min</button>
+                    <button type="button" class="adm-mini-btn" data-mins="15">15 min</button>
+                    <button type="button" class="adm-mini-btn" data-mins="60">1 hora</button>
+                    <button type="button" class="adm-mini-btn" data-mins="1440">24 horas</button>
+                    <button type="button" class="adm-mini-btn red" data-mins="0">Permanente</button>
+                </div>
+                <input type="number" id="adm-prompt-custom-mins" placeholder="O escribe minutos personalizados..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main);" />
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label id="adm-prompt-input-label" style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">Motivo:</label>
+                <input type="text" id="adm-prompt-input" placeholder="Escribe el motivo..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main);" />
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="main-btn" id="adm-prompt-confirm-btn" style="flex: 1;">Confirmar</button>
+                <button type="button" class="main-btn" id="adm-prompt-cancel-btn" style="flex: 1; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color);">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LLAMADA ENTRANTE WEBRTC -->
+    <div id="incoming-call-modal" class="modal-overlay" style="display: none; z-index: 9998;">
+        <div class="incoming-call-box">
+            <div class="call-pulse-avatar-wrap">
+                <div class="call-pulse-ring"></div>
+                <div id="inc-call-avatar-container"></div>
+            </div>
+            <h3 id="inc-call-caller-name" style="margin: 0 0 4px 0; font-size: 1.25rem;">Usuario</h3>
+            <p style="margin: 0 0 16px 0; font-size: 0.85rem; color: var(--text-sub);">📞 Llamada de voz entrante...</p>
+            <div class="call-actions-row">
+                <button type="button" class="call-action-btn accept" id="btn-accept-call">
+                    <span>🟢</span>
+                    <span>Aceptar</span>
+                </button>
+                <button type="button" class="call-action-btn decline" id="btn-decline-call">
+                    <span>🔴</span>
+                    <span>Rechazar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VENTANA FLOTANTE DE LLAMADA ACTIVA WEBRTC -->
+    <div id="active-call-overlay" class="active-call-overlay">
+        <div id="active-call-avatar-container"></div>
+        <div class="call-floating-name" id="active-call-name">En llamada con Usuario</div>
+        <div class="call-floating-status" id="active-call-timer">Conectando...</div>
+        <div class="call-floating-controls">
+            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-mic" title="Silenciar / Activar Micrófono">🎤</button>
+            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-deafen" title="Ensordecer / Activar Audio">🔊</button>
+            <button type="button" class="call-floating-ctrl-btn hangup" id="call-hangup-btn" title="Colgar">🔴</button>
+        </div>
+        <audio id="remote-call-audio" autoplay style="display: none;"></audio>
+    </div>
+
+    <!-- MODAL ALERTA DE ADVERTENCIA OFICIAL -->
+    <div id="moderation-warn-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+        <div class="warn-alert-box">
+            <div style="font-size: 3rem; margin-bottom: 8px;">⚠️</div>
+            <h2 style="color: #ffa502; margin: 0 0 8px 0;">Advertencia de Moderación</h2>
+            <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px;" id="warn-modal-reason"></p>
+            <p style="font-size: 0.78rem; color: var(--text-sub); margin-bottom: 18px;" id="warn-modal-meta"></p>
+            <button type="button" class="main-btn" id="warn-modal-ack-btn" style="background: #ffa502; color: #000; font-weight: 700;">Entendido y Acepto las Normas</button>
+        </div>
+    </div>
+
+    <!-- MODAL ANUNCIO GLOBAL DEL OWNER -->
+    <div id="admin-announcement-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+        <div class="modal-box" style="border: 2px solid var(--accent-blue); max-width: 520px; text-align: center; box-shadow: 0 12px 36px rgba(0,0,0,0.8), 0 0 24px var(--glow-color);">
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">📢</div>
+            <h2 id="announcement-modal-title" style="color: var(--accent-blue); margin: 0 0 12px 0;">Anuncio Oficial</h2>
+            <div id="announcement-modal-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-main); margin-bottom: 14px; text-align: left; background: var(--bg-input); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); white-space: pre-wrap;"></div>
+            <p style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 16px;" id="announcement-modal-by"></p>
+            <button type="button" class="main-btn" id="announcement-modal-close-btn">Entendido</button>
         </div>
     </div>
 
@@ -2403,6 +3086,7 @@
                 </div>
 
                 <div class="header-actions">
+                    <button type="button" class="call-btn-header" id="header-call-btn" title="Llamar al amigo">📞 Llamar</button>
                     <button class="action-icon-btn" id="toggle-friends-btn" title="Mostrar/Ocultar Amigos">🤝</button>
                     <button class="action-icon-btn" id="toggle-sidebar-btn" title="Mostrar/Ocultar Lateral">👥</button>
                     <button class="action-icon-btn" id="open-settings-btn" title="Configuración">⚙️</button>
@@ -3323,7 +4007,60 @@
                         closeProfile();
                         switchToDmChat(p, uid);
                     }));
+                    actions.appendChild(mk('primary', '📞 Llamar', () => {
+                        closeProfile();
+                        startCallWithUser(uid, p);
+                    }));
                 }
+            }
+
+            // SECCIÓN EXCLUSIVA ADMIN ACCESS PARA OWNER / ADMINISTRADOR
+            if (isAdmin && !isSelf && uid) {
+                const adminBox = document.createElement('div');
+                adminBox.className = 'admin-access-box';
+                adminBox.innerHTML = `
+                    <div class="admin-access-header">
+                        <div class="admin-access-title">
+                            <span>🛡️ ADMIN ACCESS</span>
+                        </div>
+                        <span class="admin-access-badge">OWNER TOOLS</span>
+                    </div>
+                    <div class="admin-btn-grid">
+                        <button type="button" class="adm-btn mute" id="adm-prof-mute-btn">🔇 Silenciar / Timeout</button>
+                        <button type="button" class="adm-btn unmute" id="adm-prof-unmute-btn">🔊 Quitar Silencio</button>
+                        <button type="button" class="adm-btn edit-name" id="adm-prof-edit-btn">✏️ Editar Apodo</button>
+                        <button type="button" class="adm-btn warn" id="adm-prof-warn-btn">⚠️ Advertir (Warn)</button>
+                        <button type="button" class="adm-btn kick" id="adm-prof-kick-btn">👢 Expulsar (Kick)</button>
+                        <button type="button" class="adm-btn ban" id="adm-prof-ban-btn">⛔ Banear (Ban)</button>
+                        <button type="button" class="adm-btn purge adm-btn-full" id="adm-prof-purge-btn">🧹 Purgar Mensajes de este Usuario</button>
+                    </div>
+                `;
+                profileCard.querySelector('.profile-body').appendChild(adminBox);
+
+                adminBox.querySelector('#adm-prof-mute-btn').addEventListener('click', () => {
+                    openAdminPrompt('mute', uid, p.nickname);
+                });
+                adminBox.querySelector('#adm-prof-unmute-btn').addEventListener('click', () => {
+                    socket.emit('admin:unmute', { targetUid: uid });
+                    showToast(`Silencio retirado a ${p.nickname}`);
+                });
+                adminBox.querySelector('#adm-prof-edit-btn').addEventListener('click', () => {
+                    openAdminPrompt('edit_user', uid, p.nickname);
+                });
+                adminBox.querySelector('#adm-prof-warn-btn').addEventListener('click', () => {
+                    openAdminPrompt('warn', uid, p.nickname);
+                });
+                adminBox.querySelector('#adm-prof-kick-btn').addEventListener('click', () => {
+                    openAdminPrompt('kick', uid, p.nickname);
+                });
+                adminBox.querySelector('#adm-prof-ban-btn').addEventListener('click', () => {
+                    openAdminPrompt('ban', uid, p.nickname);
+                });
+                adminBox.querySelector('#adm-prof-purge-btn').addEventListener('click', () => {
+                    if (confirm(`¿Eliminar todos los mensajes enviados por "${p.nickname}" en el chat global?`)) {
+                        socket.emit('admin:purge_user_messages', { targetUid: uid });
+                    }
+                });
             }
 
             profileCard.querySelector('.profile-close').addEventListener('click', closeProfile);
@@ -3369,6 +4106,8 @@
             // Cambiar panel derecho
             usersPanelView.style.display = 'block';
             dmProfilePanelView.style.display = 'none';
+            const hCallBtn = document.getElementById('header-call-btn');
+            if (hCallBtn) hCallBtn.classList.remove('show');
 
             // Audit #9: Restaurar mensajes globales desde Map reactivo
             messages.innerHTML = '';
@@ -3408,6 +4147,12 @@
             });
 
             currentChannelTitle.textContent = `💬 ${currentDmUser.nickname}${currentDmUser.userCode ? ' (' + currentDmUser.userCode + ')' : ''}`;
+
+            const hCallBtn = document.getElementById('header-call-btn');
+            if (hCallBtn) {
+                hCallBtn.classList.add('show');
+                hCallBtn.onclick = () => startCallWithUser(currentDmUser.uid, currentDmUser);
+            }
 
             // Configurar panel derecho como Perfil del Amigo
             usersPanelView.style.display = 'none';
@@ -3450,12 +4195,22 @@
                         <h4>Última conexión</h4>
                         <p style="font-size: 0.85rem;">${status === 'offline' ? (p.lastSeen ? fmtAgo(p.lastSeen) : 'Desconectado') : 'Conectado ahora'}</p>
                     </div>
+                    <div style="margin-top: 18px;">
+                        <button type="button" class="main-btn" id="dm-panel-call-btn" style="background: #2ed573; box-shadow: 0 4px 12px rgba(46, 213, 115, 0.35);">
+                            📞 Iniciar Llamada de Voz
+                        </button>
+                    </div>
                 </div>
             `;
 
             const avatarEl = makeAvatarEl(p, 'profile-avatar-img');
             avatarEl.style.background = p.avatar ? '' : color;
             dmProfilePanelView.querySelector('.profile-avatar-wrap').insertBefore(avatarEl, dmProfilePanelView.querySelector('.profile-avatar-wrap').firstChild);
+
+            const panelCallBtn = dmProfilePanelView.querySelector('#dm-panel-call-btn');
+            if (panelCallBtn) {
+                panelCallBtn.addEventListener('click', () => startCallWithUser(p.uid, p));
+            }
         }
 
         // --- SISTEMA DE AMIGOS Y LISTA LATERAL IZQUIERDA ---
@@ -4717,8 +5472,45 @@
 
         document.getElementById('pe-cancel').addEventListener('click', () => { peModal.style.display = 'none'; });
 
-        adminTrigger.addEventListener('click', () => { if (!isAdmin) adminModal.style.display = 'flex'; });
+        // ====== PANEL DE ADMINISTRACIÓN Y MODERACIÓN OWNER ======
+        const adminDashboardModal = document.getElementById('admin-dashboard-modal');
+        const closeAdminDashboardBtn = document.getElementById('close-admin-dashboard-btn');
+        const adminPromptModal = document.getElementById('admin-prompt-modal');
+        const admPromptTitle = document.getElementById('adm-prompt-title');
+        const admPromptDesc = document.getElementById('adm-prompt-desc');
+        const admPromptMinutesBox = document.getElementById('adm-prompt-minutes-box');
+        const admPromptCustomMins = document.getElementById('adm-prompt-custom-mins');
+        const admPromptInputLabel = document.getElementById('adm-prompt-input-label');
+        const admPromptInput = document.getElementById('adm-prompt-input');
+        const admPromptConfirmBtn = document.getElementById('adm-prompt-confirm-btn');
+        const admPromptCancelBtn = document.getElementById('adm-prompt-cancel-btn');
+
+        let currentPromptAction = null;
+        let currentPromptTargetUid = null;
+        let selectedPromptMinutes = 5;
+
+        // Abrir / Cerrar Dashboard Admin
+        function openAdminDashboard() {
+            adminDashboardModal.style.display = 'flex';
+            socket.emit('admin:get_dashboard');
+        }
+
+        function closeAdminDashboard() {
+            adminDashboardModal.style.display = 'none';
+        }
+
+        adminTrigger.addEventListener('click', () => {
+            if (!isAdmin) {
+                adminModal.style.display = 'flex';
+                adminPassInput.focus();
+            } else {
+                openAdminDashboard();
+            }
+        });
+
         adminCloseBtn.addEventListener('click', () => adminModal.style.display = 'none');
+        closeAdminDashboardBtn.addEventListener('click', closeAdminDashboard);
+
         adminLoginBtn.addEventListener('click', () => {
             const pass = adminPassInput.value.trim();
             if (pass) {
@@ -4731,12 +5523,746 @@
                 isAdmin = true;
                 adminModal.style.display = 'none';
                 adminPassInput.value = '';
-                adminTrigger.textContent = 'Admin: ACTIVO';
-                adminTrigger.style.color = '#28a745';
-                showToast('Modo Administrador activado');
+                adminTrigger.textContent = '🛡️ Panel Admin';
+                adminTrigger.style.color = '#2ed573';
+                adminTrigger.style.borderColor = '#2ed573';
+                showToast('Modo Administrador Activo');
+                openAdminDashboard();
             } else {
-                showToast(message || 'Contraseña de administrador incorrecta');
+                showToast(message || 'Contraseña incorrecta');
             }
+        });
+
+        // Tabs del Dashboard
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                const targetTab = btn.dataset.tab;
+                const tabEl = document.getElementById(targetTab.replace('adm-', 'adm-tab-'));
+                if (tabEl) tabEl.classList.add('active');
+            });
+        });
+
+        document.getElementById('btn-refresh-admin').addEventListener('click', () => {
+            socket.emit('admin:get_dashboard');
+            showToast('Actualizando datos de administración...');
+        });
+
+        // Prompt interactivo para acciones de moderación
+        function openAdminPrompt(action, targetUid, targetNick) {
+            currentPromptAction = action;
+            currentPromptTargetUid = targetUid;
+            admPromptInput.value = '';
+            admPromptCustomMins.value = '';
+            selectedPromptMinutes = 5;
+
+            if (action === 'mute') {
+                admPromptTitle.textContent = `🔇 Silenciar / Aislar a ${targetNick}`;
+                admPromptDesc.textContent = 'Selecciona la duración del silencio e indica el motivo.';
+                admPromptMinutesBox.style.display = 'block';
+                admPromptInputLabel.textContent = 'Motivo de la sanción:';
+                admPromptInput.placeholder = 'Ej: Spam reiterado, lenguaje ofensivo...';
+            } else if (action === 'warn') {
+                admPromptTitle.textContent = `⚠️ Advertencia Oficial a ${targetNick}`;
+                admPromptDesc.textContent = 'El usuario recibirá una alerta emergente obligatoria en su pantalla.';
+                admPromptMinutesBox.style.display = 'none';
+                admPromptInputLabel.textContent = 'Razón de la advertencia:';
+                admPromptInput.placeholder = 'Ej: Modera tu vocabulario o serás silenciado...';
+            } else if (action === 'kick') {
+                admPromptTitle.textContent = `👢 Expulsar a ${targetNick}`;
+                admPromptDesc.textContent = 'Se cerrará la sesión de este usuario de inmediato.';
+                admPromptMinutesBox.style.display = 'none';
+                admPromptInputLabel.textContent = 'Motivo de expulsión:';
+                admPromptInput.placeholder = 'Ej: Desobedecer instrucciones del staff...';
+            } else if (action === 'ban') {
+                admPromptTitle.textContent = `⛔ Banear a ${targetNick}`;
+                admPromptDesc.textContent = 'El usuario será desconectado y se le impedirá el reingreso al servidor.';
+                admPromptMinutesBox.style.display = 'none';
+                admPromptInputLabel.textContent = 'Motivo del baneo permanente:';
+                admPromptInput.placeholder = 'Ej: Conducta destructiva reiterada...';
+            } else if (action === 'edit_user') {
+                admPromptTitle.textContent = `✏️ Modificar Apodo de ${targetNick}`;
+                admPromptDesc.textContent = 'Escribe el nuevo nombre que tendrá el usuario en el chat.';
+                admPromptMinutesBox.style.display = 'none';
+                admPromptInputLabel.textContent = 'Nuevo Apodo:';
+                admPromptInput.placeholder = 'Nuevo nombre...';
+                admPromptInput.value = targetNick;
+            }
+
+            adminPromptModal.style.display = 'flex';
+            admPromptInput.focus();
+        }
+
+        admPromptCancelBtn.addEventListener('click', () => {
+            adminPromptModal.style.display = 'none';
+        });
+
+        document.querySelectorAll('#adm-prompt-minute-presets button').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('#adm-prompt-minute-presets button').forEach(x => x.style.borderColor = '');
+                b.style.borderColor = 'var(--accent-blue)';
+                selectedPromptMinutes = parseInt(b.dataset.mins, 10);
+                admPromptCustomMins.value = '';
+            });
+        });
+
+        admPromptCustomMins.addEventListener('input', () => {
+            const v = parseInt(admPromptCustomMins.value, 10);
+            if (!isNaN(v) && v >= 0) selectedPromptMinutes = v;
+        });
+
+        admPromptConfirmBtn.addEventListener('click', () => {
+            const val = admPromptInput.value.trim();
+            if (!currentPromptTargetUid) return;
+
+            if (currentPromptAction === 'mute') {
+                socket.emit('admin:mute', {
+                    targetUid: currentPromptTargetUid,
+                    minutes: selectedPromptMinutes,
+                    reason: val || 'Comportamiento no permitido'
+                });
+                showToast('Usuario silenciado correctamente');
+            } else if (currentPromptAction === 'warn') {
+                if (!val) { showToast('Por favor escribe el motivo'); return; }
+                socket.emit('admin:warn', {
+                    targetUid: currentPromptTargetUid,
+                    reason: val
+                });
+                showToast('Advertencia enviada');
+            } else if (currentPromptAction === 'kick') {
+                socket.emit('admin:kick', {
+                    targetUid: currentPromptTargetUid,
+                    reason: val || 'Expulsado por administración'
+                });
+                showToast('Usuario expulsado');
+            } else if (currentPromptAction === 'ban') {
+                socket.emit('admin:ban', {
+                    targetUid: currentPromptTargetUid,
+                    reason: val || 'Baneo permanente'
+                });
+                showToast('Usuario baneado');
+            } else if (currentPromptAction === 'edit_user') {
+                if (!val) { showToast('El nombre no puede estar vacío'); return; }
+                socket.emit('admin:edit_user', {
+                    targetUid: currentPromptTargetUid,
+                    newNickname: val
+                });
+                showToast('Apodo actualizado');
+            }
+
+            adminPromptModal.style.display = 'none';
+            if (profileModal.style.display === 'flex') closeProfile();
+        });
+
+        // Controles de Sala en el Dashboard
+        document.getElementById('adm-save-slowmode-btn').addEventListener('click', () => {
+            const sec = parseInt(document.getElementById('adm-slowmode-select').value, 10) || 0;
+            socket.emit('admin:set_slowmode', { seconds: sec });
+            showToast(`Modo lento establecido a ${sec}s`);
+        });
+
+        let currentRoomPaused = false;
+        document.getElementById('adm-toggle-pause-btn').addEventListener('click', () => {
+            socket.emit('admin:set_paused', { paused: !currentRoomPaused });
+        });
+
+        document.getElementById('adm-clear-chat-btn').addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que deseas VACIAR TODO el chat general para todos los usuarios?')) {
+                socket.emit('admin:clear_all_chat');
+                showToast('Chat vaciado');
+            }
+        });
+
+        document.getElementById('adm-broadcast-btn').addEventListener('click', () => {
+            const title = document.getElementById('adm-broadcast-title').value.trim();
+            const text = document.getElementById('adm-broadcast-text').value.trim();
+            if (!text) {
+                showToast('Escribe el texto del anuncio');
+                return;
+            }
+            socket.emit('admin:broadcast', { title, text });
+            document.getElementById('adm-broadcast-title').value = '';
+            document.getElementById('adm-broadcast-text').value = '';
+            showToast('¡Anuncio emitido a todos los usuarios!');
+        });
+
+        // Renderizado de Datos del Dashboard
+        socket.on('admin:dashboard_data', (dash) => {
+            if (!dash) return;
+
+            // 1. Usuarios Conectados
+            const usersTbody = document.getElementById('adm-users-tbody');
+            usersTbody.innerHTML = '';
+            (dash.users || []).forEach(u => {
+                const tr = document.createElement('tr');
+                const isTargetSelf = u.uid === myUid;
+                const safeName = escapeHtml(u.nickname);
+                const safeCode = escapeHtml(u.userCode || '#----');
+                const safeColorVal = safeColor(u.color);
+                const statusDot = `<span class="status-icon ${escapeHtml(u.status || 'online')}"></span>`;
+                const avatarImg = isValidImageUrl(u.avatar)
+                    ? `<img src="${escapeHtml(u.avatar)}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">`
+                    : `<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:${safeColorVal};color:#fff;text-align:center;line-height:24px;font-size:0.75rem;margin-right:6px;">${safeName.charAt(0)}</span>`;
+
+                tr.innerHTML = `
+                    <td>${avatarImg} <strong>${safeName}</strong></td>
+                    <td><code>${safeCode}</code></td>
+                    <td>${statusDot} ${STATUS_LABELS[u.status] || 'En línea'}</td>
+                    <td>${u.connectedAt ? fmtAgo(u.connectedAt) : 'Reciente'}</td>
+                    <td>
+                        <div class="adm-row-actions">
+                            ${!isTargetSelf ? `
+                                <button type="button" class="adm-mini-btn orange btn-row-mute">🔇 Silenciar</button>
+                                <button type="button" class="adm-mini-btn btn-row-edit">✏️ Nombre</button>
+                                <button type="button" class="adm-mini-btn orange btn-row-warn">⚠️ Advertir</button>
+                                <button type="button" class="adm-mini-btn red btn-row-kick">👢 Kick</button>
+                                <button type="button" class="adm-mini-btn red btn-row-ban">⛔ Ban</button>
+                            ` : '<span style="font-size:0.75rem;color:var(--text-sub);">Tú (Admin)</span>'}
+                        </div>
+                    </td>
+                `;
+
+                if (!isTargetSelf) {
+                    tr.querySelector('.btn-row-mute').addEventListener('click', () => openAdminPrompt('mute', u.uid, u.nickname));
+                    tr.querySelector('.btn-row-edit').addEventListener('click', () => openAdminPrompt('edit_user', u.uid, u.nickname));
+                    tr.querySelector('.btn-row-warn').addEventListener('click', () => openAdminPrompt('warn', u.uid, u.nickname));
+                    tr.querySelector('.btn-row-kick').addEventListener('click', () => openAdminPrompt('kick', u.uid, u.nickname));
+                    tr.querySelector('.btn-row-ban').addEventListener('click', () => openAdminPrompt('ban', u.uid, u.nickname));
+                }
+                usersTbody.appendChild(tr);
+            });
+
+            // 2. Mutes
+            const mutesTbody = document.getElementById('adm-mutes-tbody');
+            mutesTbody.innerHTML = '';
+            const mutesList = dash.mutes || [];
+            if (!mutesList.length) {
+                mutesTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-sub);">No hay usuarios silenciados actualmente.</td></tr>';
+            } else {
+                mutesList.forEach(m => {
+                    const tr = document.createElement('tr');
+                    const expText = m.until === 0 ? 'Permanente' : fmtAgo(m.until);
+                    tr.innerHTML = `
+                        <td><strong>${escapeHtml(m.nickname || 'Usuario')}</strong></td>
+                        <td>${escapeHtml(m.reason || 'Sin motivo')}</td>
+                        <td>${expText}</td>
+                        <td>${escapeHtml(m.by || 'Admin')}</td>
+                        <td><button type="button" class="adm-mini-btn green btn-unmute-row">🔊 Desilenciar</button></td>
+                    `;
+                    tr.querySelector('.btn-unmute-row').addEventListener('click', () => {
+                        socket.emit('admin:unmute', { targetUid: m.uid });
+                    });
+                    mutesTbody.appendChild(tr);
+                });
+            }
+
+            // 3. Bans
+            const bansTbody = document.getElementById('adm-bans-tbody');
+            bansTbody.innerHTML = '';
+            const bansList = dash.bans || [];
+            if (!bansList.length) {
+                bansTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-sub);">No hay usuarios baneados en el servidor.</td></tr>';
+            } else {
+                bansList.forEach(b => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${escapeHtml(b.nickname || 'Usuario')}</strong></td>
+                        <td><code>${escapeHtml(b.userCode || b.uid)}</code></td>
+                        <td>${escapeHtml(b.reason || 'Sanción')}</td>
+                        <td>${fmtDate(b.bannedAt)}</td>
+                        <td><button type="button" class="adm-mini-btn green btn-unban-row">Desbanear</button></td>
+                    `;
+                    tr.querySelector('.btn-unban-row').addEventListener('click', () => {
+                        socket.emit('admin:unban', { targetUid: b.uid });
+                    });
+                    bansTbody.appendChild(tr);
+                });
+            }
+
+            // 4. Configuración de Sala
+            if (dash.chatSettings) {
+                currentRoomPaused = !!dash.chatSettings.paused;
+                const pauseBtn = document.getElementById('adm-toggle-pause-btn');
+                if (pauseBtn) {
+                    pauseBtn.textContent = currentRoomPaused ? '▶️ Reanudar Chat General' : '⏸️ Pausar Chat General';
+                    pauseBtn.style.background = currentRoomPaused ? '#2ed573' : '#ffa502';
+                }
+                const slowSel = document.getElementById('adm-slowmode-select');
+                if (slowSel) slowSel.value = String(dash.chatSettings.slowmode || 0);
+            }
+
+            // 5. Auditoría
+            const auditTbody = document.getElementById('adm-audit-tbody');
+            auditTbody.innerHTML = '';
+            (dash.auditLog || []).forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td><span class="admin-access-badge">${escapeHtml(log.action)}</span></td>
+                    <td><strong>${escapeHtml(log.targetName || '-')}</strong></td>
+                    <td>${escapeHtml(log.byName || 'Admin')}</td>
+                    <td>${escapeHtml(log.reason || '')} ${log.details ? `(${escapeHtml(log.details)})` : ''}</td>
+                `;
+                auditTbody.appendChild(tr);
+            });
+        });
+
+        // Actualizaciones de configuración de sala para todos
+        socket.on('chat_settings_updated', (st) => {
+            currentRoomPaused = !!st.paused;
+            if (st.paused) showToast('Aviso: El chat general ha sido pausado por un administrador.');
+        });
+
+        socket.on('chat cleared', () => {
+            messages.innerHTML = '';
+            globalMessagesMap.clear();
+            showToast('El chat general ha sido vaciado por el staff.');
+        });
+
+        socket.on('bulk messages deleted', ({ msgIds }) => {
+            (msgIds || []).forEach(id => {
+                globalMessagesMap.delete(id);
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            });
+        });
+
+        // Alerta de Advertencia Oficial
+        const warnModal = document.getElementById('moderation-warn-modal');
+        const warnModalReason = document.getElementById('warn-modal-reason');
+        const warnModalMeta = document.getElementById('warn-modal-meta');
+        const warnModalAckBtn = document.getElementById('warn-modal-ack-btn');
+
+        socket.on('moderation:warned', ({ reason, by, time, count }) => {
+            warnModalReason.textContent = reason;
+            warnModalMeta.textContent = `Advertencia #${count} emitida por "${by}" el ${new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            warnModal.style.display = 'flex';
+            try { playMessageSound(); } catch (e) {}
+        });
+
+        warnModalAckBtn.addEventListener('click', () => {
+            warnModal.style.display = 'none';
+        });
+
+        // Anuncio Oficial del Owner en Pantalla
+        const announcementModal = document.getElementById('admin-announcement-modal');
+        const announcementModalTitle = document.getElementById('announcement-modal-title');
+        const announcementModalText = document.getElementById('announcement-modal-text');
+        const announcementModalBy = document.getElementById('announcement-modal-by');
+        const announcementModalCloseBtn = document.getElementById('announcement-modal-close-btn');
+
+        socket.on('admin:announcement', ({ title, text, by, time }) => {
+            announcementModalTitle.textContent = title;
+            announcementModalText.textContent = text;
+            announcementModalBy.textContent = `Emitido por ${by} · ${new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            announcementModal.style.display = 'flex';
+            try { playMessageSound(); } catch (e) {}
+        });
+
+        announcementModalCloseBtn.addEventListener('click', () => {
+            announcementModal.style.display = 'none';
+        });
+
+        socket.on('moderation:mute_status', ({ muted, until, reason, by }) => {
+            if (muted) {
+                const timeLabel = until === 0 ? 'permanente' : `hasta las ${new Date(until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                showToast(`Has sido silenciado (${timeLabel}). Motivo: ${reason || 'Sanción'}`);
+            }
+        });
+
+        socket.on('banned', ({ reason, by }) => {
+            alert(`HAS SIDO BANEADO PERMANENTEMENTE DEL SERVIDOR.\n\nMotivo: ${reason}\nAdministrador: ${by}`);
+            window.location.reload();
+        });
+
+        // ========================================================
+        // ====== SISTEMA DE LLAMADAS DE VOZ WEBRTC (1-A-1) ======
+        // ========================================================
+        const incomingCallModal = document.getElementById('incoming-call-modal');
+        const incCallAvatarContainer = document.getElementById('inc-call-avatar-container');
+        const incCallCallerName = document.getElementById('inc-call-caller-name');
+        const btnAcceptCall = document.getElementById('btn-accept-call');
+        const btnDeclineCall = document.getElementById('btn-decline-call');
+
+        const activeCallOverlay = document.getElementById('active-call-overlay');
+        const activeCallAvatarContainer = document.getElementById('active-call-avatar-container');
+        const activeCallName = document.getElementById('active-call-name');
+        const activeCallTimer = document.getElementById('active-call-timer');
+        const callToggleMic = document.getElementById('call-toggle-mic');
+        const callToggleDeafen = document.getElementById('call-toggle-deafen');
+        const callHangupBtn = document.getElementById('call-hangup-btn');
+        const remoteCallAudio = document.getElementById('remote-call-audio');
+
+        let rtcPeer = null;
+        let localAudioStream = null;
+        let callTargetUid = null;
+        let callTargetData = null;
+        let callTimerInterval = null;
+        let callDurationSeconds = 0;
+        let callIsMicMuted = false;
+        let callIsDeafened = false;
+        let ringtoneOscInterval = null;
+        let dialToneOscInterval = null;
+
+        // Tono de llamada entrante sintético (suave melodía oscilante)
+        function playIncomingRingtone() {
+            stopIncomingRingtone();
+            ringtoneOscInterval = setInterval(() => {
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.3); // E5
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.85);
+            }, 2400);
+        }
+
+        function stopIncomingRingtone() {
+            if (ringtoneOscInterval) {
+                clearInterval(ringtoneOscInterval);
+                ringtoneOscInterval = null;
+            }
+        }
+
+        // Tono de marcado saliente ("tuu... tuu...")
+        function playDialTone() {
+            stopDialTone();
+            dialToneOscInterval = setInterval(() => {
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, ctx.currentTime); // A4
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 1.25);
+            }, 3000);
+        }
+
+        function stopDialTone() {
+            if (dialToneOscInterval) {
+                clearInterval(dialToneOscInterval);
+                dialToneOscInterval = null;
+            }
+        }
+
+        function playCallEndTone() {
+            const ctx = getAudioCtx();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.35);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.38);
+        }
+
+        // Iniciar Llamada Saliente
+        async function startCallWithUser(targetUid, targetFriend) {
+            if (!targetUid) return;
+            if (callTargetUid) {
+                showToast('Ya estás en una llamada activa.');
+                return;
+            }
+
+            try {
+                localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                showToast('No se pudo acceder al micrófono. Por favor permite el acceso.');
+                return;
+            }
+
+            callTargetUid = targetUid;
+            callTargetData = targetFriend || { nickname: 'Usuario', uid: targetUid };
+
+            renderActiveCallOverlay(callTargetData, 'Llamando...');
+            playDialTone();
+            socket.emit('call:initiate', { targetUid });
+        }
+
+        function renderActiveCallOverlay(target, statusText) {
+            activeCallName.textContent = target.nickname || 'Usuario';
+            activeCallTimer.textContent = statusText || 'Conectando...';
+            activeCallOverlay.classList.remove('connected');
+
+            activeCallAvatarContainer.innerHTML = '';
+            if (target.avatar && isValidImageUrl(target.avatar)) {
+                const img = document.createElement('img');
+                img.src = target.avatar;
+                img.className = 'call-floating-avatar';
+                activeCallAvatarContainer.appendChild(img);
+            } else {
+                const div = document.createElement('div');
+                div.className = 'call-floating-initial';
+                div.style.background = safeColor(target.color || '#007bff');
+                div.textContent = target.nickname ? target.nickname.charAt(0).toUpperCase() : '?';
+                activeCallAvatarContainer.appendChild(div);
+            }
+
+            callToggleMic.classList.remove('active-muted');
+            callToggleDeafen.classList.remove('active-muted');
+            callIsMicMuted = false;
+            callIsDeafened = false;
+
+            activeCallOverlay.style.display = 'flex';
+        }
+
+        // Recibir Llamada Entrante
+        socket.on('call:incoming', ({ callerUid, callerName, callerAvatar, callerColor }) => {
+            if (callTargetUid) {
+                socket.emit('call:reject', { targetUid: callerUid, reason: 'busy' });
+                return;
+            }
+
+            callTargetUid = callerUid;
+            callTargetData = { uid: callerUid, nickname: callerName, avatar: callerAvatar, color: callerColor };
+
+            incCallCallerName.textContent = callerName;
+            incCallAvatarContainer.innerHTML = '';
+            if (callerAvatar && isValidImageUrl(callerAvatar)) {
+                const img = document.createElement('img');
+                img.src = callerAvatar;
+                img.className = 'call-pulse-avatar';
+                incCallAvatarContainer.appendChild(img);
+            } else {
+                const div = document.createElement('div');
+                div.className = 'call-pulse-initial';
+                div.style.background = safeColor(callerColor || '#007bff');
+                div.textContent = callerName ? callerName.charAt(0).toUpperCase() : '?';
+                incCallAvatarContainer.appendChild(div);
+            }
+
+            incomingCallModal.style.display = 'flex';
+            playIncomingRingtone();
+        });
+
+        // Aceptar Llamada Entrante
+        btnAcceptCall.addEventListener('click', async () => {
+            stopIncomingRingtone();
+            incomingCallModal.style.display = 'none';
+
+            try {
+                localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                showToast('No se pudo acceder al micrófono para contestar.');
+                socket.emit('call:reject', { targetUid: callTargetUid, reason: 'mic_error' });
+                cleanupCall();
+                return;
+            }
+
+            renderActiveCallOverlay(callTargetData, 'Conectando audio...');
+            socket.emit('call:accept', { targetUid: callTargetUid });
+            setupWebRtcConnection(true); // como receptor
+        });
+
+        // Rechazar Llamada Entrante
+        btnDeclineCall.addEventListener('click', () => {
+            stopIncomingRingtone();
+            incomingCallModal.style.display = 'none';
+            if (callTargetUid) {
+                socket.emit('call:reject', { targetUid: callTargetUid, reason: 'rejected' });
+                cleanupCall();
+            }
+        });
+
+        // El receptor aceptó la llamada saliente
+        socket.on('call:accepted', ({ targetUid }) => {
+            stopDialTone();
+            activeCallTimer.textContent = 'Estableciendo conexión P2P...';
+            setupWebRtcConnection(false); // como iniciador (crea offer)
+        });
+
+        // El otro usuario rechazó o está ocupado
+        socket.on('call:rejected', ({ message, reason }) => {
+            stopDialTone();
+            stopIncomingRingtone();
+            incomingCallModal.style.display = 'none';
+            playCallEndTone();
+            showToast(message || (reason === 'busy' ? 'El usuario está en otra llamada.' : 'Llamada rechazada.'));
+            cleanupCall();
+        });
+
+        // El otro usuario colgó
+        socket.on('call:ended', () => {
+            stopDialTone();
+            stopIncomingRingtone();
+            playCallEndTone();
+            showToast('Llamada finalizada.');
+            cleanupCall();
+        });
+
+        // WebRTC PeerConnection
+        const rtcConfiguration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        async function setupWebRtcConnection(isCallee) {
+            try {
+                if (rtcPeer) {
+                    rtcPeer.close();
+                    rtcPeer = null;
+                }
+
+                rtcPeer = new RTCPeerConnection(rtcConfiguration);
+
+                if (localAudioStream) {
+                    localAudioStream.getAudioTracks().forEach(track => {
+                        rtcPeer.addTrack(track, localAudioStream);
+                    });
+                }
+
+                rtcPeer.ontrack = (event) => {
+                    if (event.streams && event.streams[0]) {
+                        remoteCallAudio.srcObject = event.streams[0];
+                        remoteCallAudio.play().catch(() => {});
+                    }
+                };
+
+                rtcPeer.onicecandidate = (event) => {
+                    if (event.candidate && callTargetUid) {
+                        socket.emit('call:signal', {
+                            targetUid: callTargetUid,
+                            candidate: event.candidate
+                        });
+                    }
+                };
+
+                rtcPeer.onconnectionstatechange = () => {
+                    if (rtcPeer.connectionState === 'connected') {
+                        activeCallOverlay.classList.add('connected');
+                        startCallTimer();
+                    } else if (rtcPeer.connectionState === 'disconnected' || rtcPeer.connectionState === 'failed') {
+                        cleanupCall();
+                    }
+                };
+
+                if (!isCallee) {
+                    const offer = await rtcPeer.createOffer();
+                    await rtcPeer.setLocalDescription(offer);
+                    socket.emit('call:signal', {
+                        targetUid: callTargetUid,
+                        offer: offer
+                    });
+                }
+            } catch (err) {
+                console.error('Error configurando WebRTC:', err);
+                showToast('Error de conexión en llamada.');
+                cleanupCall();
+            }
+        }
+
+        socket.on('call:signal', async (data) => {
+            if (!rtcPeer || !callTargetUid) return;
+
+            try {
+                if (data.offer) {
+                    await rtcPeer.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await rtcPeer.createAnswer();
+                    await rtcPeer.setLocalDescription(answer);
+                    socket.emit('call:signal', {
+                        targetUid: callTargetUid,
+                        answer: answer
+                    });
+                } else if (data.answer) {
+                    await rtcPeer.setRemoteDescription(new RTCSessionDescription(data.answer));
+                } else if (data.candidate) {
+                    await rtcPeer.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            } catch (err) {
+                console.error('Error procesando señal WebRTC:', err);
+            }
+        });
+
+        function startCallTimer() {
+            clearInterval(callTimerInterval);
+            callDurationSeconds = 0;
+            activeCallTimer.textContent = '00:00';
+            callTimerInterval = setInterval(() => {
+                callDurationSeconds++;
+                const mins = String(Math.floor(callDurationSeconds / 60)).padStart(2, '0');
+                const secs = String(callDurationSeconds % 60).padStart(2, '0');
+                activeCallTimer.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function cleanupCall() {
+            stopDialTone();
+            stopIncomingRingtone();
+            clearInterval(callTimerInterval);
+            callTimerInterval = null;
+
+            if (rtcPeer) {
+                rtcPeer.close();
+                rtcPeer = null;
+            }
+
+            if (localAudioStream) {
+                localAudioStream.getTracks().forEach(track => track.stop());
+                localAudioStream = null;
+            }
+
+            if (remoteCallAudio) {
+                remoteCallAudio.srcObject = null;
+            }
+
+            activeCallOverlay.style.display = 'none';
+            activeCallOverlay.classList.remove('connected');
+            incomingCallModal.style.display = 'none';
+
+            callTargetUid = null;
+            callTargetData = null;
+            callDurationSeconds = 0;
+            callIsMicMuted = false;
+            callIsDeafened = false;
+        }
+
+        // Controles de llamada activa
+        callHangupBtn.addEventListener('click', () => {
+            if (callTargetUid) {
+                socket.emit('call:end', { targetUid: callTargetUid });
+            }
+            playCallEndTone();
+            cleanupCall();
+        });
+
+        callToggleMic.addEventListener('click', () => {
+            if (!localAudioStream) return;
+            callIsMicMuted = !callIsMicMuted;
+            localAudioStream.getAudioTracks().forEach(track => {
+                track.enabled = !callIsMicMuted;
+            });
+            callToggleMic.classList.toggle('active-muted', callIsMicMuted);
+            callToggleMic.textContent = callIsMicMuted ? '🔇' : '🎤';
+            showToast(callIsMicMuted ? 'Micrófono silenciado' : 'Micrófono activado');
+        });
+
+        callToggleDeafen.addEventListener('click', () => {
+            callIsDeafened = !callIsDeafened;
+            remoteCallAudio.muted = callIsDeafened;
+            callToggleDeafen.classList.toggle('active-muted', callIsDeafened);
+            callToggleDeafen.textContent = callIsDeafened ? '🔈' : '🔊';
+            showToast(callIsDeafened ? 'Sonido desactivado' : 'Sonido activado');
         });
 
         // Audit #4: Reconexión transparente sin perder estado
@@ -4760,4 +6286,3 @@
     </script>
 </body>
 </html>
-.
