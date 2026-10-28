@@ -2382,28 +2382,21 @@
         }
 
         /* LLAMADAS WEBRTC ESTILOS */
-        .call-btn-header {
+        #header-call-btn {
             display: none;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 8px;
-            background: #2ed573;
-            color: #fff;
-            border: none;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
+            color: #2ed573;
+            font-size: 1.05rem;
             transition: all 0.15s ease;
-            box-shadow: 0 2px 8px rgba(46, 213, 115, 0.4);
-            margin-right: 6px;
         }
-        .call-btn-header:hover {
-            background: #26af5f;
-            transform: translateY(-1px);
-        }
-        .call-btn-header.show {
+        #header-call-btn.show {
             display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #header-call-btn:hover {
+            background: rgba(46, 213, 115, 0.18);
+            border-color: #2ed573;
+            transform: scale(1.08);
         }
 
         /* MODAL LLAMADA ENTRANTE */
@@ -2903,6 +2896,16 @@
                         <button class="opt-btn sound-opt" data-val="bubbles">Burbujas Pop</button>
                     </div>
                 </div>
+
+                <div class="setting-card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 14px;">
+                    <label style="color: #38bdf8; font-weight: 700; margin-bottom: 6px; display: block;">📥 Descarga de Archivos para GitHub</label>
+                    <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 12px; line-height: 1.4;">Si el visor de código de AI Studio no carga, descarga o visualiza directamente <strong>server.js</strong>, <strong>index.html</strong> y <strong>package.json</strong> listos para Render:</p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="/descargar" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: #0284c7; color: white; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">Centro de Descarga ↗</a>
+                        <a href="/raw/server.js" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">Ver server.js</a>
+                        <a href="/raw/index.html" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">Ver index.html</a>
+                    </div>
+                </div>
             </div>
 
             <button class="main-btn" id="close-settings-btn">Guardar y Cerrar</button>
@@ -3086,7 +3089,7 @@
                 </div>
 
                 <div class="header-actions">
-                    <button type="button" class="call-btn-header" id="header-call-btn" title="Llamar al amigo">📞 Llamar</button>
+                    <button type="button" class="action-icon-btn" id="header-call-btn" title="Llamada de voz" aria-label="Llamar">📞</button>
                     <button class="action-icon-btn" id="toggle-friends-btn" title="Mostrar/Ocultar Amigos">🤝</button>
                     <button class="action-icon-btn" id="toggle-sidebar-btn" title="Mostrar/Ocultar Lateral">👥</button>
                     <button class="action-icon-btn" id="open-settings-btn" title="Configuración">⚙️</button>
@@ -5382,7 +5385,15 @@
 
         function renderUsersList(usersObj) {
             usersList.innerHTML = '';
-            const entries = Object.entries(usersObj).filter(([, u]) => u.status !== 'offline');
+            const seen = new Set();
+            const entries = Object.entries(usersObj || {})
+                .filter(([, u]) => u && u.status !== 'offline')
+                .filter(([, u]) => {
+                    const key = u.uid || u.nickname;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
             userCount.textContent = entries.length;
 
             entries.forEach(([id, uData]) => {
@@ -6117,12 +6128,15 @@
             ]
         };
 
+        let pendingIceCandidates = [];
+
         async function setupWebRtcConnection(isCallee) {
             try {
                 if (rtcPeer) {
                     rtcPeer.close();
                     rtcPeer = null;
                 }
+                pendingIceCandidates = [];
 
                 rtcPeer = new RTCPeerConnection(rtcConfiguration);
 
@@ -6135,7 +6149,12 @@
                 rtcPeer.ontrack = (event) => {
                     if (event.streams && event.streams[0]) {
                         remoteCallAudio.srcObject = event.streams[0];
-                        remoteCallAudio.play().catch(() => {});
+                        activeCallOverlay.classList.add('connected');
+                        startCallTimer();
+                        const playPromise = remoteCallAudio.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => console.warn('Audio play pending user gesture:', e));
+                        }
                     }
                 };
 
@@ -6158,7 +6177,10 @@
                 };
 
                 if (!isCallee) {
-                    const offer = await rtcPeer.createOffer();
+                    const offer = await rtcPeer.createOffer({
+                        offerToReceiveAudio: true,
+                        offerToReceiveVideo: false
+                    });
                     await rtcPeer.setLocalDescription(offer);
                     socket.emit('call:signal', {
                         targetUid: callTargetUid,
@@ -6173,21 +6195,45 @@
         }
 
         socket.on('call:signal', async (data) => {
-            if (!rtcPeer || !callTargetUid) return;
+            if (!callTargetUid) return;
+
+            const offer = data.offer || (data.signal && data.signal.offer);
+            const answer = data.answer || (data.signal && data.signal.answer);
+            const candidate = data.candidate || (data.signal && data.signal.candidate);
 
             try {
-                if (data.offer) {
-                    await rtcPeer.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await rtcPeer.createAnswer();
-                    await rtcPeer.setLocalDescription(answer);
+                if (offer) {
+                    if (!rtcPeer) {
+                        await setupWebRtcConnection(true);
+                    }
+                    await rtcPeer.setRemoteDescription(new RTCSessionDescription(offer));
+
+                    // Procesar candidatos acumulados
+                    while (pendingIceCandidates.length > 0) {
+                        const cand = pendingIceCandidates.shift();
+                        try { await rtcPeer.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
+                    }
+
+                    const answerDesc = await rtcPeer.createAnswer();
+                    await rtcPeer.setLocalDescription(answerDesc);
                     socket.emit('call:signal', {
                         targetUid: callTargetUid,
-                        answer: answer
+                        answer: answerDesc
                     });
-                } else if (data.answer) {
-                    await rtcPeer.setRemoteDescription(new RTCSessionDescription(data.answer));
-                } else if (data.candidate) {
-                    await rtcPeer.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } else if (answer) {
+                    if (rtcPeer) {
+                        await rtcPeer.setRemoteDescription(new RTCSessionDescription(answer));
+                        while (pendingIceCandidates.length > 0) {
+                            const cand = pendingIceCandidates.shift();
+                            try { await rtcPeer.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
+                        }
+                    }
+                } else if (candidate) {
+                    if (rtcPeer && rtcPeer.remoteDescription && rtcPeer.remoteDescription.type) {
+                        await rtcPeer.addIceCandidate(new RTCIceCandidate(candidate));
+                    } else {
+                        pendingIceCandidates.push(candidate);
+                    }
                 }
             } catch (err) {
                 console.error('Error procesando señal WebRTC:', err);
