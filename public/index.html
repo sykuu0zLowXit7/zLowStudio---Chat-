@@ -2831,43 +2831,44 @@
         }
 
         /* ========================================================
-           VENTANA STAGE DE LLAMADA GRUPAL ESTILO DISCORD
+           VENTANA STAGE DE LLAMADA GRUPAL ESTILO DISCORD (COMPACTA)
            ======================================================== */
         .group-voice-stage {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90vw;
-            max-width: 920px;
-            height: 78vh;
-            max-height: 600px;
+            width: min(520px, 92vw);
+            max-width: 540px;
+            height: min(410px, 74vh);
+            max-height: 430px;
             background: var(--bg-modal);
             border: 2px solid var(--border-color);
-            border-radius: 18px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px var(--glow-color);
+            border-radius: 16px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.85), 0 0 25px var(--glow-color);
             z-index: 9998;
             display: none;
             flex-direction: column;
             overflow: hidden;
             color: var(--text-main);
-            animation: scaleFadeIn 0.22s ease-out;
+            animation: scaleFadeIn 0.2s ease-out;
+            touch-action: none;
         }
         @keyframes scaleFadeIn {
             0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
         .group-voice-stage.maximized {
-            width: 98vw;
-            height: 96vh;
-            max-width: none;
-            max-height: none;
-            border-radius: 10px;
+            width: min(860px, 96vw);
+            height: min(580px, 88vh);
+            max-width: 860px;
+            max-height: 580px;
+            border-radius: 14px;
         }
         .stage-header {
-            height: 52px;
-            padding: 0 18px;
-            background: rgba(0, 0, 0, 0.25);
+            height: 46px;
+            padding: 0 14px;
+            background: rgba(0, 0, 0, 0.28);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -2882,23 +2883,23 @@
         .stage-header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
         .stage-live-badge {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             background: rgba(46, 213, 115, 0.15);
             color: #2ed573;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 0.68rem;
             font-weight: 800;
             letter-spacing: 0.5px;
         }
         .live-dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             background: #2ed573;
             border-radius: 50%;
             box-shadow: 0 0 8px #2ed573;
@@ -2909,31 +2910,32 @@
             50% { opacity: 0.3; }
         }
         .stage-title {
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-weight: 700;
+            white-space: nowrap;
         }
         .stage-participants-badge {
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             color: var(--text-sub);
             background: var(--bg-input);
-            padding: 2px 8px;
-            border-radius: 8px;
+            padding: 2px 7px;
+            border-radius: 6px;
         }
         .stage-timer {
             font-family: monospace;
-            font-size: 0.82rem;
-            color: #2ed573;
+            font-size: 0.78rem;
+            color: #38bdf8;
             font-weight: 700;
         }
         .stage-header-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
         .stage-window-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             border: 1px solid var(--border-color);
             background: var(--bg-input);
             color: var(--text-sub);
@@ -2961,7 +2963,7 @@
         .stage-grid-wrapper {
             flex: 1;
             overflow-y: auto;
-            padding: 18px;
+            padding: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2969,19 +2971,19 @@
         }
         .stage-participants-grid {
             display: grid;
-            gap: 14px;
+            gap: 10px;
             width: 100%;
             height: 100%;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
             align-content: center;
         }
         .stage-participants-grid.single-user {
-            max-width: 340px;
-            max-height: 280px;
+            max-width: 240px;
+            max-height: 200px;
             margin: auto;
         }
         .stage-participants-grid.two-users {
-            max-width: 680px;
+            max-width: 440px;
             grid-template-columns: repeat(2, 1fr);
             margin: auto;
         }
@@ -2989,64 +2991,74 @@
         /* TARJETA DE PARTICIPANTE DISCORD */
         .discord-participant-card {
             background: var(--bg-card);
-            border: 1.5px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             position: relative;
-            min-height: 170px;
-            transition: all 0.2s ease;
+            min-height: 130px;
+            box-shadow: none;
+            transition: all 0.18s ease;
         }
-        .discord-participant-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
+        /* Cuando NO está hablando: sin borde brillante ni resplandor */
+        .discord-participant-card:not(.speaking) {
+            border-color: var(--border-color);
+            box-shadow: none;
+        }
+        /* Cuando ESTÁ hablando: se marca en azul neón brillante */
+        .discord-participant-card.speaking {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+            box-shadow: 0 0 0 2px #38bdf8, 0 0 18px rgba(56, 189, 248, 0.45);
         }
         .participant-avatar-wrap {
             position: relative;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .participant-avatar {
-            width: 76px;
-            height: 76px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid transparent;
-            transition: all 0.2s ease;
+            border: 2.5px solid transparent;
+            transition: all 0.18s ease;
         }
         .participant-avatar-initial {
-            width: 76px;
-            height: 76px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.9rem;
+            font-size: 1.45rem;
             font-weight: 800;
             color: #fff;
-            border: 3px solid transparent;
-            transition: all 0.2s ease;
+            border: 2.5px solid transparent;
+            transition: all 0.18s ease;
         }
-        /* Anillo de voz hablando estilo Discord */
+        /* Resaltado del avatar en azul cuando habla */
         .discord-participant-card.speaking .participant-avatar,
         .discord-participant-card.speaking .participant-avatar-initial {
-            border-color: #2ed573;
-            box-shadow: 0 0 0 3px rgba(46, 213, 115, 0.35), 0 0 20px rgba(46, 213, 115, 0.6);
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.5), 0 0 16px rgba(56, 189, 248, 0.7);
+            transform: scale(1.04);
         }
         .participant-speaking-wave {
             position: absolute;
-            bottom: -4px;
-            right: -4px;
-            background: #2ed573;
+            bottom: -3px;
+            right: -3px;
+            background: #38bdf8;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             display: none;
             align-items: center;
             justify-content: center;
-            color: #000;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            color: #0b0f19;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
         }
         .discord-participant-card.speaking .participant-speaking-wave {
             display: flex;
@@ -3054,8 +3066,8 @@
         .participant-info-row {
             display: flex;
             align-items: center;
-            gap: 6px;
-            max-width: 90%;
+            gap: 5px;
+            max-width: 95%;
         }
         .participant-name {
             font-size: 0.92rem;
@@ -3149,30 +3161,30 @@
             border-color: #ff4757;
         }
 
-        /* DOCK DE CONTROL INFERIOR DISCORD */
+        /* DOCK DE CONTROL INFERIOR DISCORD (COMPACTO) */
         .stage-dock-bar {
-            height: 72px;
+            height: 58px;
             background: rgba(0, 0, 0, 0.35);
             border-top: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0 20px;
+            padding: 0 14px;
             flex-shrink: 0;
         }
         .dock-controls {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
             background: var(--bg-input);
-            padding: 8px 18px;
-            border-radius: 28px;
+            padding: 5px 14px;
+            border-radius: 24px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.4);
         }
         .stage-dock-btn {
-            width: 44px;
-            height: 44px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             border: 1px solid var(--border-color);
             background: var(--bg-modal);
@@ -7073,11 +7085,28 @@
             cleanupCall();
         });
 
+        // Configuración WebRTC de alta resiliencia con STUN globales y TURN Relay para conectar entre distintos Wi-Fi y países
         const rtcConfiguration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                { urls: 'stun:openrelay.metered.ca:80' },
+                {
+                    urls: [
+                        'turn:openrelay.metered.ca:80',
+                        'turn:openrelay.metered.ca:443',
+                        'turn:openrelay.metered.ca:443?transport=tcp'
+                    ],
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10,
+            bundlePolicy: 'max-bundle'
         };
 
         let pendingIceCandidates = [];
@@ -7116,6 +7145,12 @@
                             targetUid: callTargetUid,
                             candidate: event.candidate
                         });
+                    }
+                };
+
+                rtcPeer.oniceconnectionstatechange = () => {
+                    if (rtcPeer.iceConnectionState === 'failed') {
+                        try { rtcPeer.restartIce(); } catch (e) {}
                     }
                 };
 
@@ -7305,6 +7340,7 @@
         let groupVoiceStream = null;
         const groupVoicePeers = new Map(); // peerUid -> RTCPeerConnection
         const groupVoiceAudios = new Map(); // peerUid -> HTMLAudioElement
+        const pendingGroupCandidates = new Map(); // peerUid -> Array<candidate>
         let groupVoiceToastTimeout = null;
 
         // Botón en Header de Sala General
@@ -7327,7 +7363,14 @@
             }
 
             try {
-                groupVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                groupVoiceStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
             } catch (err) {
                 showToast('No se pudo acceder al micrófono para el canal de voz.');
                 return;
@@ -7344,14 +7387,32 @@
             stageToggleMic.classList.remove('active-muted');
             stageToggleDeafen.classList.remove('active-muted');
 
+            // Renderizado inicial inmediato para garantizar que nunca aparezca vacía la ventana
+            renderGroupVoiceGrid([
+                {
+                    uid: myUid,
+                    socketId: socket.id,
+                    name: myNickname || 'Tú',
+                    avatar: myAvatar,
+                    color: myColor,
+                    userCode: myUserCode,
+                    isMuted: false,
+                    isDeafened: false,
+                    isSpeaking: false,
+                    role: isOwnerOrAdmin() ? 'Owner' : 'Miembro'
+                }
+            ]);
+
             socket.emit('group-voice:join');
             startGroupVoiceTimer();
 
-            // Detección de voz propia
+            // Detección de voz propia con Web Audio API
             startVoiceActivityDetection(groupVoiceStream, (speaking) => {
                 socket.emit('group-voice:update-state', { isSpeaking: speaking });
                 const myCard = groupVoiceGrid.querySelector(`[data-uid="${myUid}"]`);
-                if (myCard) myCard.classList.toggle('speaking', speaking);
+                if (myCard) {
+                    myCard.classList.toggle('speaking', speaking);
+                }
                 if (minimizedCallType === 'group') {
                     pillStatusLabel.textContent = speaking ? `Hablando: ${myNickname}` : `Voz General (${groupVoiceParticipantsList.length})`;
                 }
@@ -7379,6 +7440,7 @@
                 try { audio.srcObject = null; audio.remove(); } catch (e) {}
             });
             groupVoiceAudios.clear();
+            pendingGroupCandidates.clear();
 
             socket.emit('group-voice:leave');
 
@@ -7450,9 +7512,26 @@
             groupVoiceDurationSeconds = 0;
         }
 
-        // Renderizado del Grid estilo Discord
+        // Renderizado del Grid estilo Discord con fotos, nombres, y resaltado en azul al hablar
         function renderGroupVoiceGrid(participants) {
-            groupVoiceParticipantsList = participants || [];
+            groupVoiceParticipantsList = Array.isArray(participants) ? [...participants] : [];
+
+            // Si estamos en la sala y el usuario local no vino en la lista, agregarlo
+            if (inGroupVoice && myUid && !groupVoiceParticipantsList.some(p => p.uid === myUid)) {
+                groupVoiceParticipantsList.unshift({
+                    uid: myUid,
+                    socketId: socket.id,
+                    name: myNickname || 'Tú',
+                    avatar: myAvatar,
+                    color: myColor,
+                    userCode: myUserCode,
+                    isMuted: groupVoiceIsMicMuted,
+                    isDeafened: groupVoiceIsDeafened,
+                    isSpeaking: false,
+                    role: isOwnerOrAdmin() ? 'Owner' : 'Miembro'
+                });
+            }
+
             groupVoiceGrid.innerHTML = '';
 
             const count = groupVoiceParticipantsList.length;
@@ -7475,6 +7554,15 @@
                     const img = document.createElement('img');
                     img.src = p.avatar;
                     img.className = 'participant-avatar';
+                    img.alt = p.name || 'Avatar';
+                    img.onerror = () => {
+                        img.remove();
+                        const initial = document.createElement('div');
+                        initial.className = 'participant-avatar-initial';
+                        initial.style.background = safeColor(p.color || '#007bff');
+                        initial.textContent = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                        avatarWrap.prepend(initial);
+                    };
                     avatarWrap.appendChild(img);
                 } else {
                     const initial = document.createElement('div');
@@ -7506,7 +7594,7 @@
 
                 card.appendChild(infoRow);
 
-                // Indicadores de estado
+                // Indicadores de estado (Silenciado / Ensordecido)
                 const statusBadges = document.createElement('div');
                 statusBadges.className = 'participant-status-badges';
 
@@ -7572,12 +7660,17 @@
         }
 
         function isOwnerOrAdmin() {
-            return Boolean(isVerifiedAdmin || (users && myUid && users[socket.id] && users[socket.id].isAdmin));
+            if (typeof isVerifiedAdmin !== 'undefined' && isVerifiedAdmin) return true;
+            if (typeof currentUsersData !== 'undefined' && currentUsersData && myUid) {
+                const u = currentUsersData[socket.id] || Object.values(currentUsersData).find(x => x && x.uid === myUid);
+                if (u && (u.isAdmin || u.isFirst)) return true;
+            }
+            return false;
         }
 
         // Estado del Canal de Voz Grupal recibido del Servidor
         socket.on('group-voice:state', ({ active, participants, startTime }) => {
-            groupVoiceParticipantsList = participants || [];
+            groupVoiceParticipantsList = Array.isArray(participants) ? [...participants] : [];
             const count = groupVoiceParticipantsList.length;
 
             if (count > 0) {
@@ -7632,8 +7725,8 @@
             const p = groupVoiceParticipantsList.find(item => item.uid === uid);
             if (p) {
                 p.isSpeaking = Boolean(isSpeaking);
-                p.isMuted = Boolean(isMuted);
-                p.isDeafened = Boolean(isDeafened);
+                if (typeof isMuted !== 'undefined') p.isMuted = Boolean(isMuted);
+                if (typeof isDeafened !== 'undefined') p.isDeafened = Boolean(isDeafened);
             }
             if (minimizedCallType === 'group') {
                 const speakingP = groupVoiceParticipantsList.find(item => item.isSpeaking);
@@ -7660,7 +7753,7 @@
             showToast(reason || 'Has sido expulsado del canal de voz.');
         });
 
-        // Señalización WebRTC Mesh para audio grupal
+        // Señalización WebRTC Mesh para audio grupal con cola de candidatos ICE
         async function setupGroupPeer(peerUid, isInitiator) {
             if (groupVoicePeers.has(peerUid)) return groupVoicePeers.get(peerUid);
 
@@ -7694,6 +7787,12 @@
                         targetUid: peerUid,
                         candidate: event.candidate
                     });
+                }
+            };
+
+            peer.oniceconnectionstatechange = () => {
+                if (peer.iceConnectionState === 'failed') {
+                    try { peer.restartIce(); } catch (e) {}
                 }
             };
 
@@ -7739,6 +7838,7 @@
                 } catch (e) {}
                 groupVoiceAudios.delete(uid);
             }
+            pendingGroupCandidates.delete(uid);
         });
 
         socket.on('group-voice:signal', async (data) => {
@@ -7754,6 +7854,14 @@
                 if (offer) {
                     const peer = await setupGroupPeer(fromUid, false);
                     await peer.setRemoteDescription(new RTCSessionDescription(offer));
+
+                    // Drenar candidatos ICE pendientes acumulados para este peer
+                    const pending = pendingGroupCandidates.get(fromUid) || [];
+                    while (pending.length > 0) {
+                        const cand = pending.shift();
+                        try { await peer.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
+                    }
+
                     const answerDesc = await peer.createAnswer();
                     await peer.setLocalDescription(answerDesc);
                     socket.emit('group-voice:signal', {
@@ -7764,11 +7872,23 @@
                     const peer = groupVoicePeers.get(fromUid);
                     if (peer) {
                         await peer.setRemoteDescription(new RTCSessionDescription(answer));
+
+                        // Drenar candidatos ICE pendientes acumulados para este peer
+                        const pending = pendingGroupCandidates.get(fromUid) || [];
+                        while (pending.length > 0) {
+                            const cand = pending.shift();
+                            try { await peer.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
+                        }
                     }
                 } else if (candidate) {
                     const peer = groupVoicePeers.get(fromUid);
                     if (peer && peer.remoteDescription && peer.remoteDescription.type) {
-                        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+                        try { await peer.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) {}
+                    } else {
+                        if (!pendingGroupCandidates.has(fromUid)) {
+                            pendingGroupCandidates.set(fromUid, []);
+                        }
+                        pendingGroupCandidates.get(fromUid).push(candidate);
                     }
                 }
             } catch (err) {
