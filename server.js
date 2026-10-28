@@ -285,6 +285,18 @@ function addAuditLog(action, targetName, targetUid, byName, reason = '', details
   broadcastAdminUpdate();
 }
 
+function getCleanUsersList() {
+  const clean = {};
+  const seenUids = new Set();
+  for (const [sid, u] of Object.entries(users)) {
+    if (!u || !u.uid) continue;
+    if (seenUids.has(u.uid)) continue;
+    seenUids.add(u.uid);
+    clean[sid] = u;
+  }
+  return clean;
+}
+
 function broadcastAdminUpdate() {
   io.sockets.sockets.forEach((s) => {
     if (s.isAdmin) {
@@ -294,19 +306,25 @@ function broadcastAdminUpdate() {
 }
 
 function buildAdminDashboardPayload() {
-  const activeUserList = Object.entries(users).map(([sid, u]) => ({
-    socketId: sid,
-    uid: u.uid,
-    userCode: u.userCode,
-    nickname: u.nickname,
-    avatar: u.avatar,
-    color: u.color,
-    status: u.status,
-    connectedAt: u.connectedAt,
-    isMuted: Boolean(isUserMuted(u.uid)),
-    muteInfo: isUserMuted(u.uid),
-    warningsCount: (warnings[u.uid] || []).length,
-  }));
+  const seen = new Set();
+  const activeUserList = [];
+  for (const [sid, u] of Object.entries(users)) {
+    if (!u || !u.uid || seen.has(u.uid)) continue;
+    seen.add(u.uid);
+    activeUserList.push({
+      socketId: sid,
+      uid: u.uid,
+      userCode: u.userCode,
+      nickname: u.nickname,
+      avatar: u.avatar,
+      color: u.color,
+      status: u.status,
+      connectedAt: u.connectedAt,
+      isMuted: Boolean(isUserMuted(u.uid)),
+      muteInfo: isUserMuted(u.uid),
+      warningsCount: (warnings[u.uid] || []).length,
+    });
+  }
 
   return {
     users: activeUserList,
@@ -315,7 +333,7 @@ function buildAdminDashboardPayload() {
     auditLog: auditLog.slice(0, 100),
     chatSettings,
     stats: {
-      totalOnline: Object.keys(users).length,
+      totalOnline: activeUserList.length,
       totalProfiles: Object.keys(profiles).length,
       totalMessages: Object.keys(messagesStore).length,
       uptime: Math.round(process.uptime()),
@@ -649,20 +667,51 @@ function broadcastRecordingStatus() {
   io.emit('recording update', names);
 }
 
+const adminAuthAttempts = new Map(); // ip -> { count, lockedUntil }
+
 // Sockets Events
 io.on('connection', (socket) => {
   socket.isAdmin = false;
 
-  // Autenticación de admin en servidor
+  // Autenticación de admin en servidor con protección anti-fuerza bruta
   socket.on('admin auth', ({ password }) => {
+    const ip = socket.handshake.address || 'ip_unknown';
+    const now = Date.now();
+    const attempt = adminAuthAttempts.get(ip) || { count: 0, lockedUntil: 0 };
+
+    if (attempt.lockedUntil > now) {
+      const waitMins = Math.ceil((attempt.lockedUntil - now) / 60000);
+      socket.emit('admin auth result', {
+        success: false,
+        message: `Acceso bloqueado por seguridad. Espera ${waitMins} min antes de reintentar.`
+      });
+      return;
+    }
+
     const inputPass = String(password || '');
     if (inputPass.length > 0 && inputPass === ADMIN_PASSWORD) {
+      adminAuthAttempts.delete(ip);
       socket.isAdmin = true;
       socket.emit('admin auth result', { success: true, message: 'Autenticación exitosa' });
       socket.emit('admin:dashboard_data', buildAdminDashboardPayload());
       addAuditLog('admin_login', users[socket.id]?.nickname || 'Admin', socket.uid, users[socket.id]?.nickname || 'Admin', 'Inicio de sesión con clave');
     } else {
-      socket.emit('admin auth result', { success: false, message: 'Contraseña de administrador incorrecta' });
+      attempt.count = (attempt.count || 0) + 1;
+      if (attempt.count >= 5) {
+        attempt.lockedUntil = now + 5 * 60 * 1000;
+        adminAuthAttempts.set(ip, attempt);
+        socket.emit('admin auth result', {
+          success: false,
+          message: 'Demasiados intentos erróneos. Acceso bloqueado por 5 minutos.'
+        });
+      } else {
+        adminAuthAttempts.set(ip, attempt);
+        const rem = 5 - attempt.count;
+        socket.emit('admin auth result', {
+          success: false,
+          message: `Contraseña incorrecta. Te quedan ${rem} intento(s).`
+        });
+      }
     }
   });
 
@@ -689,6 +738,34 @@ io.on('connection', (socket) => {
     const avatar = userData && userData.avatar ? cleanAvatar(userData.avatar) : null;
     const bio = userData && userData.bio ? cleanBio(userData.bio) : '';
     const userCode = getOrGenerateUserCode(uid);
+
+    // EXPULSIÓN DE MULTIPESTAÑAS / DUPLICADOS: Si ya existe una sesión con este mismo ID, desconectar la anterior
+    const existingSockets = getSocketsForUid(uid);
+    if (existingSockets.length > 0) {
+      existingSockets.forEach((oldSid) => {
+        if (oldSid !== socket.id) {
+          const oldSock = io.sockets.sockets.get(oldSid);
+          if (oldSock) {
+            oldSock.emit('duplicate-session', {
+              title: 'Sesión Cerrada',
+              message: 'Has iniciado sesión en otra pestaña o ventana. Solo se permite una sesión activa para evitar duplicados en la lista de conectados.',
+              reason: 'multi_tab_kick',
+            });
+            oldSock.disconnect(true);
+          }
+          delete users[oldSid];
+          messageTimestampsBySocket.delete(oldSid);
+        }
+      });
+      onlineSocketsByUid.delete(uid);
+    }
+
+    // Purgar sockets residuales con el mismo UID
+    Object.keys(users).forEach((sid) => {
+      if (sid !== socket.id && users[sid] && users[sid].uid === uid) {
+        delete users[sid];
+      }
+    });
 
     socket.uid = uid;
     socket.userCode = userCode;
@@ -752,7 +829,7 @@ io.on('connection', (socket) => {
     if (!wasAlreadyOnline) {
       io.emit('system-message', `${socket.nickname} (${userCode}) ha entrado al chat.`);
     }
-    io.emit('update-users', users);
+    io.emit('update-users', getCleanUsersList());
     broadcastAdminUpdate();
 
     Object.values(messagesStore).forEach((msg) => {
@@ -842,7 +919,7 @@ io.on('connection', (socket) => {
     if (newName && newName !== oldName) {
       io.emit('system-message', `${oldName} ahora se llama ${newName}.`);
     }
-    io.emit('update-users', users);
+    io.emit('update-users', getCleanUsersList());
     syncProfileFromSocket(socket.id);
     broadcastAdminUpdate();
   });
@@ -851,7 +928,7 @@ io.on('connection', (socket) => {
     if (users[socket.id]) {
       const validStatuses = ['online', 'dnd', 'idle', 'offline'];
       users[socket.id].status = validStatuses.includes(status) ? status : 'online';
-      io.emit('update-users', users);
+      io.emit('update-users', getCleanUsersList());
       if (users[socket.id].uid) notifyFriendsOf(users[socket.id].uid);
       broadcastAdminUpdate();
     }
@@ -1565,7 +1642,7 @@ io.on('connection', (socket) => {
     });
 
     saveFriendsData();
-    io.emit('update-users', users);
+    io.emit('update-users', getCleanUsersList());
     notifyFriendsOf(targetUid);
     broadcastAdminUpdate();
     const adminName = users[socket.id]?.nickname || 'Administrador';
@@ -1606,24 +1683,27 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('call:accept', ({ callerUid }) => {
+  socket.on('call:accept', (payload) => {
     const myUid = socket.uid;
-    if (!myUid || !callerUid) return;
+    const targetUid = payload && (payload.targetUid || payload.callerUid);
+    if (!myUid || !targetUid) return;
 
-    const callerSockets = getSocketsForUid(callerUid);
+    const callerSockets = getSocketsForUid(targetUid);
     callerSockets.forEach((sid) => {
       io.to(sid).emit('call:accepted', { targetUid: myUid });
     });
   });
 
-  socket.on('call:reject', ({ callerUid, reason }) => {
+  socket.on('call:reject', (payload) => {
     const myUid = socket.uid;
-    if (!myUid || !callerUid) return;
+    const targetUid = payload && (payload.targetUid || payload.callerUid);
+    const reason = payload && payload.reason;
+    if (!myUid || !targetUid) return;
 
-    const callKey = [callerUid, myUid].sort().join('__');
+    const callKey = [targetUid, myUid].sort().join('__');
     activeCalls.delete(callKey);
 
-    const callerSockets = getSocketsForUid(callerUid);
+    const callerSockets = getSocketsForUid(targetUid);
     callerSockets.forEach((sid) => {
       io.to(sid).emit('call:rejected', {
         targetUid: myUid,
@@ -1647,13 +1727,26 @@ io.on('connection', (socket) => {
   });
 
   // Reenvío de señalización WebRTC (Offer, Answer, ICE Candidates)
-  socket.on('call:signal', ({ targetUid, signal }) => {
+  socket.on('call:signal', (payload) => {
     const myUid = socket.uid;
-    if (!myUid || !targetUid || !signal) return;
+    const targetUid = payload && payload.targetUid;
+    if (!myUid || !targetUid) return;
+
+    const signalData = (payload && payload.signal) || {
+      offer: payload && payload.offer,
+      answer: payload && payload.answer,
+      candidate: payload && payload.candidate,
+    };
 
     const destSockets = getSocketsForUid(targetUid);
     destSockets.forEach((sid) => {
-      io.to(sid).emit('call:signal', { fromUid: myUid, signal });
+      io.to(sid).emit('call:signal', {
+        fromUid: myUid,
+        signal: signalData,
+        offer: signalData.offer,
+        answer: signalData.answer,
+        candidate: signalData.candidate,
+      });
     });
   });
 
@@ -1690,7 +1783,7 @@ io.on('connection', (socket) => {
         }
       }
 
-      io.emit('update-users', users);
+      io.emit('update-users', getCleanUsersList());
       broadcastAdminUpdate();
     }
   });
@@ -1708,7 +1801,27 @@ app.get('*', (_req, res) => {
   res.status(404).send('index.html no encontrado');
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${PORT}`);
+let TARGET_PORT = 3000;
+if (process.env.RENDER === 'true' && process.env.PORT) {
+  TARGET_PORT = Number(process.env.PORT);
+} else if (process.env.PORT && process.env.PORT !== '8080') {
+  TARGET_PORT = Number(process.env.PORT);
+}
+
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE' && TARGET_PORT !== 3000) {
+    console.warn(`Puerto ${TARGET_PORT} en uso, reintentando en puerto 3000...`);
+    TARGET_PORT = 3000;
+    server.listen(3000, '0.0.0.0', () => {
+      console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:3000`);
+    });
+  } else {
+    console.error('Error en el servidor:', err);
+    process.exit(1);
+  }
 });
+
+server.listen(TARGET_PORT, '0.0.0.0', () => {
+  console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${TARGET_PORT}`);
+});
+
