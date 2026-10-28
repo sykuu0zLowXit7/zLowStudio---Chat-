@@ -221,8 +221,39 @@ let auditLog = []; // [{ id, action, targetName, targetUid, byName, reason, time
 let chatSettings = { slowmode: 0, paused: false }; // slowmode en segundos, paused booleano
 const lastMessageTimeByUid = new Map(); // uid -> timestamp para slowmode
 
-// Seguimiento de llamadas WebRTC activas
+// Seguimiento de llamadas WebRTC activas (1-a-1 privadas)
 const activeCalls = new Map(); // callKey -> { callerUid, targetUid, startedAt }
+
+// Seguimiento del Canal de Voz Grupal (Sala General / Discord style)
+// uid -> { uid, socketId, name, avatar, color, userCode, isMuted, isDeafened, isSpeaking, joinedAt, role }
+const groupVoiceParticipants = new Map();
+let groupVoiceCallStartTime = null;
+
+function getGroupVoiceStatePayload() {
+  const participants = Array.from(groupVoiceParticipants.values()).map((p) => ({
+    uid: p.uid,
+    socketId: p.socketId,
+    name: p.name,
+    avatar: p.avatar,
+    color: p.color,
+    userCode: p.userCode,
+    isMuted: Boolean(p.isMuted),
+    isDeafened: Boolean(p.isDeafened),
+    isSpeaking: Boolean(p.isSpeaking),
+    joinedAt: p.joinedAt,
+    role: p.role || 'Miembro',
+  }));
+  return {
+    active: participants.length > 0,
+    startTime: groupVoiceCallStartTime,
+    participants,
+  };
+}
+
+function broadcastGroupVoiceState() {
+  io.emit('group-voice:state', getGroupVoiceStatePayload());
+}
+
 
 function getSocketsForUid(uid) {
   const s = onlineSocketsByUid.get(uid);
@@ -835,6 +866,8 @@ io.on('connection', (socket) => {
     Object.values(messagesStore).forEach((msg) => {
       socket.emit('chat message', msg);
     });
+
+    socket.emit('group-voice:state', getGroupVoiceStatePayload());
   });
 
   socket.on('friend request', (d) => {
@@ -1750,12 +1783,179 @@ io.on('connection', (socket) => {
     });
   });
 
+  // ========================================================
+  // --- SISTEMA DE LLAMADAS GRUPALES (CANAL DE VOZ SALA GENERAL) ---
+  // ========================================================
+  socket.on('group-voice:start', () => {
+    const myUid = socket.uid;
+    const user = users[socket.id];
+    if (!myUid || !user) return;
+    if (isUserBanned(myUid)) return;
+
+    const wasEmpty = groupVoiceParticipants.size === 0;
+    if (wasEmpty) {
+      groupVoiceCallStartTime = Date.now();
+    }
+
+    const role = (socket.isAdmin || user.isAdmin) ? 'Owner' : (user.isFirst ? 'Admin' : 'Miembro');
+    groupVoiceParticipants.set(myUid, {
+      uid: myUid,
+      socketId: socket.id,
+      name: user.nickname,
+      avatar: user.avatar,
+      color: user.color,
+      userCode: user.userCode,
+      isMuted: false,
+      isDeafened: false,
+      isSpeaking: false,
+      joinedAt: Date.now(),
+      role,
+    });
+
+    broadcastGroupVoiceState();
+
+    if (wasEmpty) {
+      io.emit('group-voice:invitation', {
+        initiatorUid: myUid,
+        initiatorName: user.nickname,
+        initiatorAvatar: user.avatar,
+        initiatorColor: user.color,
+        startTime: groupVoiceCallStartTime,
+      });
+      io.emit('system-message', `🔊 ${user.nickname} ha iniciado una llamada grupal en la Sala General.`);
+    }
+  });
+
+  socket.on('group-voice:join', () => {
+    const myUid = socket.uid;
+    const user = users[socket.id];
+    if (!myUid || !user) return;
+    if (isUserBanned(myUid)) return;
+
+    const wasEmpty = groupVoiceParticipants.size === 0;
+    if (wasEmpty) {
+      groupVoiceCallStartTime = Date.now();
+    }
+
+    const role = (socket.isAdmin || user.isAdmin) ? 'Owner' : (user.isFirst ? 'Admin' : 'Miembro');
+    const isNew = !groupVoiceParticipants.has(myUid);
+    groupVoiceParticipants.set(myUid, {
+      uid: myUid,
+      socketId: socket.id,
+      name: user.nickname,
+      avatar: user.avatar,
+      color: user.color,
+      userCode: user.userCode,
+      isMuted: false,
+      isDeafened: false,
+      isSpeaking: false,
+      joinedAt: Date.now(),
+      role,
+    });
+
+    broadcastGroupVoiceState();
+
+    if (isNew) {
+      socket.broadcast.emit('group-voice:peer-joined', {
+        uid: myUid,
+        socketId: socket.id,
+        name: user.nickname,
+        avatar: user.avatar,
+        color: user.color,
+      });
+    }
+  });
+
+  socket.on('group-voice:leave', () => {
+    const myUid = socket.uid;
+    if (!myUid) return;
+    if (groupVoiceParticipants.has(myUid)) {
+      groupVoiceParticipants.delete(myUid);
+      if (groupVoiceParticipants.size === 0) {
+        groupVoiceCallStartTime = null;
+      }
+      broadcastGroupVoiceState();
+      io.emit('group-voice:peer-left', { uid: myUid });
+    }
+  });
+
+  socket.on('group-voice:signal', (payload) => {
+    const myUid = socket.uid;
+    const targetUid = payload && payload.targetUid;
+    if (!myUid || !targetUid) return;
+
+    const signalData = (payload && payload.signal) || {
+      offer: payload && payload.offer,
+      answer: payload && payload.answer,
+      candidate: payload && payload.candidate,
+    };
+
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => {
+      io.to(sid).emit('group-voice:signal', {
+        fromUid: myUid,
+        signal: signalData,
+        offer: signalData.offer,
+        answer: signalData.answer,
+        candidate: signalData.candidate,
+      });
+    });
+  });
+
+  socket.on('group-voice:update-state', (data) => {
+    const myUid = socket.uid;
+    if (!myUid || !groupVoiceParticipants.has(myUid)) return;
+    const p = groupVoiceParticipants.get(myUid);
+    if (data && typeof data.isMuted === 'boolean') p.isMuted = data.isMuted;
+    if (data && typeof data.isDeafened === 'boolean') p.isDeafened = data.isDeafened;
+    if (data && typeof data.isSpeaking === 'boolean') p.isSpeaking = data.isSpeaking;
+    io.emit('group-voice:participant-updated', {
+      uid: myUid,
+      isMuted: p.isMuted,
+      isDeafened: p.isDeafened,
+      isSpeaking: p.isSpeaking,
+    });
+  });
+
+  socket.on('group-voice:admin-action', ({ targetUid, action, value }) => {
+    const myUser = users[socket.id];
+    const isAdmin = socket.isAdmin || (myUser && myUser.isAdmin);
+    if (!isAdmin || !targetUid) return;
+
+    if (action === 'mute') {
+      if (groupVoiceParticipants.has(targetUid)) {
+        const p = groupVoiceParticipants.get(targetUid);
+        p.isMuted = !!value;
+        const destSockets = getSocketsForUid(targetUid);
+        destSockets.forEach((sid) => io.to(sid).emit('group-voice:force-mute', { muted: !!value }));
+        broadcastGroupVoiceState();
+      }
+    } else if (action === 'kick') {
+      if (groupVoiceParticipants.has(targetUid)) {
+        groupVoiceParticipants.delete(targetUid);
+        if (groupVoiceParticipants.size === 0) groupVoiceCallStartTime = null;
+        const destSockets = getSocketsForUid(targetUid);
+        destSockets.forEach((sid) => io.to(sid).emit('group-voice:kicked', { reason: 'Has sido desconectado de la llamada por un Administrador.' }));
+        broadcastGroupVoiceState();
+        io.emit('group-voice:peer-left', { uid: targetUid });
+      }
+    }
+  });
+
   socket.on('disconnect', () => {
     if (users[socket.id]) {
       const name = users[socket.id].nickname;
       const leavingUid = users[socket.id].uid;
 
-      // Si estaba en una llamada, avisar a la contraparte
+      // Si estaba en el canal de voz grupal, desconectarlo
+      if (leavingUid && groupVoiceParticipants.has(leavingUid)) {
+        groupVoiceParticipants.delete(leavingUid);
+        if (groupVoiceParticipants.size === 0) groupVoiceCallStartTime = null;
+        broadcastGroupVoiceState();
+        io.emit('group-voice:peer-left', { uid: leavingUid });
+      }
+
+      // Si estaba en una llamada privada, avisar a la contraparte
       activeCalls.forEach((call, key) => {
         if (call.callerUid === leavingUid || call.targetUid === leavingUid) {
           const otherUid = call.callerUid === leavingUid ? call.targetUid : call.callerUid;
