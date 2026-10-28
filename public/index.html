@@ -2381,12 +2381,16 @@
             line-height: 1.4;
         }
 
-        /* LLAMADAS WEBRTC ESTILOS */
+        /* ========================================================
+           ESTILOS DE LLAMADAS WEBRTC (PRIVADA + GRUPAL DISCORD)
+           ======================================================== */
+        #header-call-btn, #header-group-voice-btn {
+            position: relative;
+            color: #2ed573;
+            transition: all 0.15s ease;
+        }
         #header-call-btn {
             display: none;
-            color: #2ed573;
-            font-size: 1.05rem;
-            transition: all 0.15s ease;
         }
         #header-call-btn.show {
             display: inline-flex;
@@ -2398,8 +2402,36 @@
             border-color: #2ed573;
             transform: scale(1.08);
         }
+        #header-group-voice-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #70a1ff;
+        }
+        #header-group-voice-btn:hover {
+            background: rgba(112, 161, 255, 0.18);
+            border-color: #70a1ff;
+            transform: scale(1.08);
+        }
+        #header-group-voice-btn.active-room {
+            color: #2ed573;
+            border-color: #2ed573;
+            box-shadow: 0 0 12px rgba(46, 213, 115, 0.4);
+        }
+        .voice-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #2ed573;
+            color: #000;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
 
-        /* MODAL LLAMADA ENTRANTE */
+        /* MODAL LLAMADA ENTRANTE PRIVADA */
         .incoming-call-box {
             width: 90%;
             max-width: 360px;
@@ -2482,7 +2514,7 @@
         }
         .call-action-btn.accept {
             background: #2ed573;
-            color: #fff;
+            color: #000;
             box-shadow: 0 4px 14px rgba(46, 213, 115, 0.4);
         }
         .call-action-btn.accept:hover { background: #26af5f; }
@@ -2493,7 +2525,47 @@
         }
         .call-action-btn.decline:hover { background: #e84118; }
 
-        /* VENTANA FLOTANTE DE LLAMADA ACTIVA (ADAPTA AL TEMA) */
+        /* Encabezado arrastrable para ventanas de llamada */
+        .call-overlay-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: grab;
+            user-select: none;
+        }
+        .call-overlay-header:active {
+            cursor: grabbing;
+        }
+        .call-header-drag-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+        .call-header-mini-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .call-header-mini-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-main);
+        }
+
+        /* VENTANA FLOTANTE DE LLAMADA PRIVADA ARRASTRABLE */
         .active-call-overlay {
             position: fixed;
             bottom: 24px;
@@ -2502,18 +2574,14 @@
             background: var(--bg-modal);
             border: 2px solid var(--border-color);
             border-radius: 16px;
-            padding: 16px;
+            padding: 12px 16px 16px;
             box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 20px var(--glow-color);
             z-index: 9999;
             display: none;
             flex-direction: column;
             align-items: center;
             color: var(--text-main);
-            animation: slideInUp 0.25s ease-out;
-        }
-        @keyframes slideInUp {
-            0% { transform: translateY(30px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+            touch-action: none;
         }
         .active-call-overlay.connected {
             border-color: #2ed573;
@@ -2561,7 +2629,6 @@
             border: 1px solid var(--border-color);
             background: var(--bg-input);
             color: var(--text-main);
-            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2583,6 +2650,554 @@
             border-color: #ff4757;
         }
         .call-floating-ctrl-btn.hangup:hover {
+            background: #d63031;
+        }
+
+        /* PASTILLA FLOTANTE MINI (PIP) CUANDO SE MINIMIZA */
+        .voice-floating-pill {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-modal);
+            border: 1.5px solid var(--border-color);
+            border-radius: 28px;
+            padding: 6px 14px 6px 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 16px rgba(46, 213, 115, 0.35);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            animation: slideInUp 0.2s ease-out;
+            user-select: none;
+            touch-action: none;
+        }
+        .pill-drag-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .pill-speaking-wave {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 18px;
+        }
+        .wave-bar {
+            width: 3px;
+            background: #2ed573;
+            border-radius: 2px;
+            height: 6px;
+            animation: waveBounce 1.2s infinite ease-in-out;
+        }
+        .wave-bar.bar1 { animation-delay: 0s; height: 10px; }
+        .wave-bar.bar2 { animation-delay: 0.2s; height: 16px; }
+        .wave-bar.bar3 { animation-delay: 0.4s; height: 8px; }
+        @keyframes waveBounce {
+            0%, 100% { height: 5px; opacity: 0.5; }
+            50% { height: 18px; opacity: 1; }
+        }
+        .pill-info-text {
+            display: flex;
+            flex-direction: column;
+        }
+        .pill-status-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            max-width: 170px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pill-timer-badge {
+            font-size: 0.72rem;
+            font-family: monospace;
+            color: #2ed573;
+            font-weight: 600;
+        }
+        .pill-quick-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 4px;
+        }
+        .pill-mini-action-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .pill-mini-action-btn:hover {
+            transform: scale(1.1);
+            background: var(--bg-modal);
+        }
+        .pill-mini-action-btn.active-muted {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+        .pill-mini-action-btn.hangup {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+        .pill-mini-action-btn.hangup:hover {
+            background: #d63031;
+        }
+
+        /* NOTIFICACIÓN ENTRADA LLAMADA GRUPAL */
+        .group-call-toast {
+            position: fixed;
+            top: 76px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 460px;
+            background: var(--bg-modal);
+            border: 2px solid #2ed573;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 20px rgba(46, 213, 115, 0.4);
+            z-index: 9995;
+            animation: slideInDown 0.25s ease-out;
+        }
+        @keyframes slideInDown {
+            0% { transform: translate(-50%, -20px); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .group-toast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(46, 213, 115, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #2ed573;
+        }
+        .group-toast-content {
+            flex: 1;
+        }
+        .group-toast-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .group-toast-desc {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+        .group-toast-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .group-toast-btn {
+            border: none;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .group-toast-btn.join {
+            background: #2ed573;
+            color: #000;
+        }
+        .group-toast-btn.join:hover {
+            background: #26af5f;
+        }
+        .group-toast-btn.dismiss {
+            background: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        .group-toast-btn.dismiss:hover {
+            background: var(--bg-modal);
+        }
+
+        /* ========================================================
+           VENTANA STAGE DE LLAMADA GRUPAL ESTILO DISCORD
+           ======================================================== */
+        .group-voice-stage {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 920px;
+            height: 78vh;
+            max-height: 600px;
+            background: var(--bg-modal);
+            border: 2px solid var(--border-color);
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px var(--glow-color);
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            color: var(--text-main);
+            animation: scaleFadeIn 0.22s ease-out;
+        }
+        @keyframes scaleFadeIn {
+            0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .group-voice-stage.maximized {
+            width: 98vw;
+            height: 96vh;
+            max-width: none;
+            max-height: none;
+            border-radius: 10px;
+        }
+        .stage-header {
+            height: 52px;
+            padding: 0 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: grab;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .stage-header:active {
+            cursor: grabbing;
+        }
+        .stage-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .stage-live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(46, 213, 115, 0.15);
+            color: #2ed573;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            background: #2ed573;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #2ed573;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .stage-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .stage-participants-badge {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            background: var(--bg-input);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+        .stage-timer {
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: #2ed573;
+            font-weight: 700;
+        }
+        .stage-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stage-window-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .stage-window-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-modal);
+        }
+        .stage-window-btn.hangup {
+            background: rgba(255, 71, 87, 0.15);
+            border-color: rgba(255, 71, 87, 0.4);
+            color: #ff4757;
+        }
+        .stage-window-btn.hangup:hover {
+            background: #ff4757;
+            color: #fff;
+        }
+
+        /* ÁREA DE GRID DE PARTICIPANTES DISCORD */
+        .stage-grid-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .stage-participants-grid {
+            display: grid;
+            gap: 14px;
+            width: 100%;
+            height: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            align-content: center;
+        }
+        .stage-participants-grid.single-user {
+            max-width: 340px;
+            max-height: 280px;
+            margin: auto;
+        }
+        .stage-participants-grid.two-users {
+            max-width: 680px;
+            grid-template-columns: repeat(2, 1fr);
+            margin: auto;
+        }
+
+        /* TARJETA DE PARTICIPANTE DISCORD */
+        .discord-participant-card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 170px;
+            transition: all 0.2s ease;
+        }
+        .discord-participant-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .participant-avatar-wrap {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .participant-avatar {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .participant-avatar-initial {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #fff;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        /* Anillo de voz hablando estilo Discord */
+        .discord-participant-card.speaking .participant-avatar,
+        .discord-participant-card.speaking .participant-avatar-initial {
+            border-color: #2ed573;
+            box-shadow: 0 0 0 3px rgba(46, 213, 115, 0.35), 0 0 20px rgba(46, 213, 115, 0.6);
+        }
+        .participant-speaking-wave {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background: #2ed573;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        .discord-participant-card.speaking .participant-speaking-wave {
+            display: flex;
+        }
+        .participant-info-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 90%;
+        }
+        .participant-name {
+            font-size: 0.92rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .participant-role-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .participant-role-tag.owner {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+            border: 1px solid rgba(255, 165, 2, 0.4);
+        }
+        .participant-role-tag.admin {
+            background: rgba(30, 144, 255, 0.2);
+            color: #70a1ff;
+            border: 1px solid rgba(30, 144, 255, 0.4);
+        }
+        .participant-role-tag.member {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-sub);
+        }
+
+        /* Indicadores de estado en esquina inferior */
+        .participant-status-badges {
+            position: absolute;
+            bottom: 10px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-muted {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ff4757;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .badge-deafened {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #57606f;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        /* Herramientas de moderador en la tarjeta */
+        .participant-admin-tools {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+        .card-admin-action-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .card-admin-action-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-modal);
+        }
+        .card-admin-action-btn.kick:hover {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+
+        /* DOCK DE CONTROL INFERIOR DISCORD */
+        .stage-dock-bar {
+            height: 72px;
+            background: rgba(0, 0, 0, 0.35);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            flex-shrink: 0;
+        }
+        .dock-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--bg-input);
+            padding: 8px 18px;
+            border-radius: 28px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        .stage-dock-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-modal);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .stage-dock-btn:hover {
+            transform: scale(1.08);
+            background: var(--bg-card);
+        }
+        .stage-dock-btn.active-muted {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+        .stage-dock-btn.hangup {
+            background: #ff4757;
+            color: #fff;
+            border-color: #ff4757;
+        }
+        .stage-dock-btn.hangup:hover {
             background: #d63031;
         }
 
@@ -2806,7 +3421,7 @@
         </div>
     </div>
 
-    <!-- MODAL LLAMADA ENTRANTE WEBRTC -->
+    <!-- MODAL LLAMADA ENTRANTE PRIVADA (CON ICONOS SVG) -->
     <div id="incoming-call-modal" class="modal-overlay" style="display: none; z-index: 9998;">
         <div class="incoming-call-box">
             <div class="call-pulse-avatar-wrap">
@@ -2814,32 +3429,140 @@
                 <div id="inc-call-avatar-container"></div>
             </div>
             <h3 id="inc-call-caller-name" style="margin: 0 0 4px 0; font-size: 1.25rem;">Usuario</h3>
-            <p style="margin: 0 0 16px 0; font-size: 0.85rem; color: var(--text-sub);">📞 Llamada de voz entrante...</p>
+            <p style="margin: 0 0 16px 0; font-size: 0.85rem; color: var(--text-sub); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span>Llamada de voz entrante...</span>
+            </p>
             <div class="call-actions-row">
                 <button type="button" class="call-action-btn accept" id="btn-accept-call">
-                    <span>🟢</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     <span>Aceptar</span>
                 </button>
                 <button type="button" class="call-action-btn decline" id="btn-decline-call">
-                    <span>🔴</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
                     <span>Rechazar</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- VENTANA FLOTANTE DE LLAMADA ACTIVA WEBRTC -->
+    <!-- VENTANA FLOTANTE DE LLAMADA PRIVADA ARRASTRABLE -->
     <div id="active-call-overlay" class="active-call-overlay">
+        <div class="call-overlay-header" id="active-call-drag-handle">
+            <div class="call-header-drag-indicator">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>
+                <span>Llamada Privada</span>
+            </div>
+            <button type="button" class="call-header-mini-btn" id="call-minimize-btn" title="Minimizar a pastilla flotante">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </div>
         <div id="active-call-avatar-container"></div>
         <div class="call-floating-name" id="active-call-name">En llamada con Usuario</div>
         <div class="call-floating-status" id="active-call-timer">Conectando...</div>
         <div class="call-floating-controls">
-            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-mic" title="Silenciar / Activar Micrófono">🎤</button>
-            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-deafen" title="Ensordecer / Activar Audio">🔊</button>
-            <button type="button" class="call-floating-ctrl-btn hangup" id="call-hangup-btn" title="Colgar">🔴</button>
+            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-mic" title="Silenciar / Activar Micrófono">
+                <svg class="icon-mic-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-deafen" title="Ensordecer / Activar Audio">
+                <svg class="icon-deafen-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+            </button>
+            <button type="button" class="call-floating-ctrl-btn hangup" id="call-hangup-btn" title="Colgar">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
         </div>
         <audio id="remote-call-audio" autoplay style="display: none;"></audio>
     </div>
+
+    <!-- PASTILLA FLOTANTE MINI (PIP) CUANDO SE MINIMIZA LA LLAMADA -->
+    <div id="voice-floating-pill" class="voice-floating-pill" style="display: none;">
+        <div class="pill-drag-area" id="pill-drag-handle" title="Hacer clic para expandir la llamada">
+            <div class="pill-speaking-wave">
+                <span class="wave-bar bar1"></span>
+                <span class="wave-bar bar2"></span>
+                <span class="wave-bar bar3"></span>
+            </div>
+            <div class="pill-info-text">
+                <span class="pill-status-label" id="pill-status-label">En llamada</span>
+                <span class="pill-timer-badge" id="pill-timer-badge">00:00</span>
+            </div>
+        </div>
+        <div class="pill-quick-actions">
+            <button type="button" class="pill-mini-action-btn" id="pill-toggle-mic" title="Silenciar / Activar micrófono">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            </button>
+            <button type="button" class="pill-mini-action-btn" id="pill-expand-btn" title="Expandir ventana">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+            <button type="button" class="pill-mini-action-btn hangup" id="pill-hangup-btn" title="Colgar">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIÓN FLOTANTE DE LLAMADA GRUPAL ENTRANTE -->
+    <div id="group-call-toast" class="group-call-toast" style="display: none;">
+        <div class="group-toast-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        </div>
+        <div class="group-toast-content">
+            <div class="group-toast-title">Llamada Grupal en Sala General</div>
+            <div class="group-toast-desc" id="group-toast-desc">Iniciada en el chat online • Haz clic para unirte</div>
+        </div>
+        <div class="group-toast-actions">
+            <button type="button" class="group-toast-btn join" id="btn-join-group-voice-toast">Unirse</button>
+            <button type="button" class="group-toast-btn dismiss" id="btn-dismiss-group-voice-toast">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- VENTANA STAGE DE LLAMADA GRUPAL ESTILO DISCORD -->
+    <div id="group-voice-stage" class="group-voice-stage" style="display: none;">
+        <div class="stage-header" id="stage-drag-handle">
+            <div class="stage-header-left">
+                <div class="stage-live-badge"><span class="live-dot"></span> EN VIVO</div>
+                <div class="stage-title">Canal de Voz: Sala General</div>
+                <div class="stage-participants-badge" id="stage-participants-count">1 participante</div>
+                <div class="stage-timer" id="stage-call-timer">00:00</div>
+            </div>
+            <div class="stage-header-actions">
+                <button type="button" class="stage-window-btn" id="stage-minimize-btn" title="Minimizar a pastilla">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button type="button" class="stage-window-btn" id="stage-expand-btn" title="Pantalla completa / Tamaño normal">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                </button>
+                <button type="button" class="stage-window-btn hangup" id="stage-close-leave-btn" title="Salir del canal de voz">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid de Participantes estilo Discord -->
+        <div class="stage-grid-wrapper" id="stage-grid-wrapper">
+            <div class="stage-participants-grid" id="group-voice-grid">
+                <!-- Se llena dinámicamente con las tarjetas de los usuarios -->
+            </div>
+        </div>
+
+        <!-- Dock inferior de controles estilo Discord -->
+        <div class="stage-dock-bar">
+            <div class="dock-controls">
+                <button type="button" class="stage-dock-btn" id="stage-toggle-mic" title="Silenciar / Activar micrófono">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+                <button type="button" class="stage-dock-btn" id="stage-toggle-deafen" title="Ensordecer / Activar sonido">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                </button>
+                <button type="button" class="stage-dock-btn hangup" id="stage-leave-btn" title="Desconectar de la llamada grupal">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+                <button type="button" class="stage-dock-btn" id="stage-dock-minimize-btn" title="Minimizar">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- MODAL ALERTA DE ADVERTENCIA OFICIAL -->
     <div id="moderation-warn-modal" class="modal-overlay" style="display: none; z-index: 9999;">
@@ -3089,7 +3812,13 @@
                 </div>
 
                 <div class="header-actions">
-                    <button type="button" class="action-icon-btn" id="header-call-btn" title="Llamada de voz" aria-label="Llamar">📞</button>
+                    <button type="button" class="action-icon-btn" id="header-group-voice-btn" title="Canal de Voz Grupal (Chat Online)" aria-label="Canal de voz grupal">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                        <span id="group-voice-badge" class="voice-badge" style="display:none;">0</span>
+                    </button>
+                    <button type="button" class="action-icon-btn" id="header-call-btn" title="Llamada de voz privada" aria-label="Llamar">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
                     <button class="action-icon-btn" id="toggle-friends-btn" title="Mostrar/Ocultar Amigos">🤝</button>
                     <button class="action-icon-btn" id="toggle-sidebar-btn" title="Mostrar/Ocultar Lateral">👥</button>
                     <button class="action-icon-btn" id="open-settings-btn" title="Configuración">⚙️</button>
@@ -4111,6 +4840,7 @@
             dmProfilePanelView.style.display = 'none';
             const hCallBtn = document.getElementById('header-call-btn');
             if (hCallBtn) hCallBtn.classList.remove('show');
+            if (headerGroupVoiceBtn) headerGroupVoiceBtn.style.display = 'inline-flex';
 
             // Audit #9: Restaurar mensajes globales desde Map reactivo
             messages.innerHTML = '';
@@ -4156,6 +4886,7 @@
                 hCallBtn.classList.add('show');
                 hCallBtn.onclick = () => startCallWithUser(currentDmUser.uid, currentDmUser);
             }
+            if (headerGroupVoiceBtn) headerGroupVoiceBtn.style.display = 'none';
 
             // Configurar panel derecho como Perfil del Amigo
             usersPanelView.style.display = 'none';
@@ -5889,7 +6620,214 @@
         });
 
         // ========================================================
-        // ====== SISTEMA DE LLAMADAS DE VOZ WEBRTC (1-A-1) ======
+        // ====== SISTEMA DE LLAMADAS WEBRTC (PRIVADA Y GRUPAL) ======
+        // ========================================================
+        const SVG_CALL_ICONS = {
+            micOn: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+            micOff: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+            deafenOn: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>`,
+            deafenOff: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M4.5 10.5A9 9 0 0 1 20 12v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>`,
+            hangup: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+            speakingWave: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M8 8v8M16 8v8M4 11v2M20 11v2"/></svg>`,
+            adminMute: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/></svg>`,
+            adminKick: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+        };
+
+        // --- FUNCIÓN PARA HACER VENTANAS Y PASTILLAS ARRASTRABLES (MOUSE Y TOUCH) ---
+        function makeDraggable(element, handle) {
+            if (!element || !handle) return;
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let initialLeft = 0, initialTop = 0;
+
+            function onPointerDown(e) {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                isDragging = true;
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+
+                const rect = element.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                element.style.bottom = 'auto';
+                element.style.right = 'auto';
+                element.style.transform = 'none';
+                element.style.left = `${initialLeft}px`;
+                element.style.top = `${initialTop}px`;
+
+                document.addEventListener('mousemove', onPointerMove);
+                document.addEventListener('mouseup', onPointerUp);
+                document.addEventListener('touchmove', onPointerMove, { passive: false });
+                document.addEventListener('touchend', onPointerUp);
+            }
+
+            function onPointerMove(e) {
+                if (!isDragging) return;
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                const deltaX = clientX - startX;
+                const deltaY = clientY - startY;
+
+                let newLeft = initialLeft + deltaX;
+                let newTop = initialTop + deltaY;
+
+                const maxLeft = Math.max(10, window.innerWidth - element.offsetWidth - 10);
+                const maxTop = Math.max(10, window.innerHeight - element.offsetHeight - 10);
+                newLeft = Math.max(10, Math.min(newLeft, maxLeft));
+                newTop = Math.max(10, Math.min(newTop, maxTop));
+
+                element.style.left = `${newLeft}px`;
+                element.style.top = `${newTop}px`;
+            }
+
+            function onPointerUp() {
+                isDragging = false;
+                document.removeEventListener('mousemove', onPointerMove);
+                document.removeEventListener('mouseup', onPointerUp);
+                document.removeEventListener('touchmove', onPointerMove);
+                document.removeEventListener('touchend', onPointerUp);
+            }
+
+            handle.addEventListener('mousedown', onPointerDown);
+            handle.addEventListener('touchstart', onPointerDown, { passive: true });
+        }
+
+        // --- DETECTOR DE ACTIVIDAD DE VOZ (WEB AUDIO API) ---
+        let audioCtxVoice = null;
+        let voiceAnalyser = null;
+        let voiceDataArray = null;
+        let voiceDetectInterval = null;
+        let isUserSpeakingNow = false;
+
+        function startVoiceActivityDetection(stream, onSpeakingChange) {
+            stopVoiceActivityDetection();
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass || !stream) return;
+                audioCtxVoice = new AudioContextClass();
+                const source = audioCtxVoice.createMediaStreamSource(stream);
+                voiceAnalyser = audioCtxVoice.createAnalyser();
+                voiceAnalyser.fftSize = 256;
+                voiceAnalyser.smoothingTimeConstant = 0.4;
+                source.connect(voiceAnalyser);
+
+                voiceDataArray = new Uint8Array(voiceAnalyser.frequencyBinCount);
+                let speakingCount = 0;
+
+                voiceDetectInterval = setInterval(() => {
+                    if (!voiceAnalyser) return;
+                    voiceAnalyser.getByteFrequencyData(voiceDataArray);
+                    let sum = 0;
+                    for (let i = 0; i < voiceDataArray.length; i++) {
+                        sum += voiceDataArray[i];
+                    }
+                    const avg = sum / voiceDataArray.length;
+                    const threshold = 16;
+                    const isMuted = callIsMicMuted || groupVoiceIsMicMuted;
+                    const speaking = avg > threshold && !isMuted;
+
+                    if (speaking) {
+                        speakingCount++;
+                        if (speakingCount >= 2 && !isUserSpeakingNow) {
+                            isUserSpeakingNow = true;
+                            if (typeof onSpeakingChange === 'function') onSpeakingChange(true);
+                        }
+                    } else {
+                        speakingCount = 0;
+                        if (isUserSpeakingNow) {
+                            isUserSpeakingNow = false;
+                            if (typeof onSpeakingChange === 'function') onSpeakingChange(false);
+                        }
+                    }
+                }, 150);
+            } catch (e) {
+                console.warn('Detector de voz no disponible:', e);
+            }
+        }
+
+        function stopVoiceActivityDetection() {
+            if (voiceDetectInterval) {
+                clearInterval(voiceDetectInterval);
+                voiceDetectInterval = null;
+            }
+            if (audioCtxVoice && audioCtxVoice.state !== 'closed') {
+                try { audioCtxVoice.close(); } catch (e) {}
+            }
+            audioCtxVoice = null;
+            voiceAnalyser = null;
+            isUserSpeakingNow = false;
+        }
+
+        // ========================================================
+        // --- GESTIÓN DE PASTILLA FLOTANTE MINI (PIP) ---
+        // ========================================================
+        const voiceFloatingPill = document.getElementById('voice-floating-pill');
+        const pillDragHandle = document.getElementById('pill-drag-handle');
+        const pillStatusLabel = document.getElementById('pill-status-label');
+        const pillTimerBadge = document.getElementById('pill-timer-badge');
+        const pillToggleMic = document.getElementById('pill-toggle-mic');
+        const pillExpandBtn = document.getElementById('pill-expand-btn');
+        const pillHangupBtn = document.getElementById('pill-hangup-btn');
+
+        let minimizedCallType = null; // 'private' | 'group' | null
+
+        makeDraggable(voiceFloatingPill, pillDragHandle);
+
+        function minimizeCurrentCall(type) {
+            minimizedCallType = type;
+            if (type === 'private') {
+                activeCallOverlay.style.display = 'none';
+                pillStatusLabel.textContent = callTargetData ? `En llamada: ${callTargetData.nickname}` : 'En llamada';
+                pillTimerBadge.textContent = activeCallTimer.textContent || '00:00';
+            } else if (type === 'group') {
+                groupVoiceStage.style.display = 'none';
+                pillStatusLabel.textContent = `Voz General (${groupVoiceParticipantsList.length})`;
+                pillTimerBadge.textContent = stageCallTimer.textContent || '00:00';
+            }
+            voiceFloatingPill.style.display = 'flex';
+            pillToggleMic.innerHTML = (type === 'private' ? callIsMicMuted : groupVoiceIsMicMuted) ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            pillToggleMic.classList.toggle('active-muted', type === 'private' ? callIsMicMuted : groupVoiceIsMicMuted);
+        }
+
+        function expandCurrentCall() {
+            voiceFloatingPill.style.display = 'none';
+            if (minimizedCallType === 'private' && callTargetUid) {
+                activeCallOverlay.style.display = 'flex';
+            } else if (minimizedCallType === 'group' && inGroupVoice) {
+                groupVoiceStage.style.display = 'flex';
+            }
+            minimizedCallType = null;
+        }
+
+        pillDragHandle.addEventListener('click', expandCurrentCall);
+        pillExpandBtn.addEventListener('click', expandCurrentCall);
+
+        pillToggleMic.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (minimizedCallType === 'private') {
+                callToggleMic.click();
+            } else if (minimizedCallType === 'group') {
+                stageToggleMic.click();
+            }
+        });
+
+        pillHangupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (minimizedCallType === 'private') {
+                callHangupBtn.click();
+            } else if (minimizedCallType === 'group') {
+                stageLeaveBtn.click();
+            }
+            voiceFloatingPill.style.display = 'none';
+            minimizedCallType = null;
+        });
+
+        // ========================================================
+        // ====== LLAMADA PRIVADA 1-A-1 (WEBRTC) ======
         // ========================================================
         const incomingCallModal = document.getElementById('incoming-call-modal');
         const incCallAvatarContainer = document.getElementById('inc-call-avatar-container');
@@ -5898,6 +6836,8 @@
         const btnDeclineCall = document.getElementById('btn-decline-call');
 
         const activeCallOverlay = document.getElementById('active-call-overlay');
+        const activeCallDragHandle = document.getElementById('active-call-drag-handle');
+        const callMinimizeBtn = document.getElementById('call-minimize-btn');
         const activeCallAvatarContainer = document.getElementById('active-call-avatar-container');
         const activeCallName = document.getElementById('active-call-name');
         const activeCallTimer = document.getElementById('active-call-timer');
@@ -5905,6 +6845,12 @@
         const callToggleDeafen = document.getElementById('call-toggle-deafen');
         const callHangupBtn = document.getElementById('call-hangup-btn');
         const remoteCallAudio = document.getElementById('remote-call-audio');
+
+        makeDraggable(activeCallOverlay, activeCallDragHandle);
+
+        callMinimizeBtn.addEventListener('click', () => {
+            minimizeCurrentCall('private');
+        });
 
         let rtcPeer = null;
         let localAudioStream = null;
@@ -5917,7 +6863,6 @@
         let ringtoneOscInterval = null;
         let dialToneOscInterval = null;
 
-        // Tono de llamada entrante sintético (suave melodía oscilante)
         function playIncomingRingtone() {
             stopIncomingRingtone();
             ringtoneOscInterval = setInterval(() => {
@@ -5926,8 +6871,8 @@
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.3); // E5
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.3);
                 gain.gain.setValueAtTime(0.12, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
                 osc.connect(gain);
@@ -5944,7 +6889,6 @@
             }
         }
 
-        // Tono de marcado saliente ("tuu... tuu...")
         function playDialTone() {
             stopDialTone();
             dialToneOscInterval = setInterval(() => {
@@ -5953,7 +6897,7 @@
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, ctx.currentTime); // A4
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
                 gain.gain.setValueAtTime(0.08, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
                 osc.connect(gain);
@@ -5986,10 +6930,9 @@
             osc.stop(ctx.currentTime + 0.38);
         }
 
-        // Iniciar Llamada Saliente
         async function startCallWithUser(targetUid, targetFriend) {
             if (!targetUid) return;
-            if (callTargetUid) {
+            if (callTargetUid || inGroupVoice) {
                 showToast('Ya estás en una llamada activa.');
                 return;
             }
@@ -5997,7 +6940,7 @@
             try {
                 localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
             } catch (err) {
-                showToast('No se pudo acceder al micrófono. Por favor permite el acceso.');
+                showToast('No se pudo acceder al micrófono. Por favor permite el acceso en tu navegador.');
                 return;
             }
 
@@ -6007,6 +6950,12 @@
             renderActiveCallOverlay(callTargetData, 'Llamando...');
             playDialTone();
             socket.emit('call:initiate', { targetUid });
+
+            startVoiceActivityDetection(localAudioStream, (speaking) => {
+                if (minimizedCallType === 'private' && callTargetData) {
+                    pillStatusLabel.textContent = speaking ? `Hablando: ${myNickname}` : `En llamada: ${callTargetData.nickname}`;
+                }
+            });
         }
 
         function renderActiveCallOverlay(target, statusText) {
@@ -6030,15 +6979,18 @@
 
             callToggleMic.classList.remove('active-muted');
             callToggleDeafen.classList.remove('active-muted');
+            callToggleMic.innerHTML = SVG_CALL_ICONS.micOn;
+            callToggleDeafen.innerHTML = SVG_CALL_ICONS.deafenOn;
+            callHangupBtn.innerHTML = SVG_CALL_ICONS.hangup;
+
             callIsMicMuted = false;
             callIsDeafened = false;
 
             activeCallOverlay.style.display = 'flex';
         }
 
-        // Recibir Llamada Entrante
         socket.on('call:incoming', ({ callerUid, callerName, callerAvatar, callerColor }) => {
-            if (callTargetUid) {
+            if (callTargetUid || inGroupVoice) {
                 socket.emit('call:reject', { targetUid: callerUid, reason: 'busy' });
                 return;
             }
@@ -6065,7 +7017,6 @@
             playIncomingRingtone();
         });
 
-        // Aceptar Llamada Entrante
         btnAcceptCall.addEventListener('click', async () => {
             stopIncomingRingtone();
             incomingCallModal.style.display = 'none';
@@ -6081,10 +7032,15 @@
 
             renderActiveCallOverlay(callTargetData, 'Conectando audio...');
             socket.emit('call:accept', { targetUid: callTargetUid });
-            setupWebRtcConnection(true); // como receptor
+            setupWebRtcConnection(true);
+
+            startVoiceActivityDetection(localAudioStream, (speaking) => {
+                if (minimizedCallType === 'private' && callTargetData) {
+                    pillStatusLabel.textContent = speaking ? `Hablando: ${myNickname}` : `En llamada: ${callTargetData.nickname}`;
+                }
+            });
         });
 
-        // Rechazar Llamada Entrante
         btnDeclineCall.addEventListener('click', () => {
             stopIncomingRingtone();
             incomingCallModal.style.display = 'none';
@@ -6094,14 +7050,12 @@
             }
         });
 
-        // El receptor aceptó la llamada saliente
         socket.on('call:accepted', ({ targetUid }) => {
             stopDialTone();
             activeCallTimer.textContent = 'Estableciendo conexión P2P...';
-            setupWebRtcConnection(false); // como iniciador (crea offer)
+            setupWebRtcConnection(false);
         });
 
-        // El otro usuario rechazó o está ocupado
         socket.on('call:rejected', ({ message, reason }) => {
             stopDialTone();
             stopIncomingRingtone();
@@ -6111,7 +7065,6 @@
             cleanupCall();
         });
 
-        // El otro usuario colgó
         socket.on('call:ended', () => {
             stopDialTone();
             stopIncomingRingtone();
@@ -6120,7 +7073,6 @@
             cleanupCall();
         });
 
-        // WebRTC PeerConnection
         const rtcConfiguration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -6208,7 +7160,6 @@
                     }
                     await rtcPeer.setRemoteDescription(new RTCSessionDescription(offer));
 
-                    // Procesar candidatos acumulados
                     while (pendingIceCandidates.length > 0) {
                         const cand = pendingIceCandidates.shift();
                         try { await rtcPeer.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {}
@@ -6244,17 +7195,20 @@
             clearInterval(callTimerInterval);
             callDurationSeconds = 0;
             activeCallTimer.textContent = '00:00';
+            pillTimerBadge.textContent = '00:00';
             callTimerInterval = setInterval(() => {
                 callDurationSeconds++;
                 const mins = String(Math.floor(callDurationSeconds / 60)).padStart(2, '0');
                 const secs = String(callDurationSeconds % 60).padStart(2, '0');
                 activeCallTimer.textContent = `${mins}:${secs}`;
+                pillTimerBadge.textContent = `${mins}:${secs}`;
             }, 1000);
         }
 
         function cleanupCall() {
             stopDialTone();
             stopIncomingRingtone();
+            stopVoiceActivityDetection();
             clearInterval(callTimerInterval);
             callTimerInterval = null;
 
@@ -6275,6 +7229,10 @@
             activeCallOverlay.style.display = 'none';
             activeCallOverlay.classList.remove('connected');
             incomingCallModal.style.display = 'none';
+            if (minimizedCallType === 'private') {
+                voiceFloatingPill.style.display = 'none';
+                minimizedCallType = null;
+            }
 
             callTargetUid = null;
             callTargetData = null;
@@ -6283,7 +7241,6 @@
             callIsDeafened = false;
         }
 
-        // Controles de llamada activa
         callHangupBtn.addEventListener('click', () => {
             if (callTargetUid) {
                 socket.emit('call:end', { targetUid: callTargetUid });
@@ -6299,7 +7256,9 @@
                 track.enabled = !callIsMicMuted;
             });
             callToggleMic.classList.toggle('active-muted', callIsMicMuted);
-            callToggleMic.textContent = callIsMicMuted ? '🔇' : '🎤';
+            callToggleMic.innerHTML = callIsMicMuted ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            pillToggleMic.innerHTML = callIsMicMuted ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            pillToggleMic.classList.toggle('active-muted', callIsMicMuted);
             showToast(callIsMicMuted ? 'Micrófono silenciado' : 'Micrófono activado');
         });
 
@@ -6307,8 +7266,514 @@
             callIsDeafened = !callIsDeafened;
             remoteCallAudio.muted = callIsDeafened;
             callToggleDeafen.classList.toggle('active-muted', callIsDeafened);
-            callToggleDeafen.textContent = callIsDeafened ? '🔈' : '🔊';
-            showToast(callIsDeafened ? 'Sonido desactivado' : 'Sonido activado');
+            callToggleDeafen.innerHTML = callIsDeafened ? SVG_CALL_ICONS.deafenOff : SVG_CALL_ICONS.deafenOn;
+            showToast(callIsDeafened ? 'Audio ensordecido' : 'Audio activado');
+        });
+
+        // ========================================================
+        // ====== LLAMADA GRUPAL SALA GENERAL (ESTILO DISCORD) ======
+        // ========================================================
+        const headerGroupVoiceBtn = document.getElementById('header-group-voice-btn');
+        const groupVoiceBadge = document.getElementById('group-voice-badge');
+        const groupCallToast = document.getElementById('group-call-toast');
+        const groupToastDesc = document.getElementById('group-toast-desc');
+        const btnJoinGroupVoiceToast = document.getElementById('btn-join-group-voice-toast');
+        const btnDismissGroupVoiceToast = document.getElementById('btn-dismiss-group-voice-toast');
+
+        const groupVoiceStage = document.getElementById('group-voice-stage');
+        const stageDragHandle = document.getElementById('stage-drag-handle');
+        const stageParticipantsCount = document.getElementById('stage-participants-count');
+        const stageCallTimer = document.getElementById('stage-call-timer');
+        const stageMinimizeBtn = document.getElementById('stage-minimize-btn');
+        const stageExpandBtn = document.getElementById('stage-expand-btn');
+        const stageCloseLeaveBtn = document.getElementById('stage-close-leave-btn');
+        const groupVoiceGrid = document.getElementById('group-voice-grid');
+
+        const stageToggleMic = document.getElementById('stage-toggle-mic');
+        const stageToggleDeafen = document.getElementById('stage-toggle-deafen');
+        const stageLeaveBtn = document.getElementById('stage-leave-btn');
+        const stageDockMinimizeBtn = document.getElementById('stage-dock-minimize-btn');
+
+        makeDraggable(groupVoiceStage, stageDragHandle);
+
+        let inGroupVoice = false;
+        let groupVoiceParticipantsList = [];
+        let groupVoiceTimerInterval = null;
+        let groupVoiceDurationSeconds = 0;
+        let groupVoiceIsMicMuted = false;
+        let groupVoiceIsDeafened = false;
+        let groupVoiceStream = null;
+        const groupVoicePeers = new Map(); // peerUid -> RTCPeerConnection
+        const groupVoiceAudios = new Map(); // peerUid -> HTMLAudioElement
+        let groupVoiceToastTimeout = null;
+
+        // Botón en Header de Sala General
+        headerGroupVoiceBtn.addEventListener('click', () => {
+            if (inGroupVoice) {
+                if (minimizedCallType === 'group') {
+                    expandCurrentCall();
+                } else {
+                    groupVoiceStage.style.display = 'flex';
+                }
+            } else {
+                startOrJoinGroupVoice();
+            }
+        });
+
+        async function startOrJoinGroupVoice() {
+            if (callTargetUid) {
+                showToast('Termina tu llamada privada antes de entrar a la llamada grupal.');
+                return;
+            }
+
+            try {
+                groupVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                showToast('No se pudo acceder al micrófono para el canal de voz.');
+                return;
+            }
+
+            inGroupVoice = true;
+            groupVoiceIsMicMuted = false;
+            groupVoiceIsDeafened = false;
+            groupVoiceStage.style.display = 'flex';
+
+            stageToggleMic.innerHTML = SVG_CALL_ICONS.micOn;
+            stageToggleDeafen.innerHTML = SVG_CALL_ICONS.deafenOn;
+            stageLeaveBtn.innerHTML = SVG_CALL_ICONS.hangup;
+            stageToggleMic.classList.remove('active-muted');
+            stageToggleDeafen.classList.remove('active-muted');
+
+            socket.emit('group-voice:join');
+            startGroupVoiceTimer();
+
+            // Detección de voz propia
+            startVoiceActivityDetection(groupVoiceStream, (speaking) => {
+                socket.emit('group-voice:update-state', { isSpeaking: speaking });
+                const myCard = groupVoiceGrid.querySelector(`[data-uid="${myUid}"]`);
+                if (myCard) myCard.classList.toggle('speaking', speaking);
+                if (minimizedCallType === 'group') {
+                    pillStatusLabel.textContent = speaking ? `Hablando: ${myNickname}` : `Voz General (${groupVoiceParticipantsList.length})`;
+                }
+            });
+        }
+
+        function leaveGroupVoice() {
+            if (!inGroupVoice) return;
+            inGroupVoice = false;
+
+            stopGroupVoiceTimer();
+            stopVoiceActivityDetection();
+
+            if (groupVoiceStream) {
+                groupVoiceStream.getTracks().forEach(t => t.stop());
+                groupVoiceStream = null;
+            }
+
+            groupVoicePeers.forEach(peer => {
+                try { peer.close(); } catch (e) {}
+            });
+            groupVoicePeers.clear();
+
+            groupVoiceAudios.forEach(audio => {
+                try { audio.srcObject = null; audio.remove(); } catch (e) {}
+            });
+            groupVoiceAudios.clear();
+
+            socket.emit('group-voice:leave');
+
+            groupVoiceStage.style.display = 'none';
+            if (minimizedCallType === 'group') {
+                voiceFloatingPill.style.display = 'none';
+                minimizedCallType = null;
+            }
+
+            showToast('Te has desconectado de la llamada grupal.');
+        }
+
+        stageLeaveBtn.addEventListener('click', leaveGroupVoice);
+        stageCloseLeaveBtn.addEventListener('click', leaveGroupVoice);
+
+        stageMinimizeBtn.addEventListener('click', () => minimizeCurrentCall('group'));
+        stageDockMinimizeBtn.addEventListener('click', () => minimizeCurrentCall('group'));
+
+        stageExpandBtn.addEventListener('click', () => {
+            groupVoiceStage.classList.toggle('maximized');
+        });
+
+        stageToggleMic.addEventListener('click', () => {
+            if (!groupVoiceStream) return;
+            groupVoiceIsMicMuted = !groupVoiceIsMicMuted;
+            groupVoiceStream.getAudioTracks().forEach(track => {
+                track.enabled = !groupVoiceIsMicMuted;
+            });
+            stageToggleMic.classList.toggle('active-muted', groupVoiceIsMicMuted);
+            stageToggleMic.innerHTML = groupVoiceIsMicMuted ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            pillToggleMic.innerHTML = groupVoiceIsMicMuted ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            pillToggleMic.classList.toggle('active-muted', groupVoiceIsMicMuted);
+            socket.emit('group-voice:update-state', { isMuted: groupVoiceIsMicMuted, isSpeaking: false });
+            showToast(groupVoiceIsMicMuted ? 'Micrófono silenciado en sala' : 'Micrófono activado');
+        });
+
+        stageToggleDeafen.addEventListener('click', () => {
+            groupVoiceIsDeafened = !groupVoiceIsDeafened;
+            groupVoiceAudios.forEach(audio => {
+                audio.muted = groupVoiceIsDeafened;
+            });
+            stageToggleDeafen.classList.toggle('active-muted', groupVoiceIsDeafened);
+            stageToggleDeafen.innerHTML = groupVoiceIsDeafened ? SVG_CALL_ICONS.deafenOff : SVG_CALL_ICONS.deafenOn;
+            socket.emit('group-voice:update-state', { isDeafened: groupVoiceIsDeafened });
+            showToast(groupVoiceIsDeafened ? 'Audio de la sala ensordecido' : 'Audio de la sala activado');
+        });
+
+        function startGroupVoiceTimer() {
+            clearInterval(groupVoiceTimerInterval);
+            groupVoiceDurationSeconds = 0;
+            stageCallTimer.textContent = '00:00';
+            pillTimerBadge.textContent = '00:00';
+            groupVoiceTimerInterval = setInterval(() => {
+                groupVoiceDurationSeconds++;
+                const mins = String(Math.floor(groupVoiceDurationSeconds / 60)).padStart(2, '0');
+                const secs = String(groupVoiceDurationSeconds % 60).padStart(2, '0');
+                stageCallTimer.textContent = `${mins}:${secs}`;
+                if (minimizedCallType === 'group') {
+                    pillTimerBadge.textContent = `${mins}:${secs}`;
+                }
+            }, 1000);
+        }
+
+        function stopGroupVoiceTimer() {
+            if (groupVoiceTimerInterval) {
+                clearInterval(groupVoiceTimerInterval);
+                groupVoiceTimerInterval = null;
+            }
+            groupVoiceDurationSeconds = 0;
+        }
+
+        // Renderizado del Grid estilo Discord
+        function renderGroupVoiceGrid(participants) {
+            groupVoiceParticipantsList = participants || [];
+            groupVoiceGrid.innerHTML = '';
+
+            const count = groupVoiceParticipantsList.length;
+            stageParticipantsCount.textContent = `${count} participante${count === 1 ? '' : 's'}`;
+
+            groupVoiceGrid.classList.toggle('single-user', count === 1);
+            groupVoiceGrid.classList.toggle('two-users', count === 2);
+
+            const isCurrentAdmin = isOwnerOrAdmin();
+
+            groupVoiceParticipantsList.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `discord-participant-card ${p.isSpeaking ? 'speaking' : ''}`;
+                card.dataset.uid = p.uid;
+
+                const avatarWrap = document.createElement('div');
+                avatarWrap.className = 'participant-avatar-wrap';
+
+                if (p.avatar && isValidImageUrl(p.avatar)) {
+                    const img = document.createElement('img');
+                    img.src = p.avatar;
+                    img.className = 'participant-avatar';
+                    avatarWrap.appendChild(img);
+                } else {
+                    const initial = document.createElement('div');
+                    initial.className = 'participant-avatar-initial';
+                    initial.style.background = safeColor(p.color || '#007bff');
+                    initial.textContent = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                    avatarWrap.appendChild(initial);
+                }
+
+                const waveIndicator = document.createElement('div');
+                waveIndicator.className = 'participant-speaking-wave';
+                waveIndicator.innerHTML = SVG_CALL_ICONS.speakingWave;
+                avatarWrap.appendChild(waveIndicator);
+
+                card.appendChild(avatarWrap);
+
+                const infoRow = document.createElement('div');
+                infoRow.className = 'participant-info-row';
+
+                const nameEl = document.createElement('span');
+                nameEl.className = 'participant-name';
+                nameEl.textContent = p.name || 'Usuario';
+                infoRow.appendChild(nameEl);
+
+                const roleTag = document.createElement('span');
+                roleTag.className = `participant-role-tag ${(p.role || 'member').toLowerCase()}`;
+                roleTag.textContent = p.role || 'Miembro';
+                infoRow.appendChild(roleTag);
+
+                card.appendChild(infoRow);
+
+                // Indicadores de estado
+                const statusBadges = document.createElement('div');
+                statusBadges.className = 'participant-status-badges';
+
+                if (p.isMuted) {
+                    const mBadge = document.createElement('div');
+                    mBadge.className = 'badge-muted';
+                    mBadge.title = 'Micrófono silenciado';
+                    mBadge.innerHTML = SVG_CALL_ICONS.micOff;
+                    statusBadges.appendChild(mBadge);
+                }
+                if (p.isDeafened) {
+                    const dBadge = document.createElement('div');
+                    dBadge.className = 'badge-deafened';
+                    dBadge.title = 'Audio ensordecido';
+                    dBadge.innerHTML = SVG_CALL_ICONS.deafenOff;
+                    statusBadges.appendChild(dBadge);
+                }
+                card.appendChild(statusBadges);
+
+                // Herramientas de Administrador si procede
+                if (isCurrentAdmin && p.uid !== myUid) {
+                    const adminTools = document.createElement('div');
+                    adminTools.className = 'participant-admin-tools';
+
+                    const muteBtn = document.createElement('button');
+                    muteBtn.type = 'button';
+                    muteBtn.className = 'card-admin-action-btn';
+                    muteBtn.title = p.isMuted ? 'Desilenciar en sala' : 'Silenciar en sala';
+                    muteBtn.innerHTML = SVG_CALL_ICONS.adminMute;
+                    muteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        socket.emit('group-voice:admin-action', {
+                            targetUid: p.uid,
+                            action: 'mute',
+                            value: !p.isMuted
+                        });
+                        showToast(`Has ${p.isMuted ? 'desilenciado' : 'silenciado'} a ${p.name} en el canal de voz.`);
+                    };
+                    adminTools.appendChild(muteBtn);
+
+                    const kickBtn = document.createElement('button');
+                    kickBtn.type = 'button';
+                    kickBtn.className = 'card-admin-action-btn kick';
+                    kickBtn.title = 'Desconectar de la llamada';
+                    kickBtn.innerHTML = SVG_CALL_ICONS.adminKick;
+                    kickBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (confirm(`¿Desconectar a "${p.name}" de la llamada grupal?`)) {
+                            socket.emit('group-voice:admin-action', {
+                                targetUid: p.uid,
+                                action: 'kick'
+                            });
+                            showToast(`Has expulsado a ${p.name} de la llamada.`);
+                        }
+                    };
+                    adminTools.appendChild(kickBtn);
+
+                    card.appendChild(adminTools);
+                }
+
+                groupVoiceGrid.appendChild(card);
+            });
+        }
+
+        function isOwnerOrAdmin() {
+            return Boolean(isVerifiedAdmin || (users && myUid && users[socket.id] && users[socket.id].isAdmin));
+        }
+
+        // Estado del Canal de Voz Grupal recibido del Servidor
+        socket.on('group-voice:state', ({ active, participants, startTime }) => {
+            groupVoiceParticipantsList = participants || [];
+            const count = groupVoiceParticipantsList.length;
+
+            if (count > 0) {
+                groupVoiceBadge.textContent = String(count);
+                groupVoiceBadge.style.display = 'inline-block';
+                headerGroupVoiceBtn.classList.add('active-room');
+            } else {
+                groupVoiceBadge.style.display = 'none';
+                headerGroupVoiceBtn.classList.remove('active-room');
+                if (inGroupVoice) {
+                    leaveGroupVoice();
+                }
+            }
+
+            if (inGroupVoice) {
+                renderGroupVoiceGrid(groupVoiceParticipantsList);
+                if (minimizedCallType === 'group') {
+                    const speakingP = groupVoiceParticipantsList.find(p => p.isSpeaking);
+                    pillStatusLabel.textContent = speakingP ? `Hablando: ${speakingP.name}` : `Voz General (${count})`;
+                }
+            }
+        });
+
+        // Notificación de inicio de llamada grupal
+        socket.on('group-voice:invitation', ({ initiatorUid, initiatorName, initiatorAvatar }) => {
+            if (inGroupVoice || callTargetUid || initiatorUid === myUid) return;
+
+            groupToastDesc.textContent = `Iniciada por ${initiatorName} • Haz clic en Unirse para hablar`;
+            groupCallToast.style.display = 'flex';
+
+            if (groupVoiceToastTimeout) clearTimeout(groupVoiceToastTimeout);
+            groupVoiceToastTimeout = setTimeout(() => {
+                groupCallToast.style.display = 'none';
+            }, 18000);
+        });
+
+        btnJoinGroupVoiceToast.addEventListener('click', () => {
+            groupCallToast.style.display = 'none';
+            startOrJoinGroupVoice();
+        });
+
+        btnDismissGroupVoiceToast.addEventListener('click', () => {
+            groupCallToast.style.display = 'none';
+        });
+
+        // Actualización de estado en tiempo real (hablando, mute, deafen)
+        socket.on('group-voice:participant-updated', ({ uid, isMuted, isDeafened, isSpeaking }) => {
+            const card = groupVoiceGrid.querySelector(`[data-uid="${uid}"]`);
+            if (card) {
+                card.classList.toggle('speaking', Boolean(isSpeaking));
+            }
+            const p = groupVoiceParticipantsList.find(item => item.uid === uid);
+            if (p) {
+                p.isSpeaking = Boolean(isSpeaking);
+                p.isMuted = Boolean(isMuted);
+                p.isDeafened = Boolean(isDeafened);
+            }
+            if (minimizedCallType === 'group') {
+                const speakingP = groupVoiceParticipantsList.find(item => item.isSpeaking);
+                pillStatusLabel.textContent = speakingP ? `Hablando: ${speakingP.name}` : `Voz General (${groupVoiceParticipantsList.length})`;
+            }
+        });
+
+        // Silenciado forzado por Administrador
+        socket.on('group-voice:force-mute', ({ muted }) => {
+            groupVoiceIsMicMuted = muted;
+            if (groupVoiceStream) {
+                groupVoiceStream.getAudioTracks().forEach(track => { track.enabled = !muted; });
+            }
+            stageToggleMic.classList.toggle('active-muted', muted);
+            stageToggleMic.innerHTML = muted ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            pillToggleMic.classList.toggle('active-muted', muted);
+            pillToggleMic.innerHTML = muted ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            showToast(muted ? 'Un Administrador ha silenciado tu micrófono en la sala.' : 'Un Administrador ha activado tu micrófono.');
+        });
+
+        // Expulsado del canal de voz por Administrador
+        socket.on('group-voice:kicked', ({ reason }) => {
+            leaveGroupVoice();
+            showToast(reason || 'Has sido expulsado del canal de voz.');
+        });
+
+        // Señalización WebRTC Mesh para audio grupal
+        async function setupGroupPeer(peerUid, isInitiator) {
+            if (groupVoicePeers.has(peerUid)) return groupVoicePeers.get(peerUid);
+
+            const peer = new RTCPeerConnection(rtcConfiguration);
+            groupVoicePeers.set(peerUid, peer);
+
+            if (groupVoiceStream) {
+                groupVoiceStream.getAudioTracks().forEach(track => {
+                    peer.addTrack(track, groupVoiceStream);
+                });
+            }
+
+            peer.ontrack = (event) => {
+                if (event.streams && event.streams[0]) {
+                    let audioEl = groupVoiceAudios.get(peerUid);
+                    if (!audioEl) {
+                        audioEl = document.createElement('audio');
+                        audioEl.autoplay = true;
+                        audioEl.muted = groupVoiceIsDeafened;
+                        document.body.appendChild(audioEl);
+                        groupVoiceAudios.set(peerUid, audioEl);
+                    }
+                    audioEl.srcObject = event.streams[0];
+                    audioEl.play().catch(e => console.warn('Group audio play pending user gesture:', e));
+                }
+            };
+
+            peer.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('group-voice:signal', {
+                        targetUid: peerUid,
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            peer.onconnectionstatechange = () => {
+                if (peer.connectionState === 'disconnected' || peer.connectionState === 'failed') {
+                    peer.close();
+                    groupVoicePeers.delete(peerUid);
+                }
+            };
+
+            if (isInitiator) {
+                try {
+                    const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+                    await peer.setLocalDescription(offer);
+                    socket.emit('group-voice:signal', {
+                        targetUid: peerUid,
+                        offer: offer
+                    });
+                } catch (e) {
+                    console.error('Error creando offer en grupo:', e);
+                }
+            }
+
+            return peer;
+        }
+
+        socket.on('group-voice:peer-joined', async ({ uid, name }) => {
+            if (!inGroupVoice || uid === myUid) return;
+            // El usuario que ya estaba en la sala inicia la conexión hacia el nuevo
+            await setupGroupPeer(uid, true);
+        });
+
+        socket.on('group-voice:peer-left', ({ uid }) => {
+            if (groupVoicePeers.has(uid)) {
+                try { groupVoicePeers.get(uid).close(); } catch (e) {}
+                groupVoicePeers.delete(uid);
+            }
+            if (groupVoiceAudios.has(uid)) {
+                try {
+                    const audio = groupVoiceAudios.get(uid);
+                    audio.srcObject = null;
+                    audio.remove();
+                } catch (e) {}
+                groupVoiceAudios.delete(uid);
+            }
+        });
+
+        socket.on('group-voice:signal', async (data) => {
+            if (!inGroupVoice) return;
+            const fromUid = data.fromUid;
+            if (!fromUid || fromUid === myUid) return;
+
+            const offer = data.offer || (data.signal && data.signal.offer);
+            const answer = data.answer || (data.signal && data.signal.answer);
+            const candidate = data.candidate || (data.signal && data.signal.candidate);
+
+            try {
+                if (offer) {
+                    const peer = await setupGroupPeer(fromUid, false);
+                    await peer.setRemoteDescription(new RTCSessionDescription(offer));
+                    const answerDesc = await peer.createAnswer();
+                    await peer.setLocalDescription(answerDesc);
+                    socket.emit('group-voice:signal', {
+                        targetUid: fromUid,
+                        answer: answerDesc
+                    });
+                } else if (answer) {
+                    const peer = groupVoicePeers.get(fromUid);
+                    if (peer) {
+                        await peer.setRemoteDescription(new RTCSessionDescription(answer));
+                    }
+                } else if (candidate) {
+                    const peer = groupVoicePeers.get(fromUid);
+                    if (peer && peer.remoteDescription && peer.remoteDescription.type) {
+                        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+                    }
+                }
+            } catch (err) {
+                console.error('Error procesando señal grupal:', err);
+            }
         });
 
         // Audit #4: Reconexión transparente sin perder estado
