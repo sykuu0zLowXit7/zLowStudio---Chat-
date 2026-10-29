@@ -188,6 +188,56 @@ app.get('/api/gifs', async (req, res) => {
   }
 });
 
+// Endpoint de configuración WebRTC ICE con STUN y TURN de alta disponibilidad
+// Diseñado para atravesar NATs simétricos, conexiones 4G/5G y routers entre distintos países
+app.get('/api/webrtc-config', async (_req, res) => {
+  const meteredApiKey = process.env.METERED_API_KEY || '';
+  const meteredDomain = process.env.METERED_DOMAIN || '';
+
+  if (meteredApiKey && meteredDomain) {
+    try {
+      const response = await fetch(`https://${meteredDomain}.metered.ca/api/v1/turn/credentials?apiKey=${meteredApiKey}`);
+      if (response.ok) {
+        const iceServers = await response.json();
+        if (Array.isArray(iceServers) && iceServers.length > 0) {
+          return res.json({ iceServers, source: 'metered-dynamic' });
+        }
+      }
+    } catch (e) {
+      console.warn('Error obteniendo credenciales de Metered:', e.message);
+    }
+  }
+
+  // Lista pública de alta disponibilidad con Google STUN, Cloudflare y OpenRelay TURN (UDP y TCP 443)
+  const defaultIceServers = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    { urls: 'stun:openrelay.metered.ca:80' },
+    {
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp'
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: [
+        'turns:openrelay.metered.ca:443?transport=tcp'
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    }
+  ];
+
+  res.json({ iceServers: defaultIceServers, source: 'default-multiregion' });
+});
+
 const AVAILABLE_COLORS = [
   '#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#eccc68',
   '#ff6b81', '#70a1ff', '#7bed9f', '#ff7f50', '#a29bfe',
@@ -753,6 +803,9 @@ const adminAuthAttempts = new Map(); // ip -> { count, lockedUntil }
 // Sockets Events
 io.on('connection', (socket) => {
   socket.isAdmin = false;
+
+  // Enviar estado actual de canales de voz inmediatamente al conectar
+  socket.emit('voice-channels:state', getVoiceChannelsPayload());
 
   // Autenticación de admin en servidor con protección anti-fuerza bruta
   socket.on('admin auth', ({ password }) => {
@@ -1838,26 +1891,48 @@ io.on('connection', (socket) => {
   // --- SISTEMA DE 3 CANALES DE VOZ (10/10) ESTILO DISCORD ---
   // ========================================================
   socket.on('group-voice:start', (data) => {
-    const chId = (data && data.channelId) || 'voice-1';
+    const chId = typeof data === 'string' ? data : (data && data.channelId) || 'voice-1';
     joinVoiceChannel(chId);
   });
 
   socket.on('group-voice:join', (data) => {
-    const chId = (data && data.channelId) || 'voice-1';
+    const chId = typeof data === 'string' ? data : (data && data.channelId) || 'voice-1';
     joinVoiceChannel(chId);
   });
 
-  socket.on('voice-channel:join', ({ channelId }) => {
-    joinVoiceChannel(channelId);
+  socket.on('voice-channel:join', (data) => {
+    const chId = typeof data === 'string' ? data : (data && data.channelId) || 'voice-1';
+    joinVoiceChannel(chId);
   });
 
   function joinVoiceChannel(targetChannelId) {
-    const myUid = socket.uid;
-    const user = users[socket.id];
-    if (!myUid || !user) return;
+    let myUid = socket.uid;
+    let user = users[socket.id];
+    if (!myUid && user && user.uid) {
+      myUid = user.uid;
+    }
+    if (myUid && !user) {
+      const prof = profiles[myUid] || {};
+      user = {
+        uid: myUid,
+        nickname: prof.nickname || socket.nickname || 'Usuario',
+        avatar: prof.avatar || null,
+        color: prof.color || socket.userColor || '#38bdf8',
+        userCode: prof.userCode || socket.userCode || getOrGenerateUserCode(myUid),
+        isAdmin: Boolean(socket.isAdmin),
+        isFirst: false,
+      };
+      users[socket.id] = user;
+    }
+
+    if (!myUid || !user) {
+      console.warn('joinVoiceChannel: No se pudo resolver UID para el socket', socket.id);
+      return;
+    }
     if (isUserBanned(myUid)) return;
 
-    const chId = VOICE_CHANNELS[targetChannelId] ? targetChannelId : 'voice-1';
+    const rawChId = typeof targetChannelId === 'string' ? targetChannelId : (targetChannelId && targetChannelId.channelId);
+    const chId = VOICE_CHANNELS[rawChId] ? rawChId : 'voice-1';
     const ch = VOICE_CHANNELS[chId];
 
     // Si ya estaba en otro canal, removerlo primero
@@ -1913,21 +1988,21 @@ io.on('connection', (socket) => {
     });
 
     // Notificar a todos los que ya estaban en ESE canal de voz para que establezcan WebRTC
-    if (isNew) {
-      existingPeers.forEach((p) => {
-        const destSockets = getSocketsForUid(p.uid);
-        destSockets.forEach((sid) => {
-          io.to(sid).emit('group-voice:peer-joined', {
-            channelId: chId,
-            uid: myUid,
-            socketId: socket.id,
-            name: user.nickname,
-            avatar: user.avatar,
-            color: user.color,
-          });
+    existingPeers.forEach((p) => {
+      const destSockets = getSocketsForUid(p.uid);
+      destSockets.forEach((sid) => {
+        io.to(sid).emit('group-voice:peer-joined', {
+          channelId: chId,
+          uid: myUid,
+          socketId: socket.id,
+          name: user.nickname,
+          avatar: user.avatar,
+          color: user.color,
         });
       });
+    });
 
+    if (isNew) {
       // Notificación flotante e interactiva para los demás usuarios en el chat
       socket.broadcast.emit('group-voice:invitation', {
         channelId: chId,
