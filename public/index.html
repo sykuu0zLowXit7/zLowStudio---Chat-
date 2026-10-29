@@ -7452,54 +7452,48 @@
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' },
-                { urls: 'stun:openrelay.metered.ca:80' },
-                {
-                    urls: [
-                        'turn:openrelay.metered.ca:80',
-                        'turn:openrelay.metered.ca:443',
-                        'turn:openrelay.metered.ca:443?transport=tcp'
-                    ],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: [
-                        'turns:openrelay.metered.ca:443?transport=tcp'
-                    ],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
+                { urls: 'stun:stun.cloudflare.com:3478' }
             ],
             iceCandidatePoolSize: 10,
             bundlePolicy: 'max-bundle'
         };
 
         // Cargar servidores ICE actualizados desde el backend (soporte TURN dinámico y cross-country)
-        async function loadWebRtcConfig() {
-            try {
-                const res = await fetch('/api/webrtc-config');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && Array.isArray(data.iceServers) && data.iceServers.length > 0) {
-                        rtcConfiguration.iceServers = data.iceServers;
+        let rtcConfigPromise = null;
+        async function ensureWebRtcConfig() {
+            if (rtcConfigPromise) return rtcConfigPromise;
+            rtcConfigPromise = (async () => {
+                try {
+                    const res = await fetch('/api/webrtc-config');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && Array.isArray(data.iceServers) && data.iceServers.length > 0) {
+                            rtcConfiguration.iceServers = data.iceServers;
+                            console.log('[WebRTC] Servidores ICE cargados:', data.iceServers.length, data.source);
+                        }
                     }
+                } catch (e) {
+                    console.warn('[WebRTC] Usando servidores ICE de respaldo:', e);
                 }
-            } catch (e) {
-                console.warn('Usando servidores ICE de respaldo:', e);
-            }
+                return rtcConfiguration;
+            })();
+            return rtcConfigPromise;
         }
-        loadWebRtcConfig();
+        // Iniciar precarga inmediata
+        ensureWebRtcConfig();
 
         let pendingIceCandidates = [];
 
         async function setupWebRtcConnection(isCallee) {
             try {
                 if (rtcPeer) {
-                    rtcPeer.close();
+                    try { rtcPeer.close(); } catch (e) {}
                     rtcPeer = null;
                 }
                 pendingIceCandidates = [];
+
+                // Asegurar que la configuración ICE (STUN + TURN Metered) esté lista antes de instanciar
+                await ensureWebRtcConfig();
 
                 rtcPeer = new RTCPeerConnection(rtcConfiguration);
 
@@ -7510,8 +7504,10 @@
                 }
 
                 rtcPeer.ontrack = (event) => {
-                    if (event.streams && event.streams[0]) {
-                        remoteCallAudio.srcObject = event.streams[0];
+                    const stream = (event.streams && event.streams[0]) ? event.streams[0] : (event.track ? new MediaStream([event.track]) : null);
+                    if (stream) {
+                        remoteCallAudio.srcObject = stream;
+                        remoteCallAudio.volume = 1.0;
                         activeCallOverlay.classList.add('connected');
                         startCallTimer();
                         const playPromise = remoteCallAudio.play();
@@ -7531,6 +7527,7 @@
                 };
 
                 rtcPeer.oniceconnectionstatechange = () => {
+                    console.log('[WebRTC 1-a-1] Estado ICE:', rtcPeer.iceConnectionState);
                     if (rtcPeer.iceConnectionState === 'failed') {
                         try { rtcPeer.restartIce(); } catch (e) {}
                     }
@@ -7981,8 +7978,17 @@
                             const item = document.createElement('div');
                             item.className = `vc-user-item ${p.isSpeaking ? 'speaking' : ''}`;
                             item.dataset.uid = p.uid;
+                            item.title = `${p.name} ${p.userCode || ''} • Clic para ver perfil`;
+                            item.onclick = (e) => {
+                                e.stopPropagation();
+                                openProfileByUid(p.uid);
+                            };
 
-                            if (p.avatar && isValidImageUrl(p.avatar)) {
+                            const avWrap = document.createElement('div');
+                            avWrap.className = 'vc-user-avatar-wrap';
+
+                            const hasPhoto = p.avatar && (typeof p.avatar === 'string') && (p.avatar.startsWith('data:image/') || isValidImageUrl(p.avatar));
+                            if (hasPhoto) {
                                 const img = document.createElement('img');
                                 img.src = p.avatar;
                                 img.className = 'vc-user-avatar';
@@ -7993,21 +7999,46 @@
                                     init.className = 'vc-user-initial';
                                     init.style.background = safeColor(p.color || '#007bff');
                                     init.textContent = (p.name || '?').charAt(0).toUpperCase();
-                                    item.prepend(init);
+                                    avWrap.appendChild(init);
                                 };
-                                item.appendChild(img);
+                                avWrap.appendChild(img);
                             } else {
                                 const init = document.createElement('div');
                                 init.className = 'vc-user-initial';
                                 init.style.background = safeColor(p.color || '#007bff');
                                 init.textContent = (p.name || '?').charAt(0).toUpperCase();
-                                item.appendChild(init);
+                                avWrap.appendChild(init);
                             }
+                            item.appendChild(avWrap);
+
+                            const infoCol = document.createElement('div');
+                            infoCol.className = 'vc-user-info-col';
+
+                            const nameRow = document.createElement('div');
+                            nameRow.className = 'vc-user-name-row';
 
                             const nameSpan = document.createElement('span');
                             nameSpan.className = 'vc-user-name';
                             nameSpan.textContent = p.name || 'Usuario';
-                            item.appendChild(nameSpan);
+                            nameRow.appendChild(nameSpan);
+
+                            if (p.role === 'Owner' || p.role === 'Admin') {
+                                const roleBadge = document.createElement('span');
+                                roleBadge.className = `vc-role-badge ${p.role.toLowerCase()}`;
+                                roleBadge.textContent = p.role === 'Owner' ? '👑' : '🛡️';
+                                roleBadge.title = p.role;
+                                nameRow.appendChild(roleBadge);
+                            }
+                            infoCol.appendChild(nameRow);
+
+                            if (p.userCode) {
+                                const codeSpan = document.createElement('span');
+                                codeSpan.className = 'vc-user-code';
+                                codeSpan.textContent = p.userCode;
+                                infoCol.appendChild(codeSpan);
+                            }
+
+                            item.appendChild(infoCol);
 
                             if (p.isMuted || p.isDeafened) {
                                 const iconsWrap = document.createElement('div');
@@ -8019,6 +8050,11 @@
 
                             usersList.appendChild(item);
                         });
+                    } else {
+                        const hint = document.createElement('div');
+                        hint.className = 'vc-empty-hint';
+                        hint.textContent = 'Canal libre • Clic para unirte';
+                        usersList.appendChild(hint);
                     }
                 }
             });
@@ -8036,8 +8072,8 @@
                     uid: myUid,
                     socketId: socket.id,
                     name: myNickname || 'Tú',
-                    avatar: myAvatar,
-                    color: myColor,
+                    avatar: getMyAvatar(),
+                    color: getMyColor(),
                     userCode: myUserCode,
                     isMuted: groupVoiceIsMicMuted,
                     isDeafened: groupVoiceIsDeafened,
@@ -8064,7 +8100,8 @@
                 const avatarWrap = document.createElement('div');
                 avatarWrap.className = 'participant-avatar-wrap';
 
-                if (p.avatar && isValidImageUrl(p.avatar)) {
+                const hasPhoto = p.avatar && (typeof p.avatar === 'string') && (p.avatar.startsWith('data:image/') || isValidImageUrl(p.avatar));
+                if (hasPhoto) {
                     const img = document.createElement('img');
                     img.src = p.avatar;
                     img.className = 'participant-avatar';
@@ -8307,6 +8344,9 @@
                 }
             }
 
+            // Asegurar que la configuración ICE (STUN + TURN Metered) esté lista
+            await ensureWebRtcConfig();
+
             const peer = new RTCPeerConnection(rtcConfiguration);
             groupVoicePeers.set(peerUid, peer);
 
@@ -8317,17 +8357,22 @@
             }
 
             peer.ontrack = (event) => {
-                if (event.streams && event.streams[0]) {
+                const stream = (event.streams && event.streams[0]) ? event.streams[0] : (event.track ? new MediaStream([event.track]) : null);
+                if (stream) {
                     let audioEl = groupVoiceAudios.get(peerUid);
                     if (!audioEl) {
                         audioEl = document.createElement('audio');
                         audioEl.autoplay = true;
                         audioEl.muted = groupVoiceIsDeafened;
+                        audioEl.volume = 1.0;
                         document.body.appendChild(audioEl);
                         groupVoiceAudios.set(peerUid, audioEl);
                     }
-                    audioEl.srcObject = event.streams[0];
-                    audioEl.play().catch(e => console.warn('Group audio play pending user gesture:', e));
+                    audioEl.srcObject = stream;
+                    const playPromise = audioEl.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => console.warn('[WebRTC Grupo] Reproducción de audio en espera de interacción:', e));
+                    }
                 }
             };
 
@@ -8342,14 +8387,16 @@
             };
 
             peer.oniceconnectionstatechange = () => {
+                console.log(`[WebRTC Grupo] Peer ${peerUid} estado ICE:`, peer.iceConnectionState);
                 if (peer.iceConnectionState === 'failed') {
                     try { peer.restartIce(); } catch (e) {}
                 }
             };
 
             peer.onconnectionstatechange = () => {
+                console.log(`[WebRTC Grupo] Peer ${peerUid} estado conexión:`, peer.connectionState);
                 if (peer.connectionState === 'disconnected' || peer.connectionState === 'failed') {
-                    peer.close();
+                    try { peer.close(); } catch (e) {}
                     groupVoicePeers.delete(peerUid);
                 }
             };
