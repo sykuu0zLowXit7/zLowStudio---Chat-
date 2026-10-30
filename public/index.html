@@ -7526,10 +7526,23 @@
                     }
                 };
 
-                rtcPeer.oniceconnectionstatechange = () => {
+                rtcPeer.oniceconnectionstatechange = async () => {
                     console.log('[WebRTC 1-a-1] Estado ICE:', rtcPeer.iceConnectionState);
                     if (rtcPeer.iceConnectionState === 'failed') {
-                        try { rtcPeer.restartIce(); } catch (e) {}
+                        console.warn('[WebRTC 1-a-1] Estado ICE falló. Ejecutando ICE restart con túnel de relevo TURN...');
+                        try {
+                            if (!isCallee && rtcPeer) {
+                                if (typeof rtcPeer.restartIce === 'function') rtcPeer.restartIce();
+                                const restartOffer = await rtcPeer.createOffer({ iceRestart: true });
+                                await rtcPeer.setLocalDescription(restartOffer);
+                                socket.emit('call:signal', {
+                                    targetUid: callTargetUid,
+                                    offer: restartOffer
+                                });
+                            }
+                        } catch (e) {
+                            console.warn('[WebRTC 1-a-1] Error ejecutando restartIce:', e);
+                        }
                     }
                 };
 
@@ -8386,10 +8399,24 @@
                 }
             };
 
-            peer.oniceconnectionstatechange = () => {
+            peer.oniceconnectionstatechange = async () => {
                 console.log(`[WebRTC Grupo] Peer ${peerUid} estado ICE:`, peer.iceConnectionState);
                 if (peer.iceConnectionState === 'failed') {
-                    try { peer.restartIce(); } catch (e) {}
+                    console.warn(`[WebRTC Grupo] ICE falló con ${peerUid}. Reiniciando con túnel de relevo TURN (TCP/TLS 443)...`);
+                    try {
+                        if (isInitiator && peer) {
+                            if (typeof peer.restartIce === 'function') peer.restartIce();
+                            const restartOffer = await peer.createOffer({ iceRestart: true });
+                            await peer.setLocalDescription(restartOffer);
+                            socket.emit('group-voice:signal', {
+                                channelId: currentVoiceChannelId,
+                                targetUid: peerUid,
+                                offer: restartOffer
+                            });
+                        }
+                    } catch (e) {
+                        console.warn(`[WebRTC Grupo] Error en restartIce con ${peerUid}:`, e);
+                    }
                 }
             };
 
