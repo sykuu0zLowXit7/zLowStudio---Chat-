@@ -2173,6 +2173,59 @@ io.on('connection', (socket) => {
     });
   });
 
+  // ========================================================
+  // --- SERVIDOR CENTRALIZADO DE MEDIOS (SFU WEBSOCKET RELAY) ---
+  // Enruta paquetes de audio digital directamente a través de WebSocket (WSS en puerto 443)
+  // No requiere P2P, no requiere STUN/TURN, y atraviesa 100% redes móviles 4G/5G, CGNAT y cortafuegos
+  // ========================================================
+  socket.on('voice:stream-audio', (payload) => {
+    const myUid = socket.uid;
+    if (!myUid || !payload || !payload.audio) return;
+
+    // 1. Canal de voz grupal (Salas de voz 1, 2, 3)
+    if (payload.channelId) {
+      const myCh = userCurrentVoiceChannel.get(myUid);
+      if (!myCh || myCh !== payload.channelId) return;
+
+      const ch = VOICE_CHANNELS[myCh];
+      if (!ch) return;
+
+      const participant = ch.participants.get(myUid);
+      if (participant && participant.isMuted) return; // Si está silenciado en sala, no emitir
+
+      // Reenviar a los demás participantes en este canal de voz
+      for (const [pUid] of ch.participants) {
+        if (pUid !== myUid) {
+          const destSockets = getSocketsForUid(pUid);
+          destSockets.forEach((sid) => {
+            io.to(sid).emit('voice:stream-audio', {
+              fromUid: myUid,
+              channelId: myCh,
+              audio: payload.audio,
+              isSpeaking: Boolean(payload.isSpeaking),
+              timestamp: payload.timestamp || Date.now()
+            });
+          });
+        }
+      }
+      return;
+    }
+
+    // 2. Llamada privada 1 a 1
+    if (payload.targetUid) {
+      const destSockets = getSocketsForUid(payload.targetUid);
+      destSockets.forEach((sid) => {
+        io.to(sid).emit('voice:stream-audio', {
+          fromUid: myUid,
+          isPrivate: true,
+          audio: payload.audio,
+          isSpeaking: Boolean(payload.isSpeaking),
+          timestamp: payload.timestamp || Date.now()
+        });
+      });
+    }
+  });
+
   socket.on('group-voice:update-state', (data) => {
     const myUid = socket.uid;
     if (!myUid) return;
