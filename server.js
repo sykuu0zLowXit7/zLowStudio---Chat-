@@ -251,24 +251,81 @@ app.get('/api/webrtc-config', async (_req, res) => {
   // 2. Soporte para credenciales estáticas de TURN configuradas manualmente en variables de entorno
   const staticTurnUser = (process.env.TURN_USERNAME || process.env.METERED_USERNAME || '').trim();
   const staticTurnPass = (process.env.TURN_PASSWORD || process.env.METERED_PASSWORD || '').trim();
-  if (staticTurnUser && staticTurnPass && meteredDomain) {
+  if (staticTurnUser && staticTurnPass) {
     const staticIceServers = [
+      // STUN para descubrimiento inicial de IP pública
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
-      { urls: `stun:${meteredDomain}:80` },
+      { urls: 'stun:stun.relay.metered.ca:80' },
+
+      // TURN Metered vía TCP en puerto 443 (Crítico para saltar bloqueos de UDP en 4G/5G y routers estrictos)
       {
         urls: [
-          `turn:${meteredDomain}:80`,
-          `turn:${meteredDomain}:443`,
-          `turn:${meteredDomain}:443?transport=tcp`,
-          `turns:${meteredDomain}:443?transport=tcp`
+          'turn:global.relay.metered.ca:443?transport=tcp'
+        ],
+        username: staticTurnUser,
+        credential: staticTurnPass
+      },
+
+      // TURNS Metered con cifrado TLS en puerto 443 (Túnel HTTPS puro que atraviesa cualquier cortafuegos)
+      {
+        urls: [
+          'turns:global.relay.metered.ca:443?transport=tcp'
+        ],
+        username: staticTurnUser,
+        credential: staticTurnPass
+      },
+
+      // TURN Metered vía TCP en puerto 80 (Respaldo por puerto web estándar)
+      {
+        urls: [
+          'turn:global.relay.metered.ca:80?transport=tcp'
+        ],
+        username: staticTurnUser,
+        credential: staticTurnPass
+      },
+
+      // TURN Metered vía UDP en puertos 443 y 80 (Para conexiones sin filtrado UDP)
+      {
+        urls: [
+          'turn:global.relay.metered.ca:443',
+          'turn:global.relay.metered.ca:80'
+        ],
+        username: staticTurnUser,
+        credential: staticTurnPass
+      },
+
+      // Servidor de relevo regional Metered (relay.metered.ca) con soporte TCP y TLS 443
+      {
+        urls: [
+          'turn:relay.metered.ca:443?transport=tcp',
+          'turns:relay.metered.ca:443?transport=tcp',
+          'turn:relay.metered.ca:80?transport=tcp',
+          'turn:relay.metered.ca:443',
+          'turn:relay.metered.ca:80'
         ],
         username: staticTurnUser,
         credential: staticTurnPass
       }
     ];
-    return res.json({ iceServers: staticIceServers, source: 'static-turn', domain: meteredDomain });
+
+    // Si además se indicó el dominio específico de la app (ej: zlowstudio.metered.live), agregarlo
+    if (meteredDomain) {
+      staticIceServers.push({
+        urls: [
+          `turn:${meteredDomain}:443?transport=tcp`,
+          `turns:${meteredDomain}:443?transport=tcp`,
+          `turn:${meteredDomain}:80?transport=tcp`,
+          `turn:${meteredDomain}:443`,
+          `turn:${meteredDomain}:80`
+        ],
+        username: staticTurnUser,
+        credential: staticTurnPass
+      });
+    }
+
+    return res.json({ iceServers: staticIceServers, source: 'static-turn', domain: meteredDomain || 'global.relay.metered.ca' });
   }
 
   // 3. Fallback a STUN servers globales de baja latencia (Google & Cloudflare)
