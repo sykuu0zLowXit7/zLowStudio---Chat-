@@ -1215,29 +1215,30 @@
             background: rgba(0, 123, 255, 0.28);
         }
 
-        /* Canales de voz Discord en Sidebar */
+        /* CANALES DE VOZ COMPACTOS (HITBOX PEQUEÑA ESTILO DISCORD) */
         .voice-channel-card {
             background: transparent;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border: 1px solid transparent;
-            transition: all 0.2s;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            border: none;
+            transition: all 0.12s ease;
         }
         .voice-channel-card.connected-here {
-            background: rgba(46, 213, 115, 0.12);
-            border-color: rgba(46, 213, 115, 0.4);
+            background: rgba(46, 213, 115, 0.08);
+            border-radius: 4px;
         }
         .voice-channel-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 7px 10px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            height: 28px;
+            border-radius: 4px;
             cursor: pointer;
             color: var(--text-sub);
-            font-size: 0.86rem;
-            font-weight: 600;
-            transition: all 0.15s;
+            font-size: 0.81rem;
+            font-weight: 500;
+            transition: all 0.12s ease;
             user-select: none;
         }
         .voice-channel-header:hover {
@@ -1247,115 +1248,110 @@
         .voice-channel-header.active-in {
             color: #2ed573;
             font-weight: 700;
+            background: rgba(46, 213, 115, 0.12);
         }
         .vc-name-wrap {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             min-width: 0;
+            overflow: hidden;
+        }
+        .vc-speaker-icon {
+            font-size: 0.78rem;
+            opacity: 0.75;
+            flex-shrink: 0;
+        }
+        .vc-title {
+            font-size: 0.80rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .vc-badge {
-            font-size: 0.68rem;
-            padding: 2px 7px;
-            border-radius: 10px;
+            font-size: 0.62rem;
+            padding: 1px 5px;
+            border-radius: 6px;
             background: var(--bg-input);
             color: var(--text-sub);
-            font-weight: 700;
+            font-weight: 600;
+            font-family: monospace;
+            flex-shrink: 0;
         }
         .vc-badge.has-users {
-            background: rgba(56, 189, 248, 0.18);
-            color: #38bdf8;
+            background: rgba(46, 213, 115, 0.2);
+            color: #2ed573;
         }
         .vc-badge.full {
             background: #ff4757;
             color: #fff;
         }
         .vc-users-list {
-            padding-left: 8px;
+            padding-left: 18px;
             padding-right: 4px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-top: 6px;
-            margin-bottom: 8px;
+            gap: 2px;
+            margin-top: 1px;
+            margin-bottom: 3px;
         }
         .vc-user-item {
             display: flex;
             align-items: center;
-            gap: 9px;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            color: var(--text-main);
-            background: rgba(0, 0, 0, 0.22);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.18s ease;
+            gap: 6px;
+            padding: 2px 6px;
+            height: 24px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            background: transparent;
+            border: none;
+            transition: all 0.12s ease;
             cursor: pointer;
         }
         .vc-user-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(56, 189, 248, 0.3);
-            transform: translateX(2px);
+            background: var(--hover-bg);
+            color: var(--text-main);
         }
         .vc-user-avatar-wrap {
             position: relative;
-            width: 28px;
-            height: 28px;
+            width: 18px;
+            height: 18px;
             flex-shrink: 0;
         }
-        .vc-user-avatar {
-            width: 28px;
-            height: 28px;
+        .vc-user-avatar, .vc-user-initial {
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid transparent;
-            transition: all 0.18s ease;
-            display: block;
-        }
-        .vc-user-initial {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
+            border: 1.5px solid transparent;
+            font-size: 0.65rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 800;
             color: #fff;
-            border: 2px solid transparent;
-            transition: all 0.18s ease;
-            flex-shrink: 0;
         }
-        /* Resaltado cuando habla en el canal de voz */
         .vc-user-item.speaking {
-            background: rgba(56, 189, 248, 0.16);
-            border-color: #38bdf8;
-            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+            color: #2ed573;
+            font-weight: 700;
         }
         .vc-user-item.speaking .vc-user-avatar,
         .vc-user-item.speaking .vc-user-initial {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.6), 0 0 10px #38bdf8;
-            animation: speakingPulse 1.2s infinite alternate;
+            border-color: #2ed573;
+            box-shadow: 0 0 0 2px rgba(46, 213, 115, 0.6), 0 0 8px #2ed573;
+            animation: speakingPulseMini 1s infinite alternate;
         }
-        @keyframes speakingPulse {
+        @keyframes speakingPulseMini {
             0% { transform: scale(1); }
             100% { transform: scale(1.08); }
         }
-        .vc-user-item.speaking .vc-user-name {
-            color: #38bdf8;
-            font-weight: 800;
-        }
         .vc-user-info-col {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            flex: 1;
-        }
-        .vc-user-name-row {
             display: flex;
             align-items: center;
             gap: 6px;
+            min-width: 0;
+            flex: 1;
         }
         .vc-user-name {
             font-weight: 600;
@@ -1364,31 +1360,933 @@
             text-overflow: ellipsis;
         }
         .vc-role-badge {
-            font-size: 0.62rem;
-            padding: 1px 5px;
-            border-radius: 4px;
+            font-size: 0.58rem;
+            padding: 1px 4px;
+            border-radius: 3px;
             font-weight: 800;
         }
         .vc-role-badge.owner { background: rgba(255, 165, 2, 0.25); color: #ffa502; border: 1px solid rgba(255, 165, 2, 0.4); }
         .vc-role-badge.admin { background: rgba(56, 189, 248, 0.25); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
-        .vc-user-code {
-            font-size: 0.68rem;
-            color: var(--text-sub);
-            opacity: 0.75;
-        }
         .vc-user-icons {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             color: #ff4757;
             flex-shrink: 0;
+            font-size: 0.7rem;
         }
         .vc-empty-hint {
-            padding: 5px 8px;
-            font-size: 0.74rem;
+            padding: 3px 6px;
+            font-size: 0.70rem;
             color: var(--text-sub);
-            opacity: 0.6;
+            opacity: 0.5;
             font-style: italic;
+        }
+
+        /* VISTA PRINCIPAL HUB DE AMIGOS DISCORD (Reemplaza chat al abrir Amigos y DMs) */
+        .friends-hub-view {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            min-width: 0;
+            height: 100%;
+            background: var(--bg-container);
+            overflow: hidden;
+            animation: fadeInHub 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeInHub {
+            0% { opacity: 0; transform: translateY(4px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .friends-hub-header {
+            height: 48px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+            background: var(--bg-sidebar);
+        }
+        .friends-hub-nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .hub-title-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-right: 6px;
+            white-space: nowrap;
+        }
+        .hub-title-tag svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            color: var(--text-sub);
+        }
+        .hub-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border-color);
+            margin: 0 4px;
+        }
+        .hub-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .hub-tab-btn:hover {
+            background: var(--hover-bg);
+            color: var(--text-main);
+        }
+        .hub-tab-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+        .hub-tab-btn.add-friend-btn {
+            background: #248046;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .hub-tab-btn.add-friend-btn:hover {
+            background: #1a6334;
+        }
+        .hub-tab-btn.add-friend-btn.active {
+            background: transparent;
+            color: #2ed573;
+        }
+        .hub-badge {
+            background: #ff4757;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 10px;
+            line-height: 1.2;
+        }
+        .friends-hub-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .friends-hub-search input {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 5px 28px 5px 10px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            outline: none;
+            width: 160px;
+            transition: all 0.2s ease;
+        }
+        .friends-hub-search input:focus {
+            width: 220px;
+            border-color: var(--accent-blue);
+        }
+        .friends-hub-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .friends-hub-main-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px;
+            overflow-y: auto;
+            min-width: 0;
+        }
+        .hub-section-count {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+        }
+        .hub-friends-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .hub-friend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.12s ease;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .hub-friend-row:hover {
+            background: var(--hover-bg);
+        }
+        .hub-friend-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .hub-friend-avatar-wrap {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+        .hub-friend-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+        .hub-friend-initial {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #fff;
+        }
+        .hub-friend-avatar-wrap .status-icon {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
+            border: 3px solid var(--bg-container);
+            box-sizing: border-box;
+        }
+        .hub-friend-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .hub-friend-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .hub-friend-name {
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hub-friend-code {
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            opacity: 0.7;
+        }
+        .hub-friend-sub {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+        .voice-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #2ed573;
+            font-weight: 600;
+        }
+        .voice-pulse-icon {
+            animation: pulseSpeaker 1.2s infinite alternate;
+        }
+        @keyframes pulseSpeaker {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.2); }
+        }
+        .game-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        .hub-friend-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hub-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .hub-action-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-modal);
+            border-color: var(--accent-blue);
+            transform: scale(1.08);
+        }
+        .hub-action-btn.call-btn:hover {
+            border-color: #2ed573;
+            color: #2ed573;
+        }
+
+        /* COLUMNA DERECHA "ACTIVO AHORA" (ACTIVE NOW PANEL - IMAGEN 2) */
+        .active-now-col {
+            width: 330px;
+            border-left: 1px solid var(--border-color);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+            background: rgba(0, 0, 0, 0.12);
+        }
+        .active-now-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 14px;
+        }
+        .active-now-card {
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            transition: transform 0.15s, border-color 0.15s;
+            cursor: pointer;
+            position: relative;
+        }
+        .active-now-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .anc-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .anc-avatar-wrap {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+        }
+        .anc-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .anc-initial {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        .anc-user-meta {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .anc-user-name {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .anc-sub-time {
+            font-size: 0.72rem;
+            color: var(--text-sub);
+        }
+        .anc-body {
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .anc-activity-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .anc-activity-details {
+            font-size: 0.76rem;
+            color: var(--text-sub);
+            line-height: 1.35;
+        }
+        .anc-join-btn {
+            margin-top: 8px;
+            background: #248046;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.15s;
+        }
+        .anc-join-btn:hover {
+            background: #1a6334;
+        }
+        .anc-empty-placeholder {
+            padding: 30px 16px;
+            text-align: center;
+            color: var(--text-sub);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        /* CARD DE ACTIVIDAD EN EL PERFIL (IMAGEN 1 - EN EL CANAL DE VOZ) */
+        .profile-voice-activity-card {
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 14px;
+            text-align: left;
+        }
+        .pvac-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .pvac-title {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-sub);
+        }
+        .pvac-dots {
+            color: var(--text-sub);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .pvac-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .pvac-avatars-stack {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .pvac-mini-av {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--bg-modal);
+            margin-right: -8px;
+            background: var(--bg-input);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .pvac-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            margin-left: 12px;
+        }
+        .pvac-room-name {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pvac-server-sub {
+            font-size: 0.72rem;
+            color: var(--text-sub);
+        }
+        .pvac-join-btn {
+            width: 100%;
+            background: #4752c4;
+            color: #ffffff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .pvac-join-btn:hover {
+            background: #3c45a5;
+            box-shadow: 0 4px 12px rgba(71, 82, 196, 0.4);
+        }
+        .profile-quick-dm-wrap {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+        .profile-quick-dm-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .profile-quick-dm-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* BARRA INFERIOR DEL USUARIO EN SIDEBAR (DISCORD USER FOOTER) */
+        .sidebar-user-footer {
+            margin-top: auto;
+            background: rgba(0, 0, 0, 0.25);
+            border-top: 1px solid var(--border-color);
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .suf-user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            cursor: pointer;
+            padding: 3px 6px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .suf-user-info:hover {
+            background: var(--hover-bg);
+        }
+        .suf-avatar-wrap {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+        .suf-avatar-img, .suf-avatar-initial {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #fff;
+        }
+        .suf-avatar-wrap .status-icon {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--bg-sidebar);
+            box-sizing: border-box;
+        }
+        .suf-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .suf-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90px;
+        }
+        .suf-status {
+            font-size: 0.68rem;
+            color: var(--text-sub);
+        }
+        .suf-actions {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .suf-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .suf-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-main);
+        }
+        .suf-btn.active-muted {
+            color: #ff4757;
+        }
+
+        /* FLOATING VOICE CONNECTION BAR (BARRA VERDE DE VOZ CONECTADA) */
+        .voice-connection-bar {
+            background: rgba(46, 213, 115, 0.12);
+            border-top: 1px solid rgba(46, 213, 115, 0.35);
+            padding: 6px 12px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .vcb-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            cursor: pointer;
+        }
+        .vcb-left svg {
+            color: #2ed573;
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        .vcb-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .vcb-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #2ed573;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .vcb-channel-name {
+            font-size: 0.68rem;
+            color: var(--text-sub);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .vcb-disconnect-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vcb-disconnect-btn:hover {
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.15);
+        }
+
+        /* LLAMADA PRIVADA 1-A-1 STAGE (PARIDAD COMPLETA CON CANALES DE VOZ) */
+        .private-call-stage {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 680px;
+            height: 480px;
+            max-height: 85vh;
+            background: var(--bg-modal);
+            border: 2px solid #2ed573;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(46, 213, 115, 0.35);
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalFadeIn 0.2s ease-out;
+            color: var(--text-main);
+        }
+        .private-call-stage.maximized {
+            width: 96vw;
+            height: 94vh;
+            max-width: none;
+            max-height: none;
+            border-radius: 8px;
+        }
+        .screen-share-video {
+            width: 100%;
+            height: 100%;
+            max-height: 280px;
+            background: #000;
+            border-radius: 8px;
+            object-fit: contain;
+            display: none;
+            margin-bottom: 8px;
+        }
+        .volume-slider-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            background: var(--bg-input);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .volume-slider-wrap input[type="range"] {
+            width: 60px;
+            height: 4px;
+            cursor: pointer;
+            accent-color: #2ed573;
+        }
+
+        /* QUICK SEARCH MODAL (CTRL+K) */
+        .quick-search-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 100px;
+        }
+        .quick-search-box {
+            width: 540px;
+            max-width: 92vw;
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: modalFadeIn 0.15s ease-out;
+        }
+        .quick-search-input-wrap {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .quick-search-input-wrap input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 1rem;
+        }
+        .quick-search-results {
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .qs-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 0.86rem;
+            transition: background 0.1s;
+        }
+        .qs-item:hover, .qs-item.selected {
+            background: var(--hover-bg);
+            color: var(--accent-blue);
+        }
+
+        /* PINNED MESSAGES MODAL */
+        .pinned-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .pinned-box {
+            width: 480px;
+            max-width: 92vw;
+            max-height: 80vh;
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .pinned-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+        }
+        .pinned-list {
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .pinned-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            position: relative;
+        }
+
+        /* REACCIONES RÁPIDAS HOVER DISCORD */
+        .msg-hover-actions {
+            position: absolute;
+            top: -16px;
+            right: 12px;
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 2px;
+            padding: 2px 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 50;
+        }
+        #messages li:hover .msg-hover-actions {
+            display: flex;
+            animation: fadeInHub 0.15s ease-out;
+        }
+        .hover-act-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.1s;
+        }
+        .hover-act-btn:hover {
+            background: var(--hover-bg);
+            color: var(--text-main);
+            transform: scale(1.15);
+        }
+
+        /* MARKDOWN FORMATTING & CODE BLOCKS */
+        .markdown-code-block {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 6px 0;
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: #c9d1d9;
+            overflow-x: auto;
+            position: relative;
+        }
+        .markdown-inline-code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.84rem;
+        }
+        .copy-code-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #aaa;
+            font-size: 0.68rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .copy-code-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .friends-header {
@@ -3743,30 +4641,78 @@
         </div>
     </div>
 
-    <!-- VENTANA FLOTANTE DE LLAMADA PRIVADA ARRASTRABLE -->
-    <div id="active-call-overlay" class="active-call-overlay">
-        <div class="call-overlay-header" id="active-call-drag-handle">
-            <div class="call-header-drag-indicator">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>
-                <span>Llamada Privada</span>
+    <!-- VENTANA STAGE DE LLAMADA PRIVADA 1-A-1 (ESTILO DISCORD IDÉNTICA A CANALES DE VOZ) -->
+    <div id="active-call-overlay" class="private-call-stage" style="display: none;">
+        <div class="stage-header" id="private-call-drag-handle">
+            <div class="stage-header-left">
+                <div class="stage-live-badge"><span class="live-dot"></span> EN LLAMADA</div>
+                <div class="stage-sfu-badge" title="Audio ultra-claro sin caídas">⚡ RTC Relay</div>
+                <div class="stage-title" id="active-call-title">Llamada Privada</div>
+                <div class="stage-timer" id="active-call-timer">00:00</div>
+                <span style="font-size: 0.72rem; color: #2ed573; font-weight: 700; margin-left: 6px;" id="call-ping-badge">● 24ms</span>
             </div>
-            <button type="button" class="call-header-mini-btn" id="call-minimize-btn" title="Minimizar a pastilla flotante">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
+            <div class="stage-header-actions">
+                <button type="button" class="stage-window-btn" id="call-minimize-btn" title="Minimizar a pastilla">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button type="button" class="stage-window-btn" id="call-expand-stage-btn" title="Pantalla completa / Normal">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                </button>
+                <button type="button" class="stage-window-btn hangup" id="call-hangup-btn" title="Colgar llamada">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
         </div>
-        <div id="active-call-avatar-container"></div>
-        <div class="call-floating-name" id="active-call-name">En llamada con Usuario</div>
-        <div class="call-floating-status" id="active-call-timer">Conectando...</div>
-        <div class="call-floating-controls">
-            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-mic" title="Silenciar / Activar Micrófono">
-                <svg class="icon-mic-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            </button>
-            <button type="button" class="call-floating-ctrl-btn" id="call-toggle-deafen" title="Ensordecer / Activar Audio">
-                <svg class="icon-deafen-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
-            </button>
-            <button type="button" class="call-floating-ctrl-btn hangup" id="call-hangup-btn" title="Colgar">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-            </button>
+
+        <video id="call-screen-share-video" class="screen-share-video" autoplay playsinline></video>
+
+        <div class="stage-grid-wrapper">
+            <div class="stage-participants-grid two-users" id="private-call-grid">
+                <!-- Tarjeta Propia -->
+                <div class="discord-participant-card" id="call-my-card">
+                    <div class="participant-avatar-wrap">
+                        <div id="call-my-avatar" class="participant-avatar-initial">👤</div>
+                    </div>
+                    <div class="participant-info-row">
+                        <span class="participant-name" id="call-my-name">Tú</span>
+                    </div>
+                    <div class="participant-status-badges" id="call-my-status-badges"></div>
+                </div>
+
+                <!-- Tarjeta del Amigo Remoto -->
+                <div class="discord-participant-card" id="call-peer-card">
+                    <div class="participant-avatar-wrap">
+                        <div id="call-peer-avatar" class="participant-avatar-initial">👤</div>
+                    </div>
+                    <div class="participant-info-row">
+                        <span class="participant-name" id="call-peer-name">Amigo</span>
+                    </div>
+                    <div style="margin-top: 6px;">
+                        <label class="volume-slider-wrap" title="Volumen individual de este usuario">
+                            <span style="font-size: 0.72rem;">🔊</span>
+                            <input type="range" id="peer-volume-slider" min="0" max="200" value="100">
+                        </label>
+                    </div>
+                    <div class="participant-status-badges" id="call-peer-status-badges"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stage-dock-bar">
+            <div class="dock-controls">
+                <button type="button" class="stage-dock-btn" id="call-toggle-mic" title="Silenciar / Activar Micrófono">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                </button>
+                <button type="button" class="stage-dock-btn" id="call-toggle-deafen" title="Ensordecer / Activar Audio">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                </button>
+                <button type="button" class="stage-dock-btn" id="call-screen-share-btn" title="Compartir Pantalla">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </button>
+                <button type="button" class="stage-dock-btn hangup" id="call-dock-hangup-btn" title="Colgar llamada">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+            </div>
         </div>
         <audio id="remote-call-audio" autoplay style="display: none;"></audio>
     </div>
@@ -4046,6 +4992,31 @@
         </div>
     </div>
 
+    <!-- QUICK SEARCH MODAL (CTRL+K) -->
+    <div id="quick-search-modal" class="quick-search-modal">
+        <div class="quick-search-box">
+            <div class="quick-search-input-wrap">
+                <span>🔍</span>
+                <input type="text" id="qs-input" placeholder="¿A dónde quieres ir? Escribe un canal, usuario o amigo..." autocomplete="off">
+                <span style="font-size: 0.75rem; color: var(--text-sub); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px;">ESC</span>
+            </div>
+            <div class="quick-search-results" id="qs-results"></div>
+        </div>
+    </div>
+
+    <!-- PINNED MESSAGES MODAL -->
+    <div id="pinned-modal" class="pinned-modal">
+        <div class="pinned-box">
+            <div class="pinned-header">
+                <span>📌 Mensajes Fijados</span>
+                <button type="button" class="profile-close" id="close-pinned-modal-btn" style="position:static;">✕</button>
+            </div>
+            <div class="pinned-list" id="pinned-list-container">
+                <div style="text-align: center; color: var(--text-sub); padding: 20px;">No hay mensajes fijados todavía.</div>
+            </div>
+        </div>
+    </div>
+
     <!-- INTERFAZ PRINCIPAL -->
     <div class="chat-container">
         <!-- BARRA IZQUIERDA: SERVIDORES, CANALES Y AMIGOS -->
@@ -4129,6 +5100,45 @@
                 </div>
                 <ul id="friends-list"></ul>
                 <div class="friends-empty" id="friends-empty">Aún no tienes amigos. Haz clic en la foto de alguien en el chat y pulsa "Agregar amigo".</div>
+            </div>
+
+            <!-- FLOATING VOICE CONNECTION BAR (BARRA VERDE DE VOZ CONECTADA) -->
+            <div class="voice-connection-bar" id="voice-connection-bar">
+                <div class="vcb-left" id="vcb-open-stage-btn" title="Abrir canal de voz">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    <div class="vcb-info">
+                        <span class="vcb-label">Voz Conectada</span>
+                        <span class="vcb-channel-name" id="vcb-channel-name">Sala de Voz 1 / Servidor</span>
+                    </div>
+                </div>
+                <button type="button" class="vcb-disconnect-btn" id="vcb-disconnect-btn" title="Desconectar del canal de voz">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+            </div>
+
+            <!-- FOOTER DE USUARIO EN LA BARRA LATERAL (ESTILO DISCORD) -->
+            <div class="sidebar-user-footer" id="sidebar-user-footer">
+                <div class="suf-avatar-col" id="suf-profile-trigger" title="Clic para ver o editar tu perfil">
+                    <div class="suf-avatar-wrap">
+                        <div class="suf-avatar" id="suf-avatar">👤</div>
+                        <span class="suf-status-dot online" id="suf-status-dot"></span>
+                    </div>
+                    <div class="suf-text">
+                        <span class="suf-name" id="suf-name">Mi Perfil</span>
+                        <span class="suf-status" id="suf-status">#0000</span>
+                    </div>
+                </div>
+                <div class="suf-actions">
+                    <button type="button" class="suf-btn" id="suf-btn-mic" title="Silenciar / Activar micrófono">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    </button>
+                    <button type="button" class="suf-btn" id="suf-btn-deafen" title="Ensordecer / Activar sonido">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                    </button>
+                    <button type="button" class="suf-btn" id="suf-btn-settings" title="Ajustes de usuario">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -4267,6 +5277,64 @@
                     <div class="gif-footer" id="gif-footer"></div>
                 </div>
             </form>
+        </div>
+
+        <!-- VISTA DISCORD FRIENDS HUB (AMIGOS Y DMs) - EXACTAMENTE COMO EN IMAGEN 2 -->
+        <div class="friends-hub-view" id="friends-hub-view">
+            <div class="friends-hub-header">
+                <div class="friends-hub-nav-left">
+                    <div class="hub-title-tag">
+                        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        <span>Amigos</span>
+                    </div>
+                    <div class="hub-divider"></div>
+                    <button type="button" class="hub-tab-btn active" data-tab="online" id="hub-tab-online">
+                        En línea <span class="hub-tab-badge" id="hub-badge-online">0</span>
+                    </button>
+                    <button type="button" class="hub-tab-btn" data-tab="all" id="hub-tab-all">Todos</button>
+                    <button type="button" class="hub-tab-btn" data-tab="pending" id="hub-tab-pending">
+                        Pendiente <span class="hub-tab-badge alert" id="hub-badge-pending" style="display:none;">0</span>
+                    </button>
+                    <button type="button" class="hub-tab-btn add-friend-pill" data-tab="add" id="hub-tab-add">Añadir amigos</button>
+                </div>
+                <div class="friends-hub-nav-right">
+                    <button type="button" class="hub-action-btn" id="hub-quick-search-btn" title="Búsqueda rápida (Ctrl+K)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </button>
+                    <button type="button" class="hub-action-btn" id="hub-open-pinned-btn" title="Mensajes fijados">
+                        📌
+                    </button>
+                </div>
+            </div>
+
+            <div class="friends-hub-content-row">
+                <!-- COLUMNA IZQUIERDA: LISTA DE AMIGOS -->
+                <div class="friends-hub-main-col">
+                    <div class="hub-search-bar-wrap">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="hub-search-input" placeholder="Buscar amigos..." autocomplete="off">
+                    </div>
+
+                    <!-- SECCIÓN AÑADIR AMIGO (TAB ADD) -->
+                    <div id="hub-add-friend-section" style="display: none; padding: 20px 24px;">
+                        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">AÑADIR AMIGO</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 16px;">Puedes añadir a un amigo con su nombre de usuario o su etiqueta de ID (#0000).</p>
+                        <div style="display: flex; gap: 8px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 14px; align-items: center;">
+                            <input type="text" id="hub-add-friend-input" placeholder="Introduce un nombre de usuario o código #0000" style="flex: 1; background: transparent; border: none; outline: none; color: var(--text-main); font-size: 0.95rem;">
+                            <button type="button" class="main-btn" id="hub-send-friend-req-btn" style="width: auto; padding: 8px 16px; margin: 0; background: var(--accent-blue);">Enviar solicitud</button>
+                        </div>
+                    </div>
+
+                    <div class="hub-section-counter" id="hub-section-counter">EN LÍNEA — 0</div>
+                    <div class="hub-friends-list" id="hub-friends-list"></div>
+                </div>
+
+                <!-- COLUMNA DERECHA: "ACTIVO AHORA" (ACTIVE NOW PANEL - IMAGEN 2) -->
+                <div class="active-now-col" id="active-now-col">
+                    <div class="active-now-title">Activo ahora</div>
+                    <div id="active-now-cards-container"></div>
+                </div>
+            </div>
         </div>
 
         <!-- BARRA DERECHA: CONECTADOS (EN GLOBAL) O PERFIL DEL AMIGO (EN DM) -->
@@ -5169,6 +6237,72 @@
                 });
             }
 
+            // ACTIVIDAD PÚBLICA EN EL PERFIL: EN EL CANAL DE VOZ (COMO EN IMAGEN 1)
+            const activeVoiceChannel = p.currentVoiceChannel || (live && live.currentVoiceChannel);
+            const activeVoiceChannelName = p.currentVoiceChannelName || (live && live.currentVoiceChannelName) || (activeVoiceChannel && voiceChannelsState[activeVoiceChannel] ? voiceChannelsState[activeVoiceChannel].name : null);
+            
+            if (activeVoiceChannel) {
+                const chState = voiceChannelsState[activeVoiceChannel] || { participants: [] };
+                const chParticipants = chState.participants || [];
+                
+                let miniAvatarsHtml = '';
+                const displayUsers = chParticipants.slice(0, 3);
+                displayUsers.forEach(u => {
+                    const uColor = safeColor(u.color || '#38bdf8');
+                    if (u.avatar && isValidImageUrl(u.avatar)) {
+                        miniAvatarsHtml += `<img src="${escapeHtml(u.avatar)}" class="pvc-stack-avatar" alt="${escapeHtml(u.name || '')}">`;
+                    } else {
+                        miniAvatarsHtml += `<div class="pvc-stack-initial" style="background:${uColor}">${escapeHtml((u.name || '?').charAt(0).toUpperCase())}</div>`;
+                    }
+                });
+                const remaining = chParticipants.length - displayUsers.length;
+                if (remaining > 0) {
+                    miniAvatarsHtml += `<div class="pvc-stack-initial extra">+${remaining}</div>`;
+                }
+
+                const voiceActivityCard = document.createElement('div');
+                voiceActivityCard.className = 'profile-voice-activity-card';
+                voiceActivityCard.innerHTML = `
+                    <div class="pvc-header">
+                        <span class="pvc-title">En el canal de voz</span>
+                        <span style="opacity:0.6;font-size:0.8rem;">•••</span>
+                    </div>
+                    <div class="pvc-body">
+                        <div class="pvc-avatars-stack">
+                            ${miniAvatarsHtml || '<div class="pvc-stack-initial" style="background:var(--accent-blue)">🔊</div>'}
+                        </div>
+                        <div class="pvc-channel-meta">
+                            <div class="pvc-ch-name">🔊 🎙️ • ${escapeHtml(activeVoiceChannelName || 'Canal de voz')}</div>
+                            <div class="pvc-srv-name">en Servidor Principal</div>
+                        </div>
+                    </div>
+                    <button type="button" class="profile-voice-join-btn" id="btn-pvc-join">
+                        Unirse al chat de voz
+                    </button>
+                `;
+
+                voiceActivityCard.querySelector('#btn-pvc-join').addEventListener('click', () => {
+                    closeProfile();
+                    startOrJoinVoiceChannel(activeVoiceChannel);
+                });
+
+                profileCard.querySelector('.profile-body').appendChild(voiceActivityCard);
+            }
+
+            if (p.activity && p.activity.name && (!activeVoiceChannel || p.activity.type !== 'voice')) {
+                const actCard = document.createElement('div');
+                actCard.className = 'profile-voice-activity-card';
+                actCard.innerHTML = `
+                    <div class="pvc-header">
+                        <span class="pvc-title">${p.activity.type === 'spotify' ? 'Escuchando Spotify' : 'Jugando ahora'}</span>
+                        <span>${p.activity.type === 'spotify' ? '🟢' : '🎮'}</span>
+                    </div>
+                    <div style="font-weight:700;font-size:0.9rem;margin-top:6px;">${escapeHtml(p.activity.name)}</div>
+                    ${p.activity.details ? `<div style="font-size:0.75rem;color:var(--text-sub);margin-top:2px;">${escapeHtml(p.activity.details)}</div>` : ''}
+                `;
+                profileCard.querySelector('.profile-body').appendChild(actCard);
+            }
+
             profileCard.querySelector('.profile-close').addEventListener('click', closeProfile);
             profileModal.style.display = 'flex';
         }
@@ -5203,6 +6337,14 @@
             currentChannelTitle.textContent = 'Chat Online';
             btnGlobalChat.classList.add('active');
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
+
+            // Alternar vista: ocultar Hub de Amigos y mostrar chat general
+            const fHub = document.getElementById('friends-hub-view');
+            const chatMain = document.querySelector('.chat-main');
+            const rightSidebar = document.getElementById('sidebar');
+            if (fHub) fHub.style.display = 'none';
+            if (chatMain) chatMain.style.display = 'flex';
+            if (rightSidebar) rightSidebar.style.display = 'flex';
 
             // Alternar paneles de la barra lateral (Modo Servidor con Canales de Voz)
             const sPanel = document.getElementById('server-channels-panel');
@@ -5245,6 +6387,14 @@
             }
             currentDmUser = Object.assign({}, friendData, { uid: uid });
 
+            // Mostrar área de chat principal y ocultar Hub de Amigos
+            const fHub = document.getElementById('friends-hub-view');
+            const chatMain = document.querySelector('.chat-main');
+            const rightSidebar = document.getElementById('sidebar');
+            if (fHub) fHub.style.display = 'none';
+            if (chatMain) chatMain.style.display = 'flex';
+            if (rightSidebar) rightSidebar.style.display = 'flex';
+
             // Alternar paneles de la barra lateral (Modo Amigos y DMs)
             const sPanel = document.getElementById('server-channels-panel');
             const fPanel = document.getElementById('friends-dms-panel');
@@ -5264,7 +6414,10 @@
                 el.classList.toggle('active', el.dataset.uid === uid);
             });
 
-            currentChannelTitle.textContent = `💬 ${currentDmUser.nickname}${currentDmUser.userCode ? ' (' + currentDmUser.userCode + ')' : ''}`;
+            const voicePresenceTag = currentDmUser.currentVoiceChannelName
+                ? ` <span style="font-size: 0.74rem; color: #2ed573; font-weight: 700; background: rgba(46, 213, 115, 0.15); padding: 2px 7px; border-radius: 6px; margin-left: 8px;">🔊 En ${escapeHtml(currentDmUser.currentVoiceChannelName)}</span>`
+                : '';
+            currentChannelTitle.innerHTML = `💬 ${escapeHtml(currentDmUser.nickname)}${currentDmUser.userCode ? ' (' + escapeHtml(currentDmUser.userCode) + ')' : ''}${voicePresenceTag}`;
 
             const hCallBtn = document.getElementById('header-call-btn');
             if (hCallBtn) {
@@ -5516,6 +6669,10 @@
                     if (friendTypingMap[f.uid]) {
                         li.classList.add('is-typing');
                         sub.innerHTML = `<span class="typing-text-accent">✍️ Escribiendo<span class="typing-dots">...</span></span>`;
+                    } else if (f.currentVoiceChannelName) {
+                        sub.innerHTML = `<span style="color:#2ed573;font-weight:600;">🔊 Conectado a ${escapeHtml(f.currentVoiceChannelName)}</span>`;
+                    } else if (f.activity && f.activity.name) {
+                        sub.textContent = `${f.activity.type === 'spotify' ? '🎵' : '🎮'} ${f.activity.name}`;
                     } else {
                         sub.textContent = f.status === 'offline'
                             ? (f.lastSeen ? fmtAgo(f.lastSeen) : 'Desconectado')
@@ -6091,11 +7248,15 @@
                         sub.innerHTML = `<span class="typing-text-accent">✍️ Escribiendo<span class="typing-dots">...</span></span>`;
                     } else {
                         friendEl.classList.remove('is-typing');
-                        const fObj = friendsState.friends.find(x => x.uid === fromUid);
-                        const status = fObj ? fObj.status : 'offline';
-                        sub.textContent = status === 'offline'
-                            ? (fObj && fObj.lastSeen ? fmtAgo(fObj.lastSeen) : 'Desconectado')
-                            : (STATUS_LABELS[status] || 'En línea');
+                        if (fObj && fObj.currentVoiceChannelName) {
+                            sub.innerHTML = `<span style="color:#2ed573;font-weight:600;">🔊 Conectado a ${escapeHtml(fObj.currentVoiceChannelName)}</span>`;
+                        } else if (fObj && fObj.activity && fObj.activity.name) {
+                            sub.textContent = `${fObj.activity.type === 'spotify' ? '🎵' : '🎮'} ${fObj.activity.name}`;
+                        } else {
+                            sub.textContent = status === 'offline'
+                                ? (fObj && fObj.lastSeen ? fmtAgo(fObj.lastSeen) : 'Desconectado')
+                                : (STATUS_LABELS[status] || 'En línea');
+                        }
                     }
                 }
             }
@@ -6180,6 +7341,22 @@
                     }
                 });
             }
+
+            // Markdown: Bloques de código con botón de copiar
+            formattedText = formattedText.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (m, lang, code) => {
+                return `<div class="markdown-code-block"><pre><code>${code}</code></pre><button type="button" class="copy-code-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText).then(()=>showToast('Código copiado'))">Copiar</button></div>`;
+            });
+            // Markdown inline `code`
+            formattedText = formattedText.replace(/`([^`]+)`/g, `<code class="markdown-inline-code">$1</code>`);
+            // Markdown **bold**
+            formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, `<strong>$1</strong>`);
+            // Markdown *italic*
+            formattedText = formattedText.replace(/\*([^*]+)\*/g, `<em>$1</em>`);
+            // Markdown __underline__
+            formattedText = formattedText.replace(/__([^_]+)__/g, `<u>$1</u>`);
+            // Markdown ~~strike~~
+            formattedText = formattedText.replace(/~~([^~]+)~~/g, `<s>$1</s>`);
+
             return formattedText;
         }
 
@@ -6244,6 +7421,7 @@
                                     <button class="menu-dots-btn" title="Opciones">⋮</button>
                                     <div class="dropdown-menu">
                                         <button class="dropdown-item reply-msg-btn">↩️ Responder</button>
+                                        <button class="dropdown-item pin-msg-btn">📌 Fijar</button>
                                         ${showOwnerAdminOpts ? `
                                             ${data.text ? '<button class="dropdown-item edit-msg-btn">✏️ Editar</button>' : ''}
                                             <button class="dropdown-item delete-opt del-msg-btn">🗑️ Eliminar</button>
@@ -6303,6 +7481,19 @@
                 replyPreviewContainer.style.display = 'flex';
                 input.focus();
             });
+
+            const pinBtn = item.querySelector('.pin-msg-btn');
+            if (pinBtn) {
+                pinBtn.addEventListener('click', () => {
+                    menuDropdown.classList.remove('show');
+                    if (!window.pinnedMessagesList.some(m => m.id === data.id)) {
+                        window.pinnedMessagesList.push(data);
+                        showToast('Mensaje fijado');
+                    } else {
+                        showToast('Este mensaje ya está fijado');
+                    }
+                });
+            }
 
             const editBtn = item.querySelector('.edit-msg-btn');
             if (editBtn) {
@@ -7984,6 +9175,18 @@
             btnSwitchToFriends.addEventListener('click', () => {
                 if (serverChannelsPanel) serverChannelsPanel.style.display = 'none';
                 if (friendsDmsPanel) friendsDmsPanel.style.display = 'flex';
+
+                // Cerrar chat online general y abrir vista dedicada Hub de Amigos Discord con "Activo ahora"
+                const chatMain = document.querySelector('.chat-main');
+                const rightSidebar = document.getElementById('sidebar');
+                const fHub = document.getElementById('friends-hub-view');
+                if (chatMain) chatMain.style.display = 'none';
+                if (rightSidebar) rightSidebar.style.display = 'none';
+                if (fHub) {
+                    fHub.style.display = 'flex';
+                    renderFriendsHub();
+                    renderActiveNow();
+                }
             });
         }
         if (btnBackToServer) {
@@ -8132,6 +9335,13 @@
             });
 
             highlightConnectedChannelInSidebar();
+
+            // Mostrar barra verde flotante de conexión de voz en barra lateral
+            const vcb = document.getElementById('voice-connection-bar');
+            const vcbName = document.getElementById('vcb-channel-name');
+            if (vcb) vcb.style.display = 'flex';
+            if (vcbName) vcbName.textContent = `${currentVoiceChannelName} / Servidor Principal`;
+            playDiscordSound('join');
         }
 
         function leaveGroupVoice(showNotify = true) {
@@ -8166,6 +9376,11 @@
                 voiceFloatingPill.style.display = 'none';
                 minimizedCallType = null;
             }
+
+            // Ocultar barra verde flotante de voz
+            const vcb = document.getElementById('voice-connection-bar');
+            if (vcb) vcb.style.display = 'none';
+            playDiscordSound('leave');
 
             highlightConnectedChannelInSidebar();
             if (showNotify) {
@@ -8821,9 +10036,724 @@
             kickedReasonText.textContent = `El administrador "${adminName}" te ha expulsado.`;
             kickedModal.style.display = 'flex';
         });
-        reconnectBtn.addEventListener('click', () => window.location.reload());
+        // ========================================================
+        // ====== DISCORD SOUND EFFECTS (SINTETIZADOR WEB AUDIO) ======
+        // ========================================================
+        function playDiscordSound(type) {
+            try {
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                if (type === 'join') {
+                    // Discord voice connect chime: C5 -> G5
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(783.99, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'leave') {
+                    // Discord voice disconnect chime: G5 -> C5
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(783.99, now);
+                    osc.frequency.setValueAtTime(523.25, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'mute') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(330, now + 0.06);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'unmute') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(330, now);
+                    osc.frequency.setValueAtTime(440, now + 0.06);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch (e) {}
+        }
+
+        // ========================================================
+        // ====== SIDEBAR USER FOOTER (ESTILO DISCORD) ======
+        // ========================================================
+        function updateSidebarUserFooter() {
+            const sufAvatar = document.getElementById('suf-avatar');
+            const sufName = document.getElementById('suf-name');
+            const sufStatus = document.getElementById('suf-status');
+            const sufDot = document.getElementById('suf-status-dot');
+
+            if (sufName) sufName.textContent = myNickname || 'Mi Perfil';
+            if (sufStatus) sufStatus.textContent = myUserCode || '#0000';
+            if (sufDot) sufDot.className = 'suf-status-dot ' + (currentStatus || 'online');
+
+            if (sufAvatar) {
+                const av = getMyAvatar();
+                sufAvatar.innerHTML = '';
+                if (av && isValidImageUrl(av)) {
+                    const img = document.createElement('img');
+                    img.src = av;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    sufAvatar.appendChild(img);
+                } else {
+                    sufAvatar.style.background = getMyColor();
+                    sufAvatar.textContent = myNickname ? myNickname.charAt(0).toUpperCase() : '👤';
+                }
+            }
+        }
+
+        const sufProfTrigger = document.getElementById('suf-profile-trigger');
+        if (sufProfTrigger) {
+            sufProfTrigger.addEventListener('click', () => {
+                openProfile(socket.id, {
+                    nickname: myNickname,
+                    avatar: getMyAvatar(),
+                    color: getMyColor(),
+                    userCode: myUserCode,
+                    uid: myUid
+                });
+            });
+        }
+
+        const sufBtnMic = document.getElementById('suf-btn-mic');
+        if (sufBtnMic) {
+            sufBtnMic.addEventListener('click', () => {
+                if (inGroupVoice) {
+                    stageToggleMic.click();
+                } else if (callTargetUid) {
+                    callToggleMic.click();
+                } else {
+                    const isMuted = sufBtnMic.classList.toggle('active-muted');
+                    playDiscordSound(isMuted ? 'mute' : 'unmute');
+                    showToast(isMuted ? 'Micrófono silenciado' : 'Micrófono activado');
+                }
+                const active = sufBtnMic.classList.contains('active-muted');
+                sufBtnMic.innerHTML = active ? SVG_CALL_ICONS.micOff : SVG_CALL_ICONS.micOn;
+            });
+        }
+
+        const sufBtnDeafen = document.getElementById('suf-btn-deafen');
+        if (sufBtnDeafen) {
+            sufBtnDeafen.addEventListener('click', () => {
+                if (inGroupVoice) {
+                    stageToggleDeafen.click();
+                } else if (callTargetUid) {
+                    callToggleDeafen.click();
+                } else {
+                    const isDeaf = sufBtnDeafen.classList.toggle('active-muted');
+                    showToast(isDeaf ? 'Audio ensordecido' : 'Audio activado');
+                }
+                const active = sufBtnDeafen.classList.contains('active-muted');
+                sufBtnDeafen.innerHTML = active ? SVG_CALL_ICONS.deafenOff : SVG_CALL_ICONS.deafenOn;
+            });
+        }
+
+        const sufBtnSettings = document.getElementById('suf-btn-settings');
+        if (sufBtnSettings) {
+            sufBtnSettings.addEventListener('click', () => {
+                settingsModal.style.display = 'flex';
+            });
+        }
+
+        const vcbOpenStage = document.getElementById('vcb-open-stage-btn');
+        if (vcbOpenStage) {
+            vcbOpenStage.addEventListener('click', () => {
+                if (inGroupVoice) {
+                    if (minimizedCallType === 'group') expandCurrentCall();
+                    else groupVoiceStage.style.display = 'flex';
+                }
+            });
+        }
+
+        const vcbDisconnect = document.getElementById('vcb-disconnect-btn');
+        if (vcbDisconnect) {
+            vcbDisconnect.addEventListener('click', () => {
+                leaveGroupVoice(true);
+            });
+        }
+
+        // ========================================================
+        // ====== DISCORD FRIENDS HUB (VISTA COMPLETA IMAGEN 2) ======
+        // ========================================================
+        let currentHubTab = 'online';
+        const friendsHubView = document.getElementById('friends-hub-view');
+        const hubTabOnline = document.getElementById('hub-tab-online');
+        const hubTabAll = document.getElementById('hub-tab-all');
+        const hubTabPending = document.getElementById('hub-tab-pending');
+        const hubTabAdd = document.getElementById('hub-tab-add');
+        const hubSearchInput = document.getElementById('hub-search-input');
+        const hubFriendsList = document.getElementById('hub-friends-list');
+        const hubSectionCounter = document.getElementById('hub-section-counter');
+        const hubBadgeOnline = document.getElementById('hub-badge-online');
+        const hubBadgePending = document.getElementById('hub-badge-pending');
+        const hubAddSection = document.getElementById('hub-add-friend-section');
+        const activeNowContainer = document.getElementById('active-now-cards-container');
+
+        function setHubTab(tab) {
+            currentHubTab = tab;
+            [hubTabOnline, hubTabAll, hubTabPending, hubTabAdd].forEach(btn => {
+                if (btn) btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            if (hubAddSection) {
+                hubAddSection.style.display = (tab === 'add') ? 'block' : 'none';
+            }
+            renderFriendsHub();
+        }
+
+        [hubTabOnline, hubTabAll, hubTabPending, hubTabAdd].forEach(btn => {
+            if (btn) btn.addEventListener('click', () => setHubTab(btn.dataset.tab));
+        });
+
+        if (hubSearchInput) {
+            hubSearchInput.addEventListener('input', () => {
+                renderFriendsHub();
+            });
+        }
+
+        const hubSendFriendReqBtn = document.getElementById('hub-send-friend-req-btn');
+        const hubAddFriendInput = document.getElementById('hub-add-friend-input');
+        if (hubSendFriendReqBtn && hubAddFriendInput) {
+            hubSendFriendReqBtn.addEventListener('click', () => {
+                const query = hubAddFriendInput.value.trim();
+                if (!query) { showToast('Introduce un nombre o etiqueta de usuario.'); return; }
+                socket.emit('friend request', { targetQuery: query });
+                hubAddFriendInput.value = '';
+                showToast(`Solicitud de amistad enviada a ${query}`);
+            });
+        }
+
+        function renderFriendsHub() {
+            if (!friendsHubView || friendsHubView.style.display === 'none') return;
+            const friends = friendsState.friends || [];
+            const incoming = friendsState.incoming || [];
+
+            const onlineFriends = friends.filter(f => f.status !== 'offline');
+            if (hubBadgeOnline) hubBadgeOnline.textContent = String(onlineFriends.length);
+            if (hubBadgePending) {
+                hubBadgePending.textContent = String(incoming.length);
+                hubBadgePending.style.display = incoming.length > 0 ? 'inline-block' : 'none';
+            }
+
+            if (!hubFriendsList) return;
+            hubFriendsList.innerHTML = '';
+
+            const query = hubSearchInput ? hubSearchInput.value.trim().toLowerCase() : '';
+
+            if (currentHubTab === 'pending') {
+                if (hubSectionCounter) hubSectionCounter.textContent = `PENDIENTE — ${incoming.length}`;
+                if (!incoming.length) {
+                    hubFriendsList.innerHTML = `<div class="hub-empty-state">No hay solicitudes de amistad pendientes.</div>`;
+                    return;
+                }
+                incoming.forEach(req => {
+                    const row = document.createElement('div');
+                    row.className = 'hub-friend-row';
+                    const av = makeAvatarEl(req, 'hub-avatar');
+                    const meta = document.createElement('div');
+                    meta.className = 'hub-user-meta';
+                    meta.innerHTML = `
+                        <div class="hub-user-name">${escapeHtml(req.nickname)} <span class="hub-user-tag">${escapeHtml(req.userCode || '')}</span></div>
+                        <div class="hub-user-activity">Solicitud de amistad entrante</div>
+                    `;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'hub-row-actions';
+                    const btnOk = document.createElement('button');
+                    btnOk.type = 'button';
+                    btnOk.className = 'hub-action-btn';
+                    btnOk.style.color = '#2ed573';
+                    btnOk.innerHTML = '✓';
+                    btnOk.title = 'Aceptar solicitud';
+                    btnOk.onclick = () => socket.emit('friend accept', { fromUid: req.uid });
+
+                    const btnNo = document.createElement('button');
+                    btnNo.type = 'button';
+                    btnNo.className = 'hub-action-btn';
+                    btnNo.style.color = '#ff4757';
+                    btnNo.innerHTML = '✕';
+                    btnNo.title = 'Rechazar solicitud';
+                    btnNo.onclick = () => socket.emit('friend decline', { fromUid: req.uid });
+
+                    actions.appendChild(btnOk);
+                    actions.appendChild(btnNo);
+
+                    row.appendChild(av);
+                    row.appendChild(meta);
+                    row.appendChild(actions);
+                    hubFriendsList.appendChild(row);
+                });
+                return;
+            }
+
+            if (currentHubTab === 'add') {
+                if (hubSectionCounter) hubSectionCounter.textContent = 'AÑADIR AMIGO';
+                return;
+            }
+
+            let list = (currentHubTab === 'online') ? onlineFriends : friends;
+            if (query) {
+                list = list.filter(f => (f.nickname && f.nickname.toLowerCase().includes(query)) || (f.userCode && f.userCode.toLowerCase().includes(query)));
+            }
+
+            if (hubSectionCounter) {
+                hubSectionCounter.textContent = `${currentHubTab === 'online' ? 'EN LÍNEA' : 'TODOS'} — ${list.length}`;
+            }
+
+            if (!list.length) {
+                hubFriendsList.innerHTML = `<div class="hub-empty-state">No se encontraron amigos ${currentHubTab === 'online' ? 'conectados' : ''}.</div>`;
+                return;
+            }
+
+            list.forEach(f => {
+                const row = document.createElement('div');
+                row.className = 'hub-friend-row';
+                row.dataset.uid = f.uid;
+
+                const avWrap = document.createElement('div');
+                avWrap.className = 'hub-avatar-wrap';
+                avWrap.appendChild(makeAvatarEl(f, 'hub-avatar'));
+                const dot = document.createElement('span');
+                dot.className = `status-icon ${f.status || 'offline'}`;
+                avWrap.appendChild(dot);
+
+                const meta = document.createElement('div');
+                meta.className = 'hub-user-meta';
+
+                const nameRow = document.createElement('div');
+                nameRow.className = 'hub-user-name';
+                nameRow.textContent = f.nickname;
+                if (f.userCode) {
+                    const tag = document.createElement('span');
+                    tag.className = 'hub-user-tag';
+                    tag.textContent = ` ${f.userCode}`;
+                    nameRow.appendChild(tag);
+                }
+
+                const act = document.createElement('div');
+                act.className = 'hub-user-activity';
+                if (friendTypingMap[f.uid]) {
+                    act.innerHTML = `<span class="typing-text-accent">✍️ Escribiendo<span class="typing-dots">...</span></span>`;
+                } else if (f.currentVoiceChannelName) {
+                    act.innerHTML = `<span style="color:#2ed573;font-weight:700;">🔊 ${escapeHtml(f.currentVoiceChannelName)}</span>`;
+                } else if (f.activity && f.activity.name) {
+                    act.textContent = `${f.activity.type === 'spotify' ? '🎵' : '🎮'} ${f.activity.name}`;
+                } else {
+                    act.textContent = f.status === 'offline' ? (f.lastSeen ? fmtAgo(f.lastSeen) : 'Desconectado') : (STATUS_LABELS[f.status] || 'En línea');
+                }
+
+                meta.appendChild(nameRow);
+                meta.appendChild(act);
+
+                const actions = document.createElement('div');
+                actions.className = 'hub-row-actions';
+
+                // Botón mensaje directo
+                const btnMsg = document.createElement('button');
+                btnMsg.type = 'button';
+                btnMsg.className = 'hub-action-btn';
+                btnMsg.title = 'Enviar mensaje directo';
+                btnMsg.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>';
+                btnMsg.onclick = (e) => {
+                    e.stopPropagation();
+                    switchToDmChat(f, f.uid);
+                };
+
+                // Botón llamada de voz privada
+                const btnCall = document.createElement('button');
+                btnCall.type = 'button';
+                btnCall.className = 'hub-action-btn call-btn';
+                btnCall.title = 'Iniciar llamada de voz';
+                btnCall.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+                btnCall.onclick = (e) => {
+                    e.stopPropagation();
+                    startCallWithUser(f.uid, f);
+                };
+
+                // Botón más opciones / perfil
+                const btnMore = document.createElement('button');
+                btnMore.type = 'button';
+                btnMore.className = 'hub-action-btn';
+                btnMore.title = 'Ver perfil';
+                btnMore.innerHTML = '•••';
+                btnMore.onclick = (e) => {
+                    e.stopPropagation();
+                    openProfileByUid(f.uid, f);
+                };
+
+                actions.appendChild(btnMsg);
+                actions.appendChild(btnCall);
+                actions.appendChild(btnMore);
+
+                row.appendChild(avWrap);
+                row.appendChild(meta);
+                row.appendChild(actions);
+
+                row.addEventListener('click', () => switchToDmChat(f, f.uid));
+                hubFriendsList.appendChild(row);
+            });
+        }
+
+        // ========================================================
+        // ====== PANEL "ACTIVO AHORA" (COLUMNA DERECHA IMAGEN 2) ======
+        // ========================================================
+        function renderActiveNow() {
+            if (!activeNowContainer) return;
+            activeNowContainer.innerHTML = '';
+
+            const activeCards = [];
+
+            // 1. Usuarios en Canales de Voz
+            Object.values(voiceChannelsState).forEach(ch => {
+                if (ch && Array.isArray(ch.participants) && ch.participants.length > 0) {
+                    ch.participants.forEach(p => {
+                        if (p.uid === myUid) return;
+                        activeCards.push({
+                            type: 'voice',
+                            uid: p.uid,
+                            name: p.name,
+                            avatar: p.avatar,
+                            color: p.color,
+                            channelId: ch.id,
+                            channelName: ch.name,
+                            participants: ch.participants
+                        });
+                    });
+                }
+            });
+
+            // 2. Amigos con actividades de juegos/Spotify
+            (friendsState.friends || []).forEach(f => {
+                if (f.status !== 'offline' && f.activity && f.activity.name && !activeCards.some(c => c.uid === f.uid)) {
+                    activeCards.push({
+                        type: 'game',
+                        uid: f.uid,
+                        name: f.nickname,
+                        avatar: f.avatar,
+                        color: f.color,
+                        activity: f.activity
+                    });
+                }
+            });
+
+            if (!activeCards.length) {
+                activeNowContainer.innerHTML = `
+                    <div class="anc-empty-placeholder">
+                        <div style="font-size: 2.2rem; margin-bottom: 8px;">🎮</div>
+                        <h4 style="color: var(--text-main); margin-bottom: 4px;">Por ahora todo está tranquilo...</h4>
+                        <p style="font-size: 0.78rem; color: var(--text-sub);">Cuando tus amigos estén jugando o conectados en canales de voz, los verás aquí.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            activeCards.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'active-now-card';
+
+                const safeColorVal = safeColor(item.color || '#38bdf8');
+                const avatarEl = makeAvatarEl(item, 'anc-avatar');
+
+                let bodyHtml = '';
+                if (item.type === 'voice') {
+                    bodyHtml = `
+                        <div class="anc-body">
+                            <div class="anc-activity-title">
+                                <span>🔊</span>
+                                <span>En canal de voz</span>
+                            </div>
+                            <div class="anc-activity-details">${escapeHtml(item.channelName)} • Servidor Principal (${item.participants.length}/10)</div>
+                            <button type="button" class="anc-join-btn btn-join-anc-voice" data-channel="${item.channelId}">
+                                Unirse al chat de voz
+                            </button>
+                        </div>
+                    `;
+                } else if (item.type === 'game') {
+                    bodyHtml = `
+                        <div class="anc-body">
+                            <div class="anc-activity-title">
+                                <span>${item.activity.type === 'spotify' ? '🟢' : '🎮'}</span>
+                                <span>${escapeHtml(item.activity.name)}</span>
+                            </div>
+                            <div class="anc-activity-details">${escapeHtml(item.activity.details || 'Activo ahora')}</div>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="anc-header">
+                        <div class="anc-avatar-wrap">
+                            ${avatarEl.outerHTML}
+                        </div>
+                        <div class="anc-user-meta">
+                            <span class="anc-user-name">${escapeHtml(item.name)}</span>
+                            <span class="anc-sub-time">Conectado ahora</span>
+                        </div>
+                    </div>
+                    ${bodyHtml}
+                `;
+
+                const joinBtn = card.querySelector('.btn-join-anc-voice');
+                if (joinBtn) {
+                    joinBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        startOrJoinVoiceChannel(joinBtn.dataset.channel);
+                    });
+                }
+
+                card.addEventListener('click', () => openProfileByUid(item.uid));
+                activeNowContainer.appendChild(card);
+            });
+        }
+
+        // ========================================================
+        // ====== QUICK SEARCH (CTRL+K) ======
+        // ========================================================
+        const quickSearchModal = document.getElementById('quick-search-modal');
+        const qsInput = document.getElementById('qs-input');
+        const qsResults = document.getElementById('qs-results');
+        const hubQuickSearchBtn = document.getElementById('hub-quick-search-btn');
+
+        function openQuickSearch() {
+            if (!quickSearchModal) return;
+            quickSearchModal.style.display = 'flex';
+            if (qsInput) {
+                qsInput.value = '';
+                qsInput.focus();
+                renderQuickSearchResults('');
+            }
+        }
+
+        function closeQuickSearch() {
+            if (quickSearchModal) quickSearchModal.style.display = 'none';
+        }
+
+        if (hubQuickSearchBtn) hubQuickSearchBtn.addEventListener('click', openQuickSearch);
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openQuickSearch();
+            } else if (e.key === 'Escape') {
+                closeQuickSearch();
+                const pinnedModal = document.getElementById('pinned-modal');
+                if (pinnedModal) pinnedModal.style.display = 'none';
+            }
+        });
+
+        if (quickSearchModal) {
+            quickSearchModal.addEventListener('click', (e) => {
+                if (e.target === quickSearchModal) closeQuickSearch();
+            });
+        }
+
+        if (qsInput) {
+            qsInput.addEventListener('input', () => {
+                renderQuickSearchResults(qsInput.value.trim().toLowerCase());
+            });
+        }
+
+        function renderQuickSearchResults(query) {
+            if (!qsResults) return;
+            qsResults.innerHTML = '';
+
+            const items = [
+                { type: 'channel', id: 'global', name: '# chat-general', desc: 'Canal de texto principal' },
+                { type: 'voice', id: 'voice-1', name: '🔊 Sala de Voz 1', desc: 'Canal de voz (10 máx)' },
+                { type: 'voice', id: 'voice-2', name: '🔊 Sala de Voz 2', desc: 'Canal de voz (10 máx)' },
+                { type: 'voice', id: 'voice-3', name: '🔊 Sala de Voz 3', desc: 'Canal de voz (10 máx)' },
+            ];
+
+            // Añadir amigos y usuarios
+            (friendsState.friends || []).forEach(f => {
+                items.push({
+                    type: 'friend',
+                    uid: f.uid,
+                    name: `@ ${f.nickname}`,
+                    desc: f.userCode ? `${f.userCode} • Amigo` : 'Amigo directo',
+                    raw: f
+                });
+            });
+
+            const filtered = query ? items.filter(it => it.name.toLowerCase().includes(query) || it.desc.toLowerCase().includes(query)) : items;
+
+            filtered.forEach(it => {
+                const div = document.createElement('div');
+                div.className = 'qs-item';
+                div.innerHTML = `
+                    <div style="font-size:1.1rem;">${it.type === 'channel' ? '💬' : (it.type === 'voice' ? '🔊' : '👤')}</div>
+                    <div style="display:flex; flex-direction:column; min-width:0;">
+                        <span style="font-weight:700;">${escapeHtml(it.name)}</span>
+                        <span style="font-size:0.75rem; color:var(--text-sub);">${escapeHtml(it.desc)}</span>
+                    </div>
+                `;
+                div.onclick = () => {
+                    closeQuickSearch();
+                    if (it.type === 'channel') {
+                        switchToGlobalChat();
+                    } else if (it.type === 'voice') {
+                        startOrJoinVoiceChannel(it.id);
+                    } else if (it.type === 'friend') {
+                        switchToDmChat(it.raw, it.uid);
+                    }
+                };
+                qsResults.appendChild(div);
+            });
+        }
+
+        // ========================================================
+        // ====== MENSAJES FIJADOS (PINNED MESSAGES) ======
+        // ========================================================
+        window.pinnedMessagesList = [];
+        const pinnedModal = document.getElementById('pinned-modal');
+        const closePinnedModalBtn = document.getElementById('close-pinned-modal-btn');
+        const hubOpenPinnedBtn = document.getElementById('hub-open-pinned-btn');
+        const pinnedListContainer = document.getElementById('pinned-list-container');
+
+        if (hubOpenPinnedBtn) {
+            hubOpenPinnedBtn.addEventListener('click', () => {
+                if (pinnedModal) {
+                    pinnedModal.style.display = 'flex';
+                    renderPinnedMessages();
+                }
+            });
+        }
+        if (closePinnedModalBtn) {
+            closePinnedModalBtn.addEventListener('click', () => {
+                if (pinnedModal) pinnedModal.style.display = 'none';
+            });
+        }
+
+        function renderPinnedMessages() {
+            if (!pinnedListContainer) return;
+            pinnedListContainer.innerHTML = '';
+            if (!window.pinnedMessagesList.length) {
+                pinnedListContainer.innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 24px;">No hay mensajes fijados todavía. Haz clic en "•••" en cualquier mensaje para fijarlo.</div>`;
+                return;
+            }
+            window.pinnedMessagesList.forEach((m, idx) => {
+                const item = document.createElement('div');
+                item.className = 'pinned-item';
+                item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-weight:700; color:${safeColor(m.color)}">${escapeHtml(m.user)}</span>
+                        <span style="font-size:0.72rem; color:var(--text-sub);">${m.time || ''}</span>
+                    </div>
+                    <div style="font-size:0.88rem; line-height:1.4;">${escapeHtml(m.text || '[Multimedia]')}</div>
+                    <button type="button" class="adm-mini-btn" style="margin-top:8px;" onclick="unpinMessageByIndex(${idx})">Desfijar</button>
+                `;
+                pinnedListContainer.appendChild(item);
+            });
+        }
+
+        window.unpinMessageByIndex = function(idx) {
+            window.pinnedMessagesList.splice(idx, 1);
+            renderPinnedMessages();
+            showToast('Mensaje desfijado');
+        };
+
+        // ========================================================
+        // ====== PARIDAD LLAMADA PRIVADA: COMPARTIR PANTALLA Y VOLUMEN ======
+        // ========================================================
+        const callScreenShareBtn = document.getElementById('call-screen-share-btn');
+        const screenShareVideo = document.getElementById('screen-share-video');
+        const peerVolumeSlider = document.getElementById('peer-volume-slider');
+        const peerVolumeVal = document.getElementById('peer-volume-val');
+        let callScreenStream = null;
+
+        if (callScreenShareBtn) {
+            callScreenShareBtn.addEventListener('click', async () => {
+                if (callScreenStream) {
+                    callScreenStream.getTracks().forEach(t => t.stop());
+                    callScreenStream = null;
+                    if (screenShareVideo) {
+                        screenShareVideo.srcObject = null;
+                        screenShareVideo.style.display = 'none';
+                    }
+                    callScreenShareBtn.classList.remove('active-muted');
+                    showToast('Has dejado de compartir pantalla');
+                    return;
+                }
+
+                try {
+                    callScreenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                    if (screenShareVideo) {
+                        screenShareVideo.srcObject = callScreenStream;
+                        screenShareVideo.style.display = 'block';
+                    }
+                    callScreenShareBtn.classList.add('active-muted');
+                    showToast('Compartiendo pantalla en la llamada');
+
+                    if (rtcPeer) {
+                        const videoTrack = callScreenStream.getVideoTracks()[0];
+                        if (videoTrack) {
+                            const sender = rtcPeer.getSenders().find(s => s.track && s.track.kind === 'video');
+                            if (sender) sender.replaceTrack(videoTrack);
+                            else rtcPeer.addTrack(videoTrack, callScreenStream);
+                        }
+                    }
+
+                    callScreenStream.getVideoTracks()[0].onended = () => {
+                        callScreenStream = null;
+                        if (screenShareVideo) {
+                            screenShareVideo.srcObject = null;
+                            screenShareVideo.style.display = 'none';
+                        }
+                        callScreenShareBtn.classList.remove('active-muted');
+                    };
+                } catch (err) {
+                    console.warn('Error compartiendo pantalla:', err);
+                }
+            });
+        }
+
+        if (peerVolumeSlider && peerVolumeVal) {
+            peerVolumeSlider.addEventListener('input', (e) => {
+                const vol = parseInt(e.target.value, 10);
+                peerVolumeVal.textContent = `${vol}%`;
+                if (remoteCallAudio) remoteCallAudio.volume = vol / 100;
+                if (callTargetUid && SfuAudioEngine.peerGains.has(callTargetUid)) {
+                    SfuAudioEngine.peerGains.get(callTargetUid).gain.value = vol / 100;
+                }
+            });
+        }
+
+        // Sincronizar footer de usuario al iniciar
+        socket.on('session', () => updateSidebarUserFooter());
+        socket.on('update-users', () => {
+            updateSidebarUserFooter();
+            renderFriendsHub();
+            renderActiveNow();
+        });
 
         loadSettings();
+        updateSidebarUserFooter();
     </script>
 </body>
 </html>
