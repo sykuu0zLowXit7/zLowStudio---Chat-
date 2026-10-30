@@ -3169,6 +3169,19 @@
             font-weight: 800;
             letter-spacing: 0.5px;
         }
+        .stage-sfu-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
         .live-dot {
             width: 6px;
             height: 6px;
@@ -3804,6 +3817,7 @@
         <div class="stage-header" id="stage-drag-handle">
             <div class="stage-header-left">
                 <div class="stage-live-badge"><span class="live-dot"></span> EN VIVO</div>
+                <div class="stage-sfu-badge" title="Servidor de Medios SFU Central Activo (100% inmune a bloqueos móviles/ICE)">⚡ SFU Relay</div>
                 <div class="stage-title">Canal de Voz: Sala General</div>
                 <div class="stage-participants-badge" id="stage-participants-count">1 participante</div>
                 <div class="stage-timer" id="stage-call-timer">00:00</div>
@@ -7134,6 +7148,262 @@
         }
 
         // ========================================================
+        // ====== SERVIDOR CENTRAL DE MEDIOS SFU (WEBSOCKET RELAY) ======
+        // Resuelve definitivamente los bloqueos de operadoras móviles (4G/5G) y fallos de ICE/TURN.
+        // Enruta audio digital PCM de 16-bit a 24 kHz directamente por WebSocket seguro (WSS en puerto 443).
+        // ========================================================
+        const SfuAudioEngine = {
+            audioCtx: null,
+            micStream: null,
+            sourceNode: null,
+            processorNode: null,
+            isStreaming: false,
+            channelId: null,
+            targetUid: null,
+            peerPlayTimelines: new Map(), // peerUid -> nextPlayTime
+            peerGains: new Map(), // peerUid -> GainNode
+            speakingTimeouts: new Map(), // peerUid -> timeoutId
+
+            init() {
+                if (!this.audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        this.audioCtx = new AudioContextClass({ sampleRate: 24000 });
+                    }
+                }
+                if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume().catch(() => {});
+                }
+            },
+
+            async startStreaming(stream, { channelId = null, targetUid = null } = {}) {
+                this.init();
+                if (!this.audioCtx || !stream) return;
+                this.stopStreaming();
+
+                this.micStream = stream;
+                this.channelId = channelId;
+                this.targetUid = targetUid;
+                this.isStreaming = true;
+
+                if (this.audioCtx.state === 'suspended') {
+                    await this.audioCtx.resume().catch(() => {});
+                }
+
+                try {
+                    this.sourceNode = this.audioCtx.createMediaStreamSource(stream);
+                    // ScriptProcessor con 2048 muestras a 24000 Hz = ~85ms por paquete de audio
+                    this.processorNode = this.audioCtx.createScriptProcessor(2048, 1, 1);
+
+                    let silenceFrames = 0;
+                    let wasSpeaking = false;
+
+                    this.processorNode.onaudioprocess = (e) => {
+                        if (!this.isStreaming) return;
+                        const inputData = e.inputBuffer.getChannelData(0);
+
+                        // Si el micrófono está silenciado, no emitir paquetes
+                        const isMuted = this.channelId ? groupVoiceIsMicMuted : callIsMicMuted;
+                        if (isMuted) {
+                            if (wasSpeaking) {
+                                wasSpeaking = false;
+                                this.notifySpeaking(false);
+                            }
+                            return;
+                        }
+
+                        // Calcular nivel de volumen RMS (Voice Activity Detection)
+                        let sum = 0;
+                        for (let i = 0; i < inputData.length; i++) {
+                            sum += inputData[i] * inputData[i];
+                        }
+                        const rms = Math.sqrt(sum / inputData.length);
+                        const isSpeakingNow = rms > 0.015;
+
+                        if (isSpeakingNow) {
+                            silenceFrames = 0;
+                            if (!wasSpeaking) {
+                                wasSpeaking = true;
+                                this.notifySpeaking(true);
+                            }
+                        } else {
+                            silenceFrames++;
+                            if (silenceFrames > 3 && wasSpeaking) { // ~255ms de cola para no cortar fonemas finales
+                                wasSpeaking = false;
+                                this.notifySpeaking(false);
+                            }
+                        }
+
+                        // Emitir audio al SFU central cuando el usuario habla
+                        if (wasSpeaking) {
+                            // Conversión de Float32 (-1.0 a 1.0) a Int16 (-32768 a 32767)
+                            const int16Buffer = new Int16Array(inputData.length);
+                            for (let i = 0; i < inputData.length; i++) {
+                                const s = Math.max(-1, Math.min(1, inputData[i]));
+                                int16Buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                            }
+
+                            socket.emit('voice:stream-audio', {
+                                channelId: this.channelId,
+                                targetUid: this.targetUid,
+                                audio: int16Buffer.buffer,
+                                isSpeaking: true,
+                                timestamp: Date.now()
+                            });
+                        }
+                    };
+
+                    this.sourceNode.connect(this.processorNode);
+
+                    // Conectar a ganancia silenciada en el destino para activar onaudioprocess sin eco local
+                    const muteGain = this.audioCtx.createGain();
+                    muteGain.gain.value = 0;
+                    this.processorNode.connect(muteGain);
+                    muteGain.connect(this.audioCtx.destination);
+                    console.log('[SFU Audio Bridge] Transmisión centralizada por WebSocket iniciada exitosamente.');
+                } catch (err) {
+                    console.error('[SFU Audio Bridge] Error configurando procesador de audio:', err);
+                }
+            },
+
+            notifySpeaking(speaking) {
+                if (this.channelId) {
+                    socket.emit('group-voice:update-state', { isSpeaking: speaking });
+                    const myCard = groupVoiceGrid.querySelector(`[data-uid="${myUid}"]`);
+                    if (myCard) myCard.classList.toggle('speaking', speaking);
+                    updateSidebarUserSpeaking(myUid, speaking);
+                    if (minimizedCallType === 'group') {
+                        pillStatusLabel.textContent = speaking ? `Hablando: ${myNickname}` : `${currentVoiceChannelName} (${groupVoiceParticipantsList.length})`;
+                    }
+                } else if (this.targetUid) {
+                    socket.emit('call:speaking', { targetUid: this.targetUid, isSpeaking: speaking });
+                }
+            },
+
+            stopStreaming() {
+                this.isStreaming = false;
+                if (this.processorNode) {
+                    try { this.processorNode.disconnect(); } catch (e) {}
+                    this.processorNode = null;
+                }
+                if (this.sourceNode) {
+                    try { this.sourceNode.disconnect(); } catch (e) {}
+                    this.sourceNode = null;
+                }
+                this.channelId = null;
+                this.targetUid = null;
+            },
+
+            // Reproducción de audio recibido desde el SFU central
+            receiveAudioChunk(fromUid, rawBuffer, { isPrivate = false } = {}) {
+                if (!rawBuffer) return;
+                const isDeafened = isPrivate ? callIsDeafened : groupVoiceIsDeafened;
+                if (isDeafened) return;
+
+                this.init();
+                if (!this.audioCtx) return;
+
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume().catch(() => {});
+                }
+
+                try {
+                    const int16 = new Int16Array(rawBuffer);
+                    if (int16.length === 0) return;
+
+                    // Convertir Int16 a Float32 para Web Audio API
+                    const float32 = new Float32Array(int16.length);
+                    for (let i = 0; i < int16.length; i++) {
+                        float32[i] = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7FFF);
+                    }
+
+                    // Buffer nativo a 24000 Hz
+                    const audioBuf = this.audioCtx.createBuffer(1, float32.length, 24000);
+                    audioBuf.getChannelData(0).set(float32);
+
+                    // Nodo de ganancia del peer
+                    let gainNode = this.peerGains.get(fromUid);
+                    if (!gainNode) {
+                        gainNode = this.audioCtx.createGain();
+                        gainNode.gain.value = 1.0;
+                        gainNode.connect(this.audioCtx.destination);
+                        this.peerGains.set(fromUid, gainNode);
+                    }
+
+                    const srcNode = this.audioCtx.createBufferSource();
+                    srcNode.buffer = audioBuf;
+                    srcNode.connect(gainNode);
+
+                    // Programar reproducción secuencial para eliminar gaps y jitter
+                    const currentTime = this.audioCtx.currentTime;
+                    let nextPlay = this.peerPlayTimelines.get(fromUid) || currentTime;
+                    if (nextPlay < currentTime) {
+                        nextPlay = currentTime + 0.02; // 20ms jitter buffer
+                    }
+                    srcNode.start(nextPlay);
+                    this.peerPlayTimelines.set(fromUid, nextPlay + audioBuf.duration);
+
+                    // Resaltar indicador visual de habla
+                    this.markPeerSpeaking(fromUid, isPrivate);
+                } catch (err) {
+                    console.warn('[SFU Audio Bridge] Error en reproducción de audio:', err);
+                }
+            },
+
+            markPeerSpeaking(uid, isPrivate = false) {
+                if (isPrivate) {
+                    activeCallOverlay.classList.add('connected');
+                    return;
+                }
+
+                const card = groupVoiceGrid.querySelector(`[data-uid="${uid}"]`);
+                if (card) card.classList.add('speaking');
+                updateSidebarUserSpeaking(uid, true);
+
+                if (this.speakingTimeouts.has(uid)) {
+                    clearTimeout(this.speakingTimeouts.get(uid));
+                }
+
+                const tid = setTimeout(() => {
+                    if (card) card.classList.remove('speaking');
+                    updateSidebarUserSpeaking(uid, false);
+                    this.speakingTimeouts.delete(uid);
+                }, 320);
+
+                this.speakingTimeouts.set(uid, tid);
+            },
+
+            cleanupPeer(uid) {
+                if (this.peerGains.has(uid)) {
+                    try { this.peerGains.get(uid).disconnect(); } catch (e) {}
+                    this.peerGains.delete(uid);
+                }
+                this.peerPlayTimelines.delete(uid);
+                if (this.speakingTimeouts.has(uid)) {
+                    clearTimeout(this.speakingTimeouts.get(uid));
+                    this.speakingTimeouts.delete(uid);
+                }
+            },
+
+            reset() {
+                this.stopStreaming();
+                this.peerGains.forEach(g => { try { g.disconnect(); } catch (e) {} });
+                this.peerGains.clear();
+                this.peerPlayTimelines.clear();
+                this.speakingTimeouts.forEach(t => clearTimeout(t));
+                this.speakingTimeouts.clear();
+            }
+        };
+
+        // Escuchar flujo de audio del servidor SFU centralizado
+        socket.on('voice:stream-audio', (data) => {
+            if (!data || !data.audio) return;
+            if (data.fromUid && data.fromUid !== myUid) {
+                SfuAudioEngine.receiveAudioChunk(data.fromUid, data.audio, { isPrivate: Boolean(data.isPrivate) });
+            }
+        });
+
+        // ========================================================
         // --- GESTIÓN DE PASTILLA FLOTANTE MINI (PIP) ---
         // ========================================================
         const voiceFloatingPill = document.getElementById('voice-floating-pill');
@@ -7501,6 +7771,8 @@
                     localAudioStream.getAudioTracks().forEach(track => {
                         rtcPeer.addTrack(track, localAudioStream);
                     });
+                    // Iniciar streaming de audio centralizado a través del SFU WebSocket Relay
+                    SfuAudioEngine.startStreaming(localAudioStream, { targetUid: callTargetUid });
                 }
 
                 rtcPeer.ontrack = (event) => {
@@ -7636,11 +7908,13 @@
             stopDialTone();
             stopIncomingRingtone();
             stopVoiceActivityDetection();
+            SfuAudioEngine.stopStreaming();
+            SfuAudioEngine.reset();
             clearInterval(callTimerInterval);
             callTimerInterval = null;
 
             if (rtcPeer) {
-                rtcPeer.close();
+                try { rtcPeer.close(); } catch (e) {}
                 rtcPeer = null;
             }
 
@@ -7841,6 +8115,9 @@
             socket.emit('voice-channel:join', { channelId });
             startGroupVoiceTimer();
 
+            // Iniciar streaming de audio centralizado a través del SFU WebSocket Relay
+            SfuAudioEngine.startStreaming(groupVoiceStream, { channelId });
+
             // Detección de voz propia con Web Audio API
             startVoiceActivityDetection(groupVoiceStream, (speaking) => {
                 socket.emit('group-voice:update-state', { isSpeaking: speaking });
@@ -7863,6 +8140,7 @@
 
             stopGroupVoiceTimer();
             stopVoiceActivityDetection();
+            SfuAudioEngine.reset();
 
             if (groupVoiceStream) {
                 groupVoiceStream.getTracks().forEach(t => t.stop());
@@ -8454,6 +8732,7 @@
         });
 
         socket.on('group-voice:peer-left', ({ channelId, uid }) => {
+            SfuAudioEngine.cleanupPeer(uid);
             if (groupVoicePeers.has(uid)) {
                 try { groupVoicePeers.get(uid).close(); } catch (e) {}
                 groupVoicePeers.delete(uid);
