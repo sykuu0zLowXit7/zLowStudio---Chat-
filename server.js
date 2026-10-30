@@ -458,6 +458,8 @@ function removeUserFromVoiceChannels(uid) {
   if (had) {
     io.emit('group-voice:peer-left', { channelId: currentChId, uid });
     broadcastVoiceChannelsState();
+    notifyFriendsOf(uid);
+    io.emit('update-users', getCleanUsersList());
   }
   return currentChId;
 }
@@ -531,7 +533,12 @@ function getCleanUsersList() {
     if (!u || !u.uid) continue;
     if (seenUids.has(u.uid)) continue;
     seenUids.add(u.uid);
-    clean[sid] = u;
+    const chId = userCurrentVoiceChannel.get(u.uid) || null;
+    clean[sid] = {
+      ...u,
+      currentVoiceChannel: chId,
+      currentVoiceChannelName: chId && VOICE_CHANNELS[chId] ? VOICE_CHANNELS[chId].name : null,
+    };
   }
   return clean;
 }
@@ -822,6 +829,8 @@ function friendEntry(id) {
   const activeUser = sids.length > 0 && users[sids[0]] ? users[sids[0]] : null;
   const src = activeUser || p;
   const userCode = src.userCode || p.userCode || getOrGenerateUserCode(id);
+  const chId = userCurrentVoiceChannel.get(id) || null;
+  const ch = chId && VOICE_CHANNELS[chId];
   return {
     uid: id,
     userCode,
@@ -832,6 +841,9 @@ function friendEntry(id) {
     memberSince: src.memberSince || 0,
     lastSeen: p.lastSeen || 0,
     status: friendStatus(id),
+    currentVoiceChannel: chId,
+    currentVoiceChannelName: ch ? ch.name : null,
+    activity: src.activity || p.activity || null,
   };
 }
 
@@ -1064,6 +1076,7 @@ io.on('connection', (socket) => {
       connectedAt: Date.now(),
       uid,
       userCode,
+      activity: (profiles[uid] && profiles[uid].activity) || null,
     };
 
     syncProfileFromSocket(socket.id);
@@ -1995,6 +2008,43 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('call:update-state', (payload) => {
+    const myUid = socket.uid;
+    const targetUid = payload && payload.targetUid;
+    if (!myUid || !targetUid) return;
+    const destSockets = getSocketsForUid(targetUid);
+    destSockets.forEach((sid) => {
+      io.to(sid).emit('call:peer-state', {
+        fromUid: myUid,
+        isMuted: Boolean(payload.isMuted),
+        isDeafened: Boolean(payload.isDeafened),
+        isSpeaking: Boolean(payload.isSpeaking),
+        isScreenSharing: Boolean(payload.isScreenSharing),
+      });
+    });
+  });
+
+  socket.on('set activity', (activity) => {
+    const u = users[socket.id];
+    if (!u) return;
+    if (!activity || !activity.name) {
+      u.activity = null;
+    } else {
+      u.activity = {
+        type: String(activity.type || 'game').slice(0, 24),
+        name: cleanName(activity.name),
+        details: cleanBio(activity.details || ''),
+        startedAt: Date.now()
+      };
+    }
+    if (u.uid) {
+      if (!profiles[u.uid]) profiles[u.uid] = {};
+      profiles[u.uid].activity = u.activity;
+      notifyFriendsOf(u.uid);
+    }
+    io.emit('update-users', getCleanUsersList());
+  });
+
   // ========================================================
   // --- SISTEMA DE 3 CANALES DE VOZ (10/10) ESTILO DISCORD ---
   // ========================================================
@@ -2129,6 +2179,8 @@ io.on('connection', (socket) => {
     }
 
     broadcastVoiceChannelsState();
+    notifyFriendsOf(myUid);
+    io.emit('update-users', getCleanUsersList());
   }
 
   socket.on('group-voice:leave', () => {
@@ -2332,17 +2384,11 @@ app.get('*', (_req, res) => {
   res.status(404).send('index.html no encontrado');
 });
 
-let TARGET_PORT = 3000;
-if (process.env.RENDER === 'true' && process.env.PORT) {
-  TARGET_PORT = Number(process.env.PORT);
-} else if (process.env.PORT && process.env.PORT !== '8080') {
-  TARGET_PORT = Number(process.env.PORT);
-}
+const TARGET_PORT = Number(process.env.PORT) || 3000;
 
 server.on('error', (err) => {
   if (err && err.code === 'EADDRINUSE' && TARGET_PORT !== 3000) {
     console.warn(`Puerto ${TARGET_PORT} en uso, reintentando en puerto 3000...`);
-    TARGET_PORT = 3000;
     server.listen(3000, '0.0.0.0', () => {
       console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:3000`);
     });
