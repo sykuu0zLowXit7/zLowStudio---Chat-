@@ -1973,27 +1973,400 @@
         .suf-actions {
             display: flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
         .suf-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: transparent;
-            border: none;
-            color: var(--text-sub);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            color: #b5bac1;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .suf-btn:hover {
-            background: var(--bg-input);
-            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+        .suf-btn:active {
+            transform: scale(0.92);
         }
         .suf-btn.active-muted {
-            color: #ff4757;
+            color: #ff4757 !important;
+            background: rgba(255, 71, 87, 0.15);
+            border-color: rgba(255, 71, 87, 0.35);
+            box-shadow: 0 0 12px rgba(255, 71, 87, 0.35);
+        }
+
+        /* ANIMACIONES VIVAS: AGRANDADO EN HOVER (EXPERIENCIA FLUIDA) */
+        .hub-tab-btn, .action-icon-btn, .suf-btn, .opt-btn,
+        .channel-item, .friend-item, .hub-friend-row, .hub-action-btn,
+        .control-btn, .profile-btn, .msg-bubble, .menu-dots-btn, .pencil-btn,
+        .status-item, .popout-menu-item, .vcb-left, .active-now-card,
+        .msg-user-name-clickable, .hub-tab-btn.cloud-disabled-pill {
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, background 0.18s ease, color 0.15s ease, border-color 0.18s ease !important;
+        }
+        .hub-tab-btn:hover, .action-icon-btn:hover,
+        .hub-action-btn:hover, .control-btn:hover, .profile-btn:hover,
+        .pencil-btn:hover, .popout-menu-item:hover {
+            transform: scale(1.07) translateY(-2px);
+        }
+        .channel-item:hover, .friend-item:hover, .hub-friend-row:hover {
+            transform: translateX(4px) scale(1.02);
+        }
+        .suf-user-info:hover {
+            transform: scale(1.03) translateY(-1px);
+        }
+
+        /* OPCIONES EN NUBE (NO DISPONIBLES) - IMAGEN 3 */
+        .cloud-disabled-pill {
+            opacity: 0.72;
+            cursor: pointer;
+            position: relative;
+            background: rgba(255, 255, 255, 0.04) !important;
+            border: 1px dashed rgba(255, 255, 255, 0.22) !important;
+            color: var(--text-sub) !important;
+            user-select: none;
+        }
+        .cloud-disabled-pill:hover {
+            opacity: 0.95;
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+            color: #38bdf8 !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        }
+        .cloud-disabled-pill::after {
+            content: '☁️';
+            margin-left: 6px;
+            font-size: 0.8rem;
+            display: inline-block;
+            transition: transform 0.25s ease;
+        }
+        .cloud-disabled-pill:hover::after {
+            transform: translateY(-2px) scale(1.15);
+        }
+        .cloud-disabled-pill:active {
+            animation: cloudShake 0.35s ease;
+        }
+        @keyframes cloudShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+
+        /* NOMBRES CLICABLES EN EL CHAT Y EN LISTAS */
+        .msg-user-name-clickable {
+            cursor: pointer;
+            display: inline-block;
+            transition: color 0.15s, transform 0.15s;
+        }
+        .msg-user-name-clickable:hover {
+            text-decoration: underline;
+            filter: brightness(1.2);
+            transform: scale(1.04);
+        }
+
+        /* MINI PERFIL FLOTANTE / POPOUT (EXACTO A IMAGEN 5 - image_ecbead84.png) */
+        .mini-profile-popout {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            width: 310px;
+            max-width: calc(100% - 20px);
+            background: #1e1f22;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 14px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 0, 0, 0.6);
+            z-index: 1200;
+            overflow: hidden;
+            animation: popoutBounceIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #dbdee1;
+            text-align: left;
+        }
+        @keyframes popoutBounceIn {
+            from { opacity: 0; transform: translateY(14px) scale(0.94); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .popout-banner {
+            height: 80px;
+            background: linear-gradient(135deg, #f472b6, #fb7185, #38bdf8);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            box-shadow: inset 0 -15px 20px rgba(0, 0, 0, 0.4);
+        }
+        .popout-header-content {
+            position: relative;
+            padding: 0 14px;
+            margin-top: -38px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .popout-avatar-wrap {
+            position: relative;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 5px solid #1e1f22;
+            background: #111;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+            flex-shrink: 0;
+        }
+        .popout-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .popout-status-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3.5px solid #1e1f22;
+            box-sizing: border-box;
+        }
+        .popout-status-dot.online { background: #23a55a; }
+        .popout-status-dot.idle { background: #f0b232; }
+        .popout-status-dot.dnd { background: #f23f43; }
+        .popout-status-dot.offline { background: #80848e; }
+
+        .popout-bubble-status {
+            background: #2b2d31;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 0.73rem;
+            font-style: italic;
+            color: #b5bac1;
+            max-width: 180px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .popout-bubble-status:hover {
+            background: #313338;
+            color: #ffffff;
+            transform: scale(1.05) translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .popout-info {
+            padding: 8px 14px 4px;
+        }
+        .popout-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .popout-name {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .popout-status-emoji {
+            font-size: 0.9rem;
+        }
+        .popout-tag {
+            font-size: 0.78rem;
+            color: #949ba4;
+            font-weight: 600;
+        }
+
+        .popout-menu {
+            background: #2b2d31;
+            border-radius: 10px;
+            margin: 8px 10px 12px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .popout-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            color: #dbdee1;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .popout-menu-item:hover {
+            background: #35373c;
+            color: #ffffff;
+            transform: scale(1.04) translateX(3px);
+        }
+        .popout-has-arrow {
+            justify-content: space-between;
+        }
+        .popout-arrow {
+            color: #949ba4;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .popout-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 4px 6px;
+        }
+
+        .popout-cur-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .popout-cur-status-dot.online { background: #23a55a; }
+        .popout-cur-status-dot.idle { background: #f0b232; }
+        .popout-cur-status-dot.dnd { background: #f23f43; }
+        .popout-cur-status-dot.offline { background: #80848e; }
+
+        .popout-status-flyout {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: #18191c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 6px;
+            margin: 4px 0 6px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            animation: fadeInHub 0.18s ease-out;
+        }
+        .popout-status-opt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            color: #dbdee1;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            transition: all 0.15s;
+        }
+        .popout-status-opt:hover {
+            background: #313338;
+            color: #ffffff;
+            transform: scale(1.04) translateX(2px);
+        }
+        .popout-opt-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .popout-opt-dot.online { background: #23a55a; }
+        .popout-opt-dot.idle { background: #f0b232; }
+        .popout-opt-dot.dnd { background: #f23f43; }
+        .popout-opt-dot.offline { background: #80848e; }
+
+        /* EDITOR DE PERFIL MEJORADO CON LÁPIZ DE BANNER */
+        .profile-edit-box {
+            padding: 0 0 20px 0 !important;
+            overflow: hidden;
+            width: 440px !important;
+            max-width: 95vw !important;
+            text-align: left;
+        }
+        .pe-banner-wrap {
+            position: relative;
+            height: 120px;
+            background: linear-gradient(135deg, #e11d48, #2563eb);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 10px;
+            box-shadow: inset 0 -20px 30px rgba(0,0,0,0.5);
+        }
+        .pe-banner-pencil-btn {
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .pe-banner-pencil-btn:hover {
+            background: rgba(0,0,0,0.85);
+            transform: scale(1.08) translateY(-2px);
+            border-color: #fff;
+        }
+        .pe-banner-panel {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 18px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .pe-swatches-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pe-color-swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .pe-color-swatch:hover {
+            transform: scale(1.25);
+            border-color: #fff;
+        }
+        .pe-content-inner {
+            padding: 0 20px;
         }
 
         /* FLOATING VOICE CONNECTION BAR (BARRA VERDE DE VOZ CONECTADA) */
@@ -4942,27 +5315,65 @@
     <!-- EDITAR MI PERFIL -->
     <div id="profile-edit-modal" class="modal-overlay" style="display: none;">
         <div class="modal-box profile-edit-box">
-            <h2>Editar perfil</h2>
-            <input type="file" id="pe-file" accept="image/png, image/jpeg, image/webp" style="display: none;" />
-
-            <div class="avatar-picker-wrapper">
-                <div class="avatar-preview-img" id="pe-avatar-box">👤</div>
-                <button type="button" class="pencil-btn" id="pe-pencil" title="Cambiar foto de perfil">✏️</button>
-            </div>
-            <button type="button" class="pe-link-btn" id="pe-remove-photo" style="display: block; margin: 0 auto 16px; background: transparent; border: none; color: var(--text-sub); cursor: pointer; text-decoration: underline;">Quitar foto</button>
-
-            <div class="pe-field" style="margin-bottom: 14px; text-align: left;">
-                <label for="pe-nick" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">Apodo</label>
-                <input type="text" id="pe-nick" maxlength="20" autocomplete="off" placeholder="Tu apodo...">
-            </div>
-            <div class="pe-field" style="margin-bottom: 14px; text-align: left;">
-                <label for="pe-bio" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">Descripción</label>
-                <textarea id="pe-bio" style="width: 100%; height: 84px; resize: none; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); outline: none;" maxlength="200" placeholder="Cuéntales algo sobre ti..."></textarea>
-                <div class="pe-count" id="pe-count" style="text-align: right; font-size: 0.7rem; color: var(--text-sub); margin-top: 4px;">0/200</div>
+            <!-- BANNER PREVIEW CON LÁPIZ -->
+            <div class="pe-banner-wrap" id="pe-banner-wrap">
+                <input type="file" id="pe-banner-file" accept="image/png, image/jpeg, image/webp" style="display: none;" />
+                <input type="color" id="pe-banner-color" style="display: none;" value="#e11d48" />
+                <button type="button" class="pe-banner-pencil-btn" id="pe-banner-pencil" title="Cambiar banner">
+                    <span>✏️</span>
+                    <span>Personalizar Banner</span>
+                </button>
             </div>
 
-            <button type="button" class="main-btn" id="pe-save">Guardar cambios</button>
-            <button type="button" class="main-btn" id="pe-cancel" style="margin-top: 8px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color);">Cancelar</button>
+            <!-- PANEL DESPLEGABLE DE PERSONALIZACIÓN DE BANNER -->
+            <div class="pe-banner-panel" id="pe-banner-panel" style="display: none;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-sub); display: flex; justify-content: space-between; align-items: center;">
+                    <span>COLOR O IMAGEN DE BANNER</span>
+                    <button type="button" id="pe-remove-banner-btn" style="background: transparent; border: none; color: #ff4757; font-size: 0.72rem; cursor: pointer; text-decoration: underline;">Quitar banner</button>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="opt-btn" id="pe-upload-banner-btn" style="font-size: 0.76rem; padding: 5px 10px;">📷 Subir imagen</button>
+                    <button type="button" class="opt-btn" id="pe-pick-color-btn" style="font-size: 0.76rem; padding: 5px 10px;">🎨 Color personalizado</button>
+                </div>
+                <div class="pe-swatches-row">
+                    <span style="font-size: 0.72rem; color: var(--text-sub);">Estilos:</span>
+                    <div class="pe-color-swatch" data-bg="linear-gradient(135deg, #f472b6, #fb7185, #38bdf8)" style="background: linear-gradient(135deg, #f472b6, #fb7185, #38bdf8);" title="Sakura Neon"></div>
+                    <div class="pe-color-swatch" data-bg="linear-gradient(135deg, #0d0221, #ff0055, #00f6ff)" style="background: linear-gradient(135deg, #0d0221, #ff0055, #00f6ff);" title="Cyberpunk"></div>
+                    <div class="pe-color-swatch" data-bg="linear-gradient(135deg, #0a1128, #1c3166, #0284c7)" style="background: linear-gradient(135deg, #0a1128, #1c3166, #0284c7);" title="Midnight Navy"></div>
+                    <div class="pe-color-swatch" data-bg="linear-gradient(135deg, #10b981, #047857, #064e3b)" style="background: linear-gradient(135deg, #10b981, #047857, #064e3b);" title="Esmeralda"></div>
+                    <div class="pe-color-swatch" data-bg="linear-gradient(135deg, #f97316, #ef4444, #7c2d12)" style="background: linear-gradient(135deg, #f97316, #ef4444, #7c2d12);" title="Sunset Fire"></div>
+                    <div class="pe-color-swatch" data-bg="linear-gradient(135deg, #8b5cf6, #ec4899, #3b82f6)" style="background: linear-gradient(135deg, #8b5cf6, #ec4899, #3b82f6);" title="Cosmic Violet"></div>
+                </div>
+            </div>
+
+            <div class="pe-content-inner">
+                <input type="file" id="pe-file" accept="image/png, image/jpeg, image/webp" style="display: none;" />
+
+                <div class="avatar-picker-wrapper" style="margin-top: -35px; position: relative;">
+                    <div class="avatar-preview-img" id="pe-avatar-box">👤</div>
+                    <button type="button" class="pencil-btn" id="pe-pencil" title="Cambiar foto de perfil">✏️</button>
+                </div>
+                <button type="button" class="pe-link-btn" id="pe-remove-photo" style="display: block; margin: 0 auto 12px; background: transparent; border: none; color: var(--text-sub); cursor: pointer; text-decoration: underline; font-size: 0.76rem;">Quitar foto</button>
+
+                <div class="pe-field" style="margin-bottom: 12px; text-align: left;">
+                    <label for="pe-nick" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-bottom: 5px;">Apodo</label>
+                    <input type="text" id="pe-nick" maxlength="20" autocomplete="off" placeholder="Tu apodo...">
+                </div>
+
+                <div class="pe-field" style="margin-bottom: 12px; text-align: left;">
+                    <label for="pe-mascot-status" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-bottom: 5px;">Mascota / Estado de Criatura</label>
+                    <input type="text" id="pe-mascot-status" maxlength="60" autocomplete="off" placeholder="Ej: Dragón Astral, Fénix Carmesí...">
+                </div>
+
+                <div class="pe-field" style="margin-bottom: 14px; text-align: left;">
+                    <label for="pe-bio" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-bottom: 5px;">Descripción</label>
+                    <textarea id="pe-bio" style="width: 100%; height: 72px; resize: none; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); outline: none;" maxlength="200" placeholder="Cuéntales algo sobre ti..."></textarea>
+                    <div class="pe-count" id="pe-count" style="text-align: right; font-size: 0.7rem; color: var(--text-sub); margin-top: 3px;">0/200</div>
+                </div>
+
+                <button type="button" class="main-btn" id="pe-save">Guardar cambios</button>
+                <button type="button" class="main-btn" id="pe-cancel" style="margin-top: 8px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color);">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -5116,9 +5527,82 @@
                 </button>
             </div>
 
+            <!-- MINI PERFIL FLOTANTE (ESTILO IMAGEN 5 - image_ecbead84.png) -->
+            <div class="mini-profile-popout" id="mini-profile-popout" style="display: none;">
+                <div class="popout-banner" id="popout-banner"></div>
+                <div class="popout-header-content">
+                    <div class="popout-avatar-wrap">
+                        <div class="popout-avatar" id="popout-avatar">👤</div>
+                        <span class="popout-status-dot online" id="popout-status-dot"></span>
+                    </div>
+                    <div class="popout-bubble-status" id="popout-bubble-status" title="Clic para cambiar actividad / criatura">
+                        <span>➕</span>
+                        <span id="popout-bubble-text">Elige una criatura mitológica como mascota</span>
+                    </div>
+                </div>
+                <div class="popout-info">
+                    <div class="popout-name-row">
+                        <span class="popout-name" id="popout-name">Usuario</span>
+                        <span class="popout-status-emoji" id="popout-status-emoji">🟢</span>
+                    </div>
+                    <div class="popout-tag" id="popout-tag">#4405</div>
+                </div>
+                <div class="popout-menu">
+                    <button type="button" class="popout-menu-item" id="popout-btn-edit">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        <span>Editar perfil</span>
+                    </button>
+
+                    <button type="button" class="popout-menu-item popout-has-arrow" id="popout-status-btn">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="popout-cur-status-dot online" id="popout-cur-status-dot"></span>
+                            <span id="popout-cur-status-label">En línea</span>
+                        </div>
+                        <span class="popout-arrow">›</span>
+                    </button>
+                    <!-- Flyout selector de estado de 1-click directo -->
+                    <div class="popout-status-flyout" id="popout-status-flyout" style="display: none;">
+                        <button type="button" class="popout-status-opt" data-status="online">
+                            <span class="popout-opt-dot online"></span>
+                            <span>En línea</span>
+                        </button>
+                        <button type="button" class="popout-status-opt" data-status="idle">
+                            <span class="popout-opt-dot idle"></span>
+                            <span>Ausente 🌙</span>
+                        </button>
+                        <button type="button" class="popout-status-opt" data-status="dnd">
+                            <span class="popout-opt-dot dnd"></span>
+                            <span>No molestar ⛔</span>
+                        </button>
+                        <button type="button" class="popout-status-opt" data-status="offline">
+                            <span class="popout-opt-dot offline"></span>
+                            <span>Invisible ⚪</span>
+                        </button>
+                    </div>
+
+                    <button type="button" class="popout-menu-item" id="popout-btn-badges">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="8" r="6"/><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <span>Insignias</span>
+                    </button>
+
+                    <div class="popout-divider"></div>
+
+                    <button type="button" class="popout-menu-item popout-has-arrow" id="popout-btn-accounts">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <span>Cambiar cuentas</span>
+                        <span class="popout-arrow">›</span>
+                    </button>
+
+                    <button type="button" class="popout-menu-item" id="popout-btn-copy-id">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="8" x2="12" y2="8"/><line x1="8" y1="16" x2="14" y2="16"/></svg>
+                        <span>Copiar ID del usuario</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- FOOTER DE USUARIO EN LA BARRA LATERAL (ESTILO DISCORD) -->
             <div class="sidebar-user-footer" id="sidebar-user-footer">
-                <div class="suf-avatar-col" id="suf-profile-trigger" title="Clic para ver o editar tu perfil">
+                <div class="suf-avatar-col" id="suf-profile-trigger" title="Clic para ver tu perfil y estado">
                     <div class="suf-avatar-wrap">
                         <div class="suf-avatar" id="suf-avatar">👤</div>
                         <span class="suf-status-dot online" id="suf-status-dot"></span>
@@ -5130,13 +5614,13 @@
                 </div>
                 <div class="suf-actions">
                     <button type="button" class="suf-btn" id="suf-btn-mic" title="Silenciar / Activar micrófono">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                     </button>
                     <button type="button" class="suf-btn" id="suf-btn-deafen" title="Ensordecer / Activar sonido">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
                     </button>
                     <button type="button" class="suf-btn" id="suf-btn-settings" title="Ajustes de usuario">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     </button>
                 </div>
             </div>
@@ -5291,11 +5775,11 @@
                     <button type="button" class="hub-tab-btn active" data-tab="online" id="hub-tab-online">
                         En línea <span class="hub-tab-badge" id="hub-badge-online">0</span>
                     </button>
-                    <button type="button" class="hub-tab-btn" data-tab="all" id="hub-tab-all">Todos</button>
-                    <button type="button" class="hub-tab-btn" data-tab="pending" id="hub-tab-pending">
+                    <button type="button" class="hub-tab-btn cloud-disabled-pill" data-tab="all" id="hub-tab-all" title="Función no disponible temporalmente">Todos</button>
+                    <button type="button" class="hub-tab-btn cloud-disabled-pill" data-tab="pending" id="hub-tab-pending" title="Función no disponible temporalmente">
                         Pendiente <span class="hub-tab-badge alert" id="hub-badge-pending" style="display:none;">0</span>
                     </button>
-                    <button type="button" class="hub-tab-btn add-friend-pill" data-tab="add" id="hub-tab-add">Añadir amigos</button>
+                    <button type="button" class="hub-tab-btn add-friend-pill cloud-disabled-pill" data-tab="add" id="hub-tab-add" title="Función no disponible temporalmente">Añadir amigos</button>
                 </div>
                 <div class="friends-hub-nav-right">
                     <button type="button" class="hub-action-btn" id="hub-quick-search-btn" title="Búsqueda rápida (Ctrl+K)">
@@ -5998,6 +6482,9 @@
         // ====== PERFIL Y AMIGOS ======
         let myBio = '';
         let myMemberSince = 0;
+        let myBannerImage = localStorage.getItem('chat_banner_image') || null;
+        let myBannerColor = localStorage.getItem('chat_banner_color') || null;
+        let myMascotStatus = localStorage.getItem('chat_mascot_status') || 'Elige una criatura mitológica como mascota';
         const BIO_MAX = 200;
         const STATUS_LABELS = { online: 'En línea', dnd: 'No molestar', idle: 'Ausente', offline: 'Desconectado' };
 
@@ -6005,12 +6492,24 @@
             myBio = localStorage.getItem('chat_bio') || '';
             myMemberSince = Number(localStorage.getItem('chat_member_since')) || Date.now();
             localStorage.setItem('chat_member_since', String(myMemberSince));
+            myBannerImage = localStorage.getItem('chat_banner_image') || null;
+            myBannerColor = localStorage.getItem('chat_banner_color') || null;
+            myMascotStatus = localStorage.getItem('chat_mascot_status') || 'Elige una criatura mitológica como mascota';
             let token = localStorage.getItem('chat_token');
             if (!token) {
                 token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36));
                 localStorage.setItem('chat_token', token);
             }
-            return { nickname: myNickname, avatar: myAvatarBase64, bio: myBio, memberSince: myMemberSince, token: token };
+            return {
+                nickname: myNickname,
+                avatar: myAvatarBase64,
+                bio: myBio,
+                memberSince: myMemberSince,
+                token: token,
+                bannerImage: myBannerImage,
+                bannerColor: myBannerColor,
+                mascotStatus: myMascotStatus
+            };
         }
 
         function resizeAvatar(file, size) {
@@ -6128,6 +6627,23 @@
             if (!p.isFirst) profileCard.querySelector('.profile-chip.founder').style.display = 'none';
             if (rel !== 'friends') profileCard.querySelector('.friend-chip').style.display = 'none';
             profileCard.querySelector('.st-text').textContent = STATUS_LABELS[status] || STATUS_LABELS.online;
+
+            const bannerEl = profileCard.querySelector('.profile-banner');
+            if (bannerEl) {
+                const bImg = p.bannerImage || (isSelf ? myBannerImage : null);
+                const bCol = p.bannerColor || (isSelf ? myBannerColor : null);
+                if (bImg && isValidImageUrl(bImg)) {
+                    bannerEl.style.backgroundImage = `url("${bImg}")`;
+                    bannerEl.style.backgroundSize = 'cover';
+                    bannerEl.style.backgroundPosition = 'center';
+                } else if (bCol) {
+                    bannerEl.style.background = bCol;
+                    bannerEl.style.backgroundImage = 'none';
+                } else {
+                    bannerEl.style.background = `linear-gradient(135deg, ${color}, #0b0b0e)`;
+                    bannerEl.style.backgroundImage = 'none';
+                }
+            }
 
             const avatarEl = makeAvatarEl(p, 'profile-avatar-img');
             avatarEl.style.background = p.avatar ? '' : color;
@@ -6316,14 +6832,16 @@
 
         messages.addEventListener('click', (e) => {
             const av = e.target.closest('li > .user-avatar, .voice-avatar-img');
-            if (!av) return;
-            const li = av.closest('#messages > li');
-            if (!li || !li.dataset.senderId) return;
-            openProfile(li.dataset.senderId, {
-                uid: li.dataset.senderUid,
-                user: li.dataset.userName,
-                color: li.dataset.userColor,
-                avatar: av.tagName === 'IMG' ? av.src : null
+            const nameEl = e.target.closest('.msg-user-name-clickable');
+            if (!av && !nameEl) return;
+            const li = (av || nameEl).closest('#messages > li');
+            if (!li) return;
+            const targetAvatar = li.querySelector('.user-avatar');
+            openProfile(li.dataset.senderId || null, {
+                uid: li.dataset.senderUid || null,
+                user: li.dataset.userName || '',
+                color: li.dataset.userColor || '',
+                avatar: targetAvatar && targetAvatar.tagName === 'IMG' ? targetAvatar.src : null
             });
         });
 
@@ -6477,6 +6995,21 @@
             const avatarEl = makeAvatarEl(p, 'profile-avatar-img');
             avatarEl.style.background = p.avatar ? '' : color;
             dmProfilePanelView.querySelector('.profile-avatar-wrap').insertBefore(avatarEl, dmProfilePanelView.querySelector('.profile-avatar-wrap').firstChild);
+
+            const dmBannerEl = dmProfilePanelView.querySelector('.profile-banner');
+            if (dmBannerEl) {
+                if (p.bannerImage && isValidImageUrl(p.bannerImage)) {
+                    dmBannerEl.style.backgroundImage = `url("${p.bannerImage}")`;
+                    dmBannerEl.style.backgroundSize = 'cover';
+                    dmBannerEl.style.backgroundPosition = 'center';
+                } else if (p.bannerColor) {
+                    dmBannerEl.style.background = p.bannerColor;
+                    dmBannerEl.style.backgroundImage = 'none';
+                } else {
+                    dmBannerEl.style.background = `linear-gradient(135deg, ${color}, #0b0b0e)`;
+                    dmBannerEl.style.backgroundImage = 'none';
+                }
+            }
 
             const panelCallBtn = dmProfilePanelView.querySelector('#dm-panel-call-btn');
             if (panelCallBtn) {
@@ -6647,7 +7180,13 @@
 
                     const av = document.createElement('div');
                     av.className = 'friend-avatar';
+                    av.style.cursor = 'pointer';
+                    av.title = `Ver perfil de ${f.nickname}`;
                     av.appendChild(makeAvatarEl(f, 'user-avatar'));
+                    av.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openProfileByUid(f.uid, f);
+                    });
                     const dot = document.createElement('span');
                     dot.className = 'status-icon ' + (f.status || 'offline');
                     av.appendChild(dot);
@@ -6655,8 +7194,13 @@
                     const txt = document.createElement('div');
                     txt.className = 'friend-text';
                     const nm = document.createElement('span');
-                    nm.className = 'friend-name';
+                    nm.className = 'friend-name msg-user-name-clickable';
+                    nm.title = `Ver perfil de ${f.nickname}`;
                     nm.textContent = f.nickname;
+                    nm.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openProfileByUid(f.uid, f);
+                    });
                     if (f.userCode) {
                         const tagSpan = document.createElement('span');
                         tagSpan.className = 'friend-tag-small';
@@ -7414,7 +7958,7 @@
                 <div class="msg-content-wrapper">
                     <div class="msg-bubble ${data.image ? 'has-image' : ''}" style="background-color: ${safeCol}">
                         <div class="msg-info">
-                            <span><strong>${escapeHtml(data.user)}</strong></span>
+                            <span class="msg-user-name-clickable" title="Ver perfil de ${escapeHtml(data.user)}"><strong>${escapeHtml(data.user)}</strong></span>
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <span>${escapeHtml(data.time)}</span>
                                 <div class="msg-menu-container">
@@ -7739,22 +8283,105 @@
             });
         }
 
-        // EDITAR MI PERFIL
+        // EDITAR MI PERFIL (CON PERSONALIZACIÓN DE BANNER Y MASCOTA)
         const peModal = document.getElementById('profile-edit-modal');
         const peFile = document.getElementById('pe-file');
         const peAvatarBox = document.getElementById('pe-avatar-box');
         const peNick = document.getElementById('pe-nick');
         const peBio = document.getElementById('pe-bio');
         const peCount = document.getElementById('pe-count');
+        const peMascotStatus = document.getElementById('pe-mascot-status');
+        const peBannerWrap = document.getElementById('pe-banner-wrap');
+        const peBannerPanel = document.getElementById('pe-banner-panel');
+        const peBannerPencil = document.getElementById('pe-banner-pencil');
+        const peBannerFile = document.getElementById('pe-banner-file');
+        const peBannerColorInput = document.getElementById('pe-banner-color');
+        const peUploadBannerBtn = document.getElementById('pe-upload-banner-btn');
+        const pePickColorBtn = document.getElementById('pe-pick-color-btn');
+        const peRemoveBannerBtn = document.getElementById('pe-remove-banner-btn');
+
         let peAvatar = null;
+        let peBannerImage = null;
+        let peBannerColor = null;
+
+        function updatePeBannerPreview() {
+            if (!peBannerWrap) return;
+            if (peBannerImage && isValidImageUrl(peBannerImage)) {
+                peBannerWrap.style.backgroundImage = `url("${peBannerImage}")`;
+                peBannerWrap.style.backgroundSize = 'cover';
+                peBannerWrap.style.backgroundPosition = 'center';
+            } else if (peBannerColor) {
+                peBannerWrap.style.background = peBannerColor;
+                peBannerWrap.style.backgroundImage = 'none';
+            } else {
+                peBannerWrap.style.background = 'linear-gradient(135deg, #f472b6, #fb7185, #38bdf8)';
+                peBannerWrap.style.backgroundImage = 'none';
+            }
+        }
 
         function openProfileEdit() {
-            peNick.value = myNickname;
-            peBio.value = myBio;
+            peNick.value = myNickname || '';
+            peBio.value = myBio || '';
+            if (peMascotStatus) peMascotStatus.value = myMascotStatus || '';
             peAvatar = myAvatarBase64;
+            peBannerImage = myBannerImage;
+            peBannerColor = myBannerColor;
+
             peAvatarBox.innerHTML = peAvatar ? `<img src="${peAvatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '👤';
             peCount.textContent = `${peBio.value.length}/${BIO_MAX}`;
+            if (peBannerPanel) peBannerPanel.style.display = 'none';
+            updatePeBannerPreview();
             peModal.style.display = 'flex';
+        }
+
+        if (peBannerPencil && peBannerPanel) {
+            peBannerPencil.addEventListener('click', () => {
+                peBannerPanel.style.display = (peBannerPanel.style.display === 'none') ? 'flex' : 'none';
+            });
+        }
+
+        if (peUploadBannerBtn && peBannerFile) {
+            peUploadBannerBtn.addEventListener('click', () => peBannerFile.click());
+            peBannerFile.addEventListener('change', async (e) => {
+                const f = e.target.files[0];
+                if (f && f.type.startsWith('image/')) {
+                    try {
+                        const resized = await resizeAvatar(f, 600);
+                        peBannerImage = resized;
+                        peBannerColor = null;
+                        updatePeBannerPreview();
+                        showToast('Banner cargado');
+                    } catch (err) {
+                        showToast('Error al cargar la imagen');
+                    }
+                }
+            });
+        }
+
+        if (pePickColorBtn && peBannerColorInput) {
+            pePickColorBtn.addEventListener('click', () => peBannerColorInput.click());
+            peBannerColorInput.addEventListener('input', (e) => {
+                peBannerColor = e.target.value;
+                peBannerImage = null;
+                updatePeBannerPreview();
+            });
+        }
+
+        document.querySelectorAll('.pe-color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                peBannerColor = swatch.dataset.bg;
+                peBannerImage = null;
+                updatePeBannerPreview();
+            });
+        });
+
+        if (peRemoveBannerBtn) {
+            peRemoveBannerBtn.addEventListener('click', () => {
+                peBannerImage = null;
+                peBannerColor = null;
+                updatePeBannerPreview();
+                showToast('Banner restablecido a valor por defecto');
+            });
         }
 
         document.getElementById('pe-pencil').addEventListener('click', () => peFile.click());
@@ -7779,13 +8406,36 @@
             myNickname = nick;
             myAvatarBase64 = peAvatar;
             myBio = peBio.value.trim().slice(0, BIO_MAX);
+            myBannerImage = peBannerImage;
+            myBannerColor = peBannerColor;
+            if (peMascotStatus) {
+                myMascotStatus = peMascotStatus.value.trim() || 'Elige una criatura mitológica como mascota';
+                localStorage.setItem('chat_mascot_status', myMascotStatus);
+            }
+
             localStorage.setItem('chat_nickname', nick);
             if (peAvatar) localStorage.setItem('chat_avatar', peAvatar);
             else localStorage.removeItem('chat_avatar');
             localStorage.setItem('chat_bio', myBio);
 
-            socket.emit('update profile', { nickname: nick, avatar: peAvatar, bio: myBio });
+            if (myBannerImage) localStorage.setItem('chat_banner_image', myBannerImage);
+            else localStorage.removeItem('chat_banner_image');
+
+            if (myBannerColor) localStorage.setItem('chat_banner_color', myBannerColor);
+            else localStorage.removeItem('chat_banner_color');
+
+            socket.emit('update profile', {
+                nickname: nick,
+                avatar: peAvatar,
+                bio: myBio,
+                bannerImage: myBannerImage,
+                bannerColor: myBannerColor,
+                mascotStatus: myMascotStatus
+            });
+
+            updateSidebarUserFooter();
             peModal.style.display = 'none';
+            showToast('Perfil actualizado con éxito');
         });
 
         document.getElementById('pe-cancel').addEventListener('click', () => { peModal.style.display = 'none'; });
@@ -10101,6 +10751,9 @@
         // ========================================================
         // ====== SIDEBAR USER FOOTER (ESTILO DISCORD) ======
         // ========================================================
+        // ========================================================
+        // ====== SIDEBAR USER FOOTER Y MINI PERFIL POPOUT (IMAGEN 5) ======
+        // ========================================================
         function updateSidebarUserFooter() {
             const sufAvatar = document.getElementById('suf-avatar');
             const sufName = document.getElementById('suf-name');
@@ -10111,8 +10764,8 @@
             if (sufStatus) sufStatus.textContent = myUserCode || '#0000';
             if (sufDot) sufDot.className = 'suf-status-dot ' + (currentStatus || 'online');
 
+            const av = getMyAvatar();
             if (sufAvatar) {
-                const av = getMyAvatar();
                 sufAvatar.innerHTML = '';
                 if (av && isValidImageUrl(av)) {
                     const img = document.createElement('img');
@@ -10127,20 +10780,198 @@
                     sufAvatar.textContent = myNickname ? myNickname.charAt(0).toUpperCase() : '👤';
                 }
             }
+
+            // Sincronizar Mini Perfil Flotante (image_ecbead84.png)
+            const popBanner = document.getElementById('popout-banner');
+            const popAvatar = document.getElementById('popout-avatar');
+            const popStatusDot = document.getElementById('popout-status-dot');
+            const popBubbleText = document.getElementById('popout-bubble-text');
+            const popName = document.getElementById('popout-name');
+            const popTag = document.getElementById('popout-tag');
+            const popCurDot = document.getElementById('popout-cur-status-dot');
+            const popCurLabel = document.getElementById('popout-cur-status-label');
+            const popStatusEmoji = document.getElementById('popout-status-emoji');
+
+            if (popName) popName.textContent = myNickname || 'Usuario';
+            if (popTag) popTag.textContent = myUserCode || '#4405';
+            if (popBubbleText) popBubbleText.textContent = myMascotStatus || 'Elige una criatura mitológica como mascota';
+
+            if (popStatusDot) popStatusDot.className = 'popout-status-dot ' + (currentStatus || 'online');
+            if (popCurDot) popCurDot.className = 'popout-cur-status-dot ' + (currentStatus || 'online');
+            if (popCurLabel) popCurLabel.textContent = STATUS_LABELS[currentStatus] || 'En línea';
+            if (popStatusEmoji) {
+                popStatusEmoji.textContent = currentStatus === 'online' ? '🟢' : (currentStatus === 'idle' ? '🌙' : (currentStatus === 'dnd' ? '⛔' : '⚪'));
+            }
+
+            if (popBanner) {
+                if (myBannerImage && isValidImageUrl(myBannerImage)) {
+                    popBanner.style.backgroundImage = `url("${myBannerImage}")`;
+                    popBanner.style.backgroundSize = 'cover';
+                    popBanner.style.backgroundPosition = 'center';
+                } else if (myBannerColor) {
+                    popBanner.style.background = myBannerColor;
+                    popBanner.style.backgroundImage = 'none';
+                } else {
+                    popBanner.style.background = 'linear-gradient(135deg, #f472b6, #fb7185, #38bdf8)';
+                    popBanner.style.backgroundImage = 'none';
+                }
+            }
+
+            if (popAvatar) {
+                popAvatar.innerHTML = '';
+                if (av && isValidImageUrl(av)) {
+                    const img = document.createElement('img');
+                    img.src = av;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    popAvatar.appendChild(img);
+                } else {
+                    popAvatar.style.background = getMyColor();
+                    popAvatar.textContent = myNickname ? myNickname.charAt(0).toUpperCase() : '👤';
+                }
+            }
         }
 
         const sufProfTrigger = document.getElementById('suf-profile-trigger');
+        const miniPopout = document.getElementById('mini-profile-popout');
+        const popoutFlyout = document.getElementById('popout-status-flyout');
+        let popoutHoverTimer = null;
+
+        function openMiniPopout() {
+            if (!miniPopout) return;
+            updateSidebarUserFooter();
+            miniPopout.style.display = 'block';
+            if (popoutFlyout) popoutFlyout.style.display = 'none';
+        }
+
+        function closeMiniPopout() {
+            if (miniPopout) miniPopout.style.display = 'none';
+            if (popoutFlyout) popoutFlyout.style.display = 'none';
+        }
+
+        function toggleMiniPopout() {
+            if (!miniPopout) return;
+            if (miniPopout.style.display === 'none' || !miniPopout.style.display) openMiniPopout();
+            else closeMiniPopout();
+        }
+
         if (sufProfTrigger) {
-            sufProfTrigger.addEventListener('click', () => {
-                openProfile(socket.id, {
-                    nickname: myNickname,
-                    avatar: getMyAvatar(),
-                    color: getMyColor(),
-                    userCode: myUserCode,
-                    uid: myUid
-                });
+            sufProfTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleMiniPopout();
+            });
+            sufProfTrigger.addEventListener('mouseenter', () => {
+                clearTimeout(popoutHoverTimer);
+                popoutHoverTimer = setTimeout(() => {
+                    openMiniPopout();
+                }, 380);
+            });
+            sufProfTrigger.addEventListener('mouseleave', () => {
+                clearTimeout(popoutHoverTimer);
             });
         }
+
+        if (miniPopout) {
+            miniPopout.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#mini-profile-popout') && !e.target.closest('#suf-profile-trigger')) {
+                closeMiniPopout();
+            }
+        });
+
+        // Botones y acciones del Mini Perfil Popout (Imagen 5)
+        const popBtnEdit = document.getElementById('popout-btn-edit');
+        if (popBtnEdit) {
+            popBtnEdit.addEventListener('click', () => {
+                closeMiniPopout();
+                openProfileEdit();
+            });
+        }
+
+        const popStatusBtn = document.getElementById('popout-status-btn');
+        if (popStatusBtn && popoutFlyout) {
+            popStatusBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popoutFlyout.style.display = (popoutFlyout.style.display === 'none' || !popoutFlyout.style.display) ? 'flex' : 'none';
+            });
+        }
+
+        document.querySelectorAll('.popout-status-opt').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const st = opt.dataset.status;
+                if (st) {
+                    setStatus(st);
+                    socket.emit('change status', st);
+                    updateSidebarUserFooter();
+                    if (popoutFlyout) popoutFlyout.style.display = 'none';
+                    showToast(`Estado cambiado a: ${STATUS_LABELS[st] || st}`);
+                }
+            });
+        });
+
+        const popBtnBadges = document.getElementById('popout-btn-badges');
+        if (popBtnBadges) {
+            popBtnBadges.addEventListener('click', () => {
+                showToast('👑 Fundador • ⚡ Desarrollador • 🌟 Early Supporter • 🛡️ Miembro Activo');
+            });
+        }
+
+        const popBtnAccounts = document.getElementById('popout-btn-accounts');
+        if (popBtnAccounts) {
+            popBtnAccounts.addEventListener('click', () => {
+                closeMiniPopout();
+                welcomeModalOverlay.style.display = 'flex';
+                nicknameInput.focus();
+                nicknameInput.select();
+            });
+        }
+
+        const popBtnCopyId = document.getElementById('popout-btn-copy-id');
+        if (popBtnCopyId) {
+            popBtnCopyId.addEventListener('click', () => {
+                if (myUserCode) {
+                    navigator.clipboard.writeText(myUserCode).then(() => {
+                        showToast(`¡ID de usuario copiado: ${myUserCode}!`);
+                    }).catch(() => {
+                        showToast(`ID: ${myUserCode}`);
+                    });
+                } else {
+                    showToast('ID no asignado');
+                }
+            });
+        }
+
+        const popBubbleStatus = document.getElementById('popout-bubble-status');
+        if (popBubbleStatus) {
+            popBubbleStatus.addEventListener('click', () => {
+                const cur = (myMascotStatus && myMascotStatus !== 'Elige una criatura mitológica como mascota') ? myMascotStatus : '';
+                const chosen = prompt('Escribe tu criatura mitológica o estado personalizado:', cur);
+                if (chosen !== null) {
+                    myMascotStatus = chosen.trim() || 'Elige una criatura mitológica como mascota';
+                    localStorage.setItem('chat_mascot_status', myMascotStatus);
+                    updateSidebarUserFooter();
+                    socket.emit('update profile', { mascotStatus: myMascotStatus });
+                    showToast('Mascota / Estado actualizado');
+                }
+            });
+        }
+
+        // Intercepción Capturing de Opciones en Nube No Disponibles (Imagen 3)
+        document.addEventListener('click', (e) => {
+            const pill = e.target.closest('.cloud-disabled-pill');
+            if (pill) {
+                e.preventDefault();
+                e.stopPropagation();
+                pill.classList.remove('cloud-shake');
+                void pill.offsetWidth;
+                pill.classList.add('cloud-shake');
+                showToast('☁️ Esta opción no está disponible temporalmente.');
+            }
+        }, true);
 
         const sufBtnMic = document.getElementById('suf-btn-mic');
         if (sufBtnMic) {
@@ -10338,7 +11169,13 @@
 
                 const avWrap = document.createElement('div');
                 avWrap.className = 'hub-avatar-wrap';
+                avWrap.style.cursor = 'pointer';
+                avWrap.title = `Ver perfil de ${f.nickname}`;
                 avWrap.appendChild(makeAvatarEl(f, 'hub-avatar'));
+                avWrap.onclick = (e) => {
+                    e.stopPropagation();
+                    openProfileByUid(f.uid, f);
+                };
                 const dot = document.createElement('span');
                 dot.className = `status-icon ${f.status || 'offline'}`;
                 avWrap.appendChild(dot);
@@ -10347,8 +11184,13 @@
                 meta.className = 'hub-user-meta';
 
                 const nameRow = document.createElement('div');
-                nameRow.className = 'hub-user-name';
+                nameRow.className = 'hub-user-name msg-user-name-clickable';
+                nameRow.title = `Ver perfil de ${f.nickname}`;
                 nameRow.textContent = f.nickname;
+                nameRow.onclick = (e) => {
+                    e.stopPropagation();
+                    openProfileByUid(f.uid, f);
+                };
                 if (f.userCode) {
                     const tag = document.createElement('span');
                     tag.className = 'hub-user-tag';
