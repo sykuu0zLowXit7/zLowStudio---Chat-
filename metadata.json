@@ -1,0 +1,6 @@
+{
+  "name": "zLowStudio Chat",
+  "description": "Chat en tiempo real con canales globales, mensajes directos, perfiles, multimedia y seguridad auditada.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
