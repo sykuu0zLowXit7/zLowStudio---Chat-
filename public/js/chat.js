@@ -1,5 +1,5 @@
 // ========================================================
-// zLowStudio Chat - Módulo de Mensajería y Chat (chat.js)
+// Web Chat Global - Módulo de Mensajería y Chat (chat.js)
 // ========================================================
 
 export function formatTime(ts) {

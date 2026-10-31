@@ -1111,6 +1111,13 @@ io.on('connection', (socket) => {
     const now = Date.now();
     const attempt = adminAuthAttempts.get(ip) || { count: 0, lockedUntil: 0 };
 
+    if (socket.isAdmin) {
+      adminAuthAttempts.delete(ip);
+      socket.emit('admin auth result', { success: true, message: 'Autenticación exitosa (Rol Administrador)' });
+      socket.emit('admin:dashboard_data', buildAdminDashboardPayload());
+      return;
+    }
+
     if (attempt.lockedUntil > now) {
       const waitMins = Math.ceil((attempt.lockedUntil - now) / 60000);
       socket.emit('admin auth result', {
@@ -1222,8 +1229,24 @@ io.on('connection', (socket) => {
       return;
     }
 
-    socket.emit('session', { uid, userCode, token });
+    const isPermanentAdmin = Boolean(dbUser && (dbUser.isAdmin || dbUser.role === 'admin'));
+    if (isPermanentAdmin) {
+      socket.isAdmin = true;
+    }
+
+    socket.emit('session', {
+      uid,
+      userCode,
+      token,
+      isAdmin: Boolean(socket.isAdmin),
+      role: socket.isAdmin ? 'admin' : (dbUser?.role || 'user'),
+    });
     socket.emit('chat_settings_updated', chatSettings);
+
+    if (socket.isAdmin) {
+      socket.emit('admin auth result', { success: true, message: 'Rol de Administrador permanente activo' });
+      socket.emit('admin:dashboard_data', buildAdminDashboardPayload());
+    }
 
     // Notificar si está silenciado
     const muteInfo = isUserMuted(uid);
@@ -1243,7 +1266,7 @@ io.on('connection', (socket) => {
 
     socket.nickname = nickname;
     const isFirst = Object.keys(users).length === 0;
-    socket.userColor = isFirst ? '#ffcc00' : getUniqueColor();
+    socket.userColor = socket.isAdmin ? '#e11d48' : (isFirst ? '#ffcc00' : getUniqueColor());
 
     const bannerImage = (dbUser && dbUser.bannerImage) || (profiles[uid] && profiles[uid].bannerImage) || cleanBanner(userData && userData.bannerImage) || null;
     const bannerColor = (dbUser && dbUser.bannerColor) || (profiles[uid] && profiles[uid].bannerColor) || cleanBannerColor(userData && userData.bannerColor) || null;
@@ -1262,6 +1285,8 @@ io.on('connection', (socket) => {
       uid,
       userCode,
       activity: (profiles[uid] && profiles[uid].activity) || null,
+      isAdmin: Boolean(socket.isAdmin),
+      role: socket.isAdmin ? 'admin' : (dbUser?.role || 'user'),
     };
 
     syncProfileFromSocket(socket.id);
@@ -2583,6 +2608,22 @@ io.on('connection', (socket) => {
   });
 });
 
+app.use((err, req, res, next) => {
+  if (
+    err &&
+    (err.name === 'MongooseError' ||
+      err.name === 'MongoNetworkError' ||
+      (err.message && err.message.includes('buffering timed out')))
+  ) {
+    console.warn('[AI Studio] Database offline — returning fallback response');
+    if (req.method === 'GET') {
+      return res.json(req.path.endsWith('s') || req.path.endsWith('s/') ? [] : {});
+    }
+    return res.status(503).json({ error: 'Service temporarily unavailable (database offline)' });
+  }
+  next(err);
+});
+
 app.get('*', (_req, res) => {
   const rootIndex = path.join(__dirname, 'index.html');
   if (fs.existsSync(rootIndex)) {
@@ -2601,7 +2642,7 @@ server.on('error', (err) => {
   if (err && err.code === 'EADDRINUSE' && TARGET_PORT !== 3000) {
     console.warn(`Puerto ${TARGET_PORT} en uso, reintentando en puerto 3000...`);
     server.listen(3000, '0.0.0.0', () => {
-      console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:3000`);
+      console.log(`Web Chat Global Server corriendo en http://0.0.0.0:3000`);
     });
   } else {
     console.error('Error en el servidor:', err);
@@ -2616,6 +2657,6 @@ server.listen(TARGET_PORT, '0.0.0.0', async () => {
   } catch (err) {
     console.error('[DB] Error inicializando base de datos:', err);
   }
-  console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${TARGET_PORT}`);
+  console.log(`Web Chat Global Server corriendo en http://0.0.0.0:${TARGET_PORT}`);
 });
 

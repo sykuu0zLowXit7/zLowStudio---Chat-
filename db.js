@@ -6,6 +6,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+mongoose.set('bufferCommands', false);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -165,6 +167,26 @@ function loadLocalStore() {
       }
       console.log(`[DB-Local] Migrados ${memoryStore.users.size} perfiles desde formato anterior.`);
       schedulePersist();
+    }
+
+    // Asegurar que el usuario principal específico o el primer usuario tenga el rol de Administrador permanente
+    let hasAdmin = false;
+    for (const u of memoryStore.users.values()) {
+      if (isUserAdmin(u)) {
+        u.isAdmin = true;
+        u.role = 'admin';
+        hasAdmin = true;
+        break;
+      }
+    }
+    if (!hasAdmin && memoryStore.users.size > 0) {
+      const firstUser = memoryStore.users.values().next().value;
+      if (firstUser) {
+        firstUser.isAdmin = true;
+        firstUser.role = 'admin';
+        console.log(`[DB] Asignado rol permanente de Administrador al usuario principal: ${firstUser.username}`);
+        schedulePersist();
+      }
     }
   } catch (err) {
     console.warn('[DB-Local] Advertencia al leer datos locales:', err.message);
@@ -340,6 +362,27 @@ export async function initDatabase() {
 
 // Helpers de Usuario y Autenticación
 
+export function isUserAdmin(userOrUid) {
+  if (!userOrUid) return false;
+  const user = typeof userOrUid === 'string' ? memoryStore.users.get(userOrUid) : userOrUid;
+  if (!user) return false;
+  const adminUsername = (process.env.ADMIN_USER || 'admin').toLowerCase().trim();
+  if (user.username && user.username.toLowerCase() === adminUsername) return true;
+  if (user.isAdmin === true || user.role === 'admin') return true;
+  return false;
+}
+
+export function formatSafeUser(user) {
+  if (!user) return null;
+  const { passwordHash: _, ...safeUser } = user;
+  const adminState = isUserAdmin(user);
+  return {
+    ...safeUser,
+    isAdmin: adminState,
+    role: adminState ? 'admin' : (user.role || 'user'),
+  };
+}
+
 export function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
@@ -390,6 +433,12 @@ export async function registerUser({
     throw new Error('Ese nombre de usuario ya está registrado. Por favor elige otro o inicia sesión.');
   }
 
+  const isFirstUser = memoryStore.users.size === 0;
+  const designatedAdmin = (process.env.ADMIN_USER || 'admin').toLowerCase().trim();
+  const shouldBeAdmin = isFirstUser || cleanUsername === 'admin' || cleanUsername === designatedAdmin;
+  const role = shouldBeAdmin ? 'admin' : 'user';
+  const isAdmin = shouldBeAdmin;
+
   const uid = crypto.randomBytes(8).toString('hex');
   const userCode = generateUserCode(cleanUsername, uid);
   const passwordHash = await hashPassword(String(password));
@@ -407,10 +456,12 @@ export async function registerUser({
     bannerColor: bannerColor || null,
     mascotStatus: mascotStatus || 'Elige una criatura mitológica como mascota',
     bio: String(bio || '').trim().slice(0, 200),
-    color: '#38bdf8',
+    color: isAdmin ? '#e11d48' : '#38bdf8',
     memberSince: Date.now(),
     lastSeen: Date.now(),
     token,
+    role,
+    isAdmin,
   };
 
   // Guardar en memoria
@@ -460,9 +511,7 @@ export async function registerUser({
 
   schedulePersist();
 
-  // Devolver sin hash sensible
-  const { passwordHash: _, ...safeUser } = newUser;
-  return { user: safeUser, token };
+  return { user: formatSafeUser(newUser), token };
 }
 
 // Inicio de Sesión de Usuario
@@ -476,7 +525,7 @@ export async function authenticateUser(usernameOrObj, passwordArg) {
     throw new Error('Usuario no encontrado. Comprueba los datos o crea una cuenta.');
   }
 
-  const user = memoryStore.users.get(uid);
+    const user = memoryStore.users.get(uid);
 
   // Si el usuario se creó en modo legacy sin contraseña, permitir asignarle contraseña en el primer login
   if (!user.passwordHash) {
@@ -484,8 +533,7 @@ export async function authenticateUser(usernameOrObj, passwordArg) {
     user.token = generateToken();
     memoryStore.usersByToken.set(user.token, uid);
     schedulePersist();
-    const { passwordHash: _, ...safeUser } = user;
-    return { user: safeUser, token: user.token };
+    return { user: formatSafeUser(user), token: user.token };
   }
 
   const isMatch = await comparePassword(String(password), user.passwordHash);
@@ -502,8 +550,7 @@ export async function authenticateUser(usernameOrObj, passwordArg) {
 
   schedulePersist();
 
-  const { passwordHash: _, ...safeUser } = user;
-  return { user: safeUser, token: user.token };
+  return { user: formatSafeUser(user), token: user.token };
 }
 
 // Búsqueda de Usuario por Token
@@ -512,16 +559,14 @@ export function getUserByToken(token) {
   const uid = memoryStore.usersByToken.get(token);
   if (!uid || !memoryStore.users.has(uid)) return null;
   const user = memoryStore.users.get(uid);
-  const { passwordHash: _, ...safeUser } = user;
-  return safeUser;
+  return formatSafeUser(user);
 }
 
 // Búsqueda de Usuario por UID
 export function getUserByUid(uid) {
   if (!uid || !memoryStore.users.has(uid)) return null;
   const user = memoryStore.users.get(uid);
-  const { passwordHash: _, ...safeUser } = user;
-  return safeUser;
+  return formatSafeUser(user);
 }
 
 // Búsqueda de Usuario por Username o Tag (#0000)
@@ -535,8 +580,7 @@ export function findUsersByQuery(query) {
       (u.nickname && u.nickname.toLowerCase().includes(q)) ||
       (u.userCode && u.userCode.toLowerCase() === q)
     ) {
-      const { passwordHash: _, ...safe } = u;
-      results.push(safe);
+      results.push(formatSafeUser(u));
     }
   }
   return results.slice(0, 10);
@@ -586,8 +630,7 @@ export async function updateUserProfile(uid, updates = {}) {
   }
 
   schedulePersist();
-  const { passwordHash: _, ...safe } = user;
-  return safe;
+  return formatSafeUser(user);
 }
 
 // Gestión de Amistades
@@ -602,9 +645,8 @@ export function getFriendsState(uid) {
 
   const mapToSafeUser = (id) => {
     const u = memoryStore.users.get(id);
-    if (!u) return { uid: id, nickname: 'Usuario', userCode: '#0000', status: 'offline' };
-    const { passwordHash: _, ...safe } = u;
-    return safe;
+    if (!u) return { uid: id, nickname: 'Usuario', userCode: '#0000', status: 'offline', isAdmin: false, role: 'user' };
+    return formatSafeUser(u);
   };
 
   return {

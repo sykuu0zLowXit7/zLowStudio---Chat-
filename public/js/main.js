@@ -1,5 +1,5 @@
 // ========================================================
-// zLowStudio Chat - Entrada Principal del Cliente (main.js)
+// Web Chat Global - Entrada Principal del Cliente (main.js)
 // ========================================================
 
 import { getAuthToken, fetchCurrentUser, clearSession, requireAuth } from '/js/auth.js';
@@ -22,6 +22,27 @@ async function bootstrap() {
     currentUser = await requireAuth();
     if (!currentUser) return;
 
+    // Ocultar de inmediato la pantalla de bienvenida ya que el usuario tiene sesión activa
+    const welcomeOverlay = document.getElementById('welcome-modal-overlay');
+    if (welcomeOverlay) {
+        welcomeOverlay.style.display = 'none';
+    }
+
+    // Prevención de congelamiento si algún elemento interactúa con join-btn
+    const joinBtn = document.getElementById('join-btn');
+    if (joinBtn) {
+        joinBtn.addEventListener('click', () => {
+            if (welcomeOverlay) welcomeOverlay.style.display = 'none';
+            const nickInput = document.getElementById('nickname-input');
+            if (nickInput && nickInput.value.trim()) {
+                const newNick = nickInput.value.trim();
+                currentUser.nickname = newNick;
+                setupUserInfoBar();
+                if (socket) socket.emit('update profile', { nickname: newNick });
+            }
+        });
+    }
+
     setupUserInfoBar();
     setupTopControls();
     setupSocketConnection();
@@ -29,6 +50,7 @@ async function bootstrap() {
     setupVoiceChannels();
     setupMiniProfile();
     setupProfileModal();
+    setupAdminDashboard();
 }
 
 // Configurar barra inferior de estado del usuario
@@ -119,13 +141,30 @@ function setupTopControls() {
     const adminPassInput = document.getElementById('admin-pass-input');
     const adminLoginBtn = document.getElementById('admin-login-btn');
     const adminCloseBtn = document.getElementById('admin-close-btn');
+    const dashModal = document.getElementById('admin-dashboard-modal');
 
-    if (adminTrigger && adminModal) {
+    // Control de visibilidad del botón Admin: solo para usuarios administradores
+    function updateAdminButton() {
+        const isAdmin = Boolean(currentUser && (currentUser.isAdmin || currentUser.role === 'admin'));
+        if (adminTrigger) {
+            adminTrigger.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+    }
+    updateAdminButton();
+
+    if (adminTrigger) {
         adminTrigger.addEventListener('click', () => {
-            adminModal.style.display = 'flex';
-            if (adminPassInput) {
-                adminPassInput.value = '';
-                adminPassInput.focus();
+            const isAdmin = Boolean(currentUser && (currentUser.isAdmin || currentUser.role === 'admin'));
+            if (isAdmin) {
+                // Entrada directa al panel admin sin contraseñas repetitivas
+                if (dashModal) dashModal.style.display = 'flex';
+                if (socket) socket.emit('admin:get_dashboard');
+            } else if (adminModal) {
+                adminModal.style.display = 'flex';
+                if (adminPassInput) {
+                    adminPassInput.value = '';
+                    adminPassInput.focus();
+                }
             }
         });
     }
@@ -136,10 +175,10 @@ function setupTopControls() {
         });
     }
 
-    if (adminLoginBtn && adminPassInput && socket) {
+    if (adminLoginBtn && adminPassInput) {
         adminLoginBtn.addEventListener('click', () => {
             const pass = adminPassInput.value;
-            if (pass) {
+            if (pass && socket) {
                 socket.emit('admin auth', { password: pass });
             }
         });
@@ -167,10 +206,18 @@ function setupSocketConnection() {
     });
 
     socket.on('session', (sessionData) => {
-        if (sessionData && sessionData.userCode) {
-            currentUser.userCode = sessionData.userCode;
-            const tagEl = document.getElementById('user-status-tag');
-            if (tagEl) tagEl.textContent = sessionData.userCode;
+        if (sessionData) {
+            if (sessionData.userCode) {
+                currentUser.userCode = sessionData.userCode;
+                const tagEl = document.getElementById('user-status-tag');
+                if (tagEl) tagEl.textContent = sessionData.userCode;
+            }
+            if (sessionData.isAdmin || sessionData.role === 'admin') {
+                currentUser.isAdmin = true;
+                currentUser.role = 'admin';
+                const adminTrigger = document.getElementById('admin-trigger');
+                if (adminTrigger) adminTrigger.style.display = 'inline-flex';
+            }
         }
     });
 
@@ -205,13 +252,25 @@ function setupSocketConnection() {
 
     socket.on('admin auth result', (res) => {
         if (res.success) {
+            currentUser.isAdmin = true;
+            currentUser.role = 'admin';
+            const adminTrigger = document.getElementById('admin-trigger');
+            if (adminTrigger) adminTrigger.style.display = 'inline-flex';
+
             const adminModal = document.getElementById('admin-modal');
             const dashModal = document.getElementById('admin-dashboard-modal');
             if (adminModal) adminModal.style.display = 'none';
-            if (dashModal) dashModal.style.display = 'flex';
-        } else {
-            alert(res.message || 'Contraseña incorrecta');
+            if (dashModal && dashModal.style.display !== 'flex') {
+                dashModal.style.display = 'flex';
+                socket.emit('admin:get_dashboard');
+            }
+        } else if (res.message && !res.message.includes('Rol de Administrador')) {
+            alert(res.message);
         }
+    });
+
+    socket.on('admin:dashboard_data', (payload) => {
+        renderAdminDashboard(payload);
     });
 
     // Iniciar el gestor de chat
@@ -645,6 +704,246 @@ function openEditProfileModal() {
     if (bioInput) bioInput.value = currentUser.bio || '';
     if (bannerColorInput) bannerColorInput.value = currentUser.bannerColor || '#5865f2';
     if (modal) modal.style.display = 'flex';
+}
+
+// ========================================================
+// PANEL DE ADMINISTRACIÓN (EVENTOS Y RENDER)
+// ========================================================
+function setupAdminDashboard() {
+    const dashModal = document.getElementById('admin-dashboard-modal');
+    const closeBtn = document.getElementById('close-admin-dashboard-btn');
+    if (closeBtn && dashModal) {
+        closeBtn.addEventListener('click', () => {
+            dashModal.style.display = 'none';
+        });
+    }
+
+    // Pestañas del dashboard admin
+    const tabBtns = document.querySelectorAll('.admin-tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const targetTab = btn.dataset.tab;
+            document.querySelectorAll('.admin-tab-content').forEach(c => {
+                c.classList.remove('active');
+                if (c.id === targetTab) c.classList.add('active');
+            });
+        });
+    });
+
+    // Botón refrescar
+    const refreshBtn = document.getElementById('btn-refresh-admin');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            if (socket) socket.emit('admin:get_dashboard');
+        });
+    }
+
+    // Modo lento
+    const slowmodeBtn = document.getElementById('adm-save-slowmode-btn');
+    const slowmodeSelect = document.getElementById('adm-slowmode-select');
+    if (slowmodeBtn && slowmodeSelect) {
+        slowmodeBtn.addEventListener('click', () => {
+            const secs = parseInt(slowmodeSelect.value, 10) || 0;
+            if (socket) {
+                socket.emit('admin:set_slowmode', { seconds: secs });
+                alert(`Modo lento establecido a ${secs} segundos.`);
+            }
+        });
+    }
+
+    // Pausar / Reanudar chat
+    const pauseBtn = document.getElementById('adm-toggle-pause-btn');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+            const isCurrentlyPaused = pauseBtn.textContent.includes('Reanudar');
+            const newPausedState = !isCurrentlyPaused;
+            if (socket) {
+                socket.emit('admin:set_paused', { paused: newPausedState });
+            }
+        });
+    }
+
+    // Vaciar chat
+    const clearChatBtn = document.getElementById('adm-clear-chat-btn');
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que deseas vaciar todo el historial de la sala general?')) {
+                if (socket) socket.emit('admin:clear_all_chat');
+            }
+        });
+    }
+
+    // Difundir anuncio global
+    const sendBroadcastBtn = document.getElementById('adm-broadcast-send-btn');
+    const bTitle = document.getElementById('adm-broadcast-title');
+    const bText = document.getElementById('adm-broadcast-text');
+    if (sendBroadcastBtn && bTitle && bText) {
+        sendBroadcastBtn.addEventListener('click', () => {
+            const title = bTitle.value.trim();
+            const text = bText.value.trim();
+            if (!text) {
+                alert('Escribe el texto del anuncio.');
+                return;
+            }
+            if (socket) {
+                socket.emit('admin:broadcast_announcement', { title, text });
+                alert('¡Anuncio enviado a todos los usuarios!');
+                bTitle.value = '';
+                bText.value = '';
+            }
+        });
+    }
+}
+
+function renderAdminDashboard(payload) {
+    if (!payload) return;
+
+    // Actualizar configuración de sala (slowmode y pausa)
+    if (payload.chatSettings) {
+        const slowmodeSelect = document.getElementById('adm-slowmode-select');
+        if (slowmodeSelect) slowmodeSelect.value = String(payload.chatSettings.slowmode || 0);
+
+        const pauseBtn = document.getElementById('adm-toggle-pause-btn');
+        if (pauseBtn) {
+            pauseBtn.textContent = payload.chatSettings.paused ? 'Reanudar Chat General' : 'Pausar Chat';
+            pauseBtn.style.background = payload.chatSettings.paused ? '#2ed573' : '#ffa502';
+        }
+    }
+
+    // TAB 1: Usuarios Conectados
+    const usersTbody = document.getElementById('adm-users-tbody');
+    if (usersTbody && Array.isArray(payload.users)) {
+        usersTbody.innerHTML = '';
+        if (payload.users.length === 0) {
+            usersTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px;">No hay otros usuarios conectados.</td></tr>';
+        } else {
+            payload.users.forEach(u => {
+                const tr = document.createElement('tr');
+                const isMe = u.uid === currentUser.uid;
+                tr.innerHTML = `
+                    <td style="display:flex; align-items:center; gap:8px;">
+                        <span class="user-status-dot status-${escapeHtml(u.status || 'online')}"></span>
+                        <strong>${escapeHtml(u.nickname)}</strong>
+                        ${isMe ? '<span style="font-size:0.7rem; background:#38bdf8; color:#000; padding:2px 6px; border-radius:4px; font-weight:700;">TÚ</span>' : ''}
+                    </td>
+                    <td><code>${escapeHtml(u.userCode || u.uid)}</code></td>
+                    <td>${u.isMuted ? '<span style="color:#ff6b81; font-weight:700;">🔇 Silenciado</span>' : '<span style="color:#2ed573;">Activo</span>'}</td>
+                    <td>${new Date(u.connectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td>
+                        ${isMe ? '-' : `
+                            <button class="adm-mini-btn red btn-admin-mute-user" data-uid="${escapeHtml(u.uid)}" data-name="${escapeHtml(u.nickname)}">Silenciar</button>
+                            <button class="adm-mini-btn btn-admin-warn-user" data-uid="${escapeHtml(u.uid)}" data-name="${escapeHtml(u.nickname)}">Advertir</button>
+                            <button class="adm-mini-btn red btn-admin-ban-user" data-uid="${escapeHtml(u.uid)}" data-name="${escapeHtml(u.nickname)}">Banear</button>
+                        `}
+                    </td>
+                `;
+                usersTbody.appendChild(tr);
+            });
+
+            // Handlers para acciones sobre usuarios
+            usersTbody.querySelectorAll('.btn-admin-mute-user').forEach(b => {
+                b.addEventListener('click', () => {
+                    const uid = b.dataset.uid;
+                    const mins = prompt(`¿Cuántos minutos silenciar a ${b.dataset.name}? (0 para permanente):`, '5');
+                    if (mins !== null) {
+                        const reason = prompt('Motivo del silencio:', 'Comportamiento inapropiado');
+                        if (socket) socket.emit('admin:mute', { targetUid: uid, minutes: parseInt(mins, 10) || 5, reason });
+                    }
+                });
+            });
+
+            usersTbody.querySelectorAll('.btn-admin-warn-user').forEach(b => {
+                b.addEventListener('click', () => {
+                    const uid = b.dataset.uid;
+                    const reason = prompt(`Motivo de la advertencia para ${b.dataset.name}:`, 'Por favor respeta las normas de la sala');
+                    if (reason && socket) {
+                        socket.emit('admin:warn', { targetUid: uid, reason });
+                    }
+                });
+            });
+
+            usersTbody.querySelectorAll('.btn-admin-ban-user').forEach(b => {
+                b.addEventListener('click', () => {
+                    const uid = b.dataset.uid;
+                    if (confirm(`¿Estás seguro de banear permanentemente a ${b.dataset.name}?`)) {
+                        const reason = prompt('Motivo del baneo permanente:', 'Violación de normas de la comunidad');
+                        if (socket) socket.emit('admin:ban', { targetUid: uid, reason });
+                    }
+                });
+            });
+        }
+    }
+
+    // TAB 2: Sanciones (Mutes y Bans)
+    const mutesTbody = document.getElementById('adm-mutes-tbody');
+    if (mutesTbody && Array.isArray(payload.mutes)) {
+        mutesTbody.innerHTML = '';
+        if (payload.mutes.length === 0) {
+            mutesTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:12px; color:var(--text-sub);">No hay usuarios silenciados.</td></tr>';
+        } else {
+            payload.mutes.forEach(m => {
+                const tr = document.createElement('tr');
+                const exp = m.until === 0 ? 'Permanente' : new Date(m.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(m.nickname || m.uid)}</strong></td>
+                    <td>${escapeHtml(m.reason || 'Sin motivo')}</td>
+                    <td>${exp}</td>
+                    <td>${escapeHtml(m.by || 'Admin')}</td>
+                    <td><button class="adm-mini-btn green btn-admin-unmute" data-uid="${escapeHtml(m.uid)}">Quitar</button></td>
+                `;
+                mutesTbody.appendChild(tr);
+            });
+            mutesTbody.querySelectorAll('.btn-admin-unmute').forEach(b => {
+                b.addEventListener('click', () => {
+                    if (socket) socket.emit('admin:unmute', { targetUid: b.dataset.uid });
+                });
+            });
+        }
+    }
+
+    const bansTbody = document.getElementById('adm-bans-tbody');
+    if (bansTbody && Array.isArray(payload.bans)) {
+        bansTbody.innerHTML = '';
+        if (payload.bans.length === 0) {
+            bansTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:12px; color:var(--text-sub);">No hay usuarios baneados.</td></tr>';
+        } else {
+            payload.bans.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(b.nickname || 'Usuario')}</strong></td>
+                    <td><code>${escapeHtml(b.userCode || b.uid)}</code></td>
+                    <td>${escapeHtml(b.reason || 'Sin motivo')}</td>
+                    <td>${new Date(b.bannedAt).toLocaleDateString()}</td>
+                    <td><button class="adm-mini-btn green btn-admin-unban" data-uid="${escapeHtml(b.uid)}">Desbanear</button></td>
+                `;
+                bansTbody.appendChild(tr);
+            });
+            bansTbody.querySelectorAll('.btn-admin-unban').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (socket) socket.emit('admin:unban', { targetUid: btn.dataset.uid });
+                });
+            });
+        }
+    }
+
+    // TAB 5: Auditoría
+    const auditTbody = document.getElementById('adm-audit-tbody');
+    if (auditTbody && Array.isArray(payload.auditLog)) {
+        auditTbody.innerHTML = '';
+        payload.auditLog.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><code>${new Date(log.time).toLocaleTimeString()}</code></td>
+                <td><strong style="color:var(--accent-blue);">${escapeHtml(log.action)}</strong></td>
+                <td>${escapeHtml(log.targetName)}</td>
+                <td>${escapeHtml(log.byName)}</td>
+                <td>${escapeHtml(log.reason || log.details || '-')}</td>
+            `;
+            auditTbody.appendChild(tr);
+        });
+    }
 }
 
 // Iniciar aplicación al cargar el DOM

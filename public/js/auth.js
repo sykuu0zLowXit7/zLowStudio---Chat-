@@ -1,5 +1,5 @@
 // ========================================================
-// zLowStudio Chat - Autenticación y Gestión de Sesión
+// Web Chat Global - Autenticación y Gestión de Sesión
 // ========================================================
 
 const AUTH_TOKEN_KEY = 'chat_auth_token';

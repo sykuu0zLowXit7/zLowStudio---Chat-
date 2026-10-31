@@ -1,5 +1,5 @@
 // ========================================================
-// zLowStudio Chat - Módulo de Voz y WebRTC (voice.js)
+// Web Chat Global - Módulo de Voz y WebRTC (voice.js)
 // ========================================================
 
 export const SVG_CALL_ICONS = {

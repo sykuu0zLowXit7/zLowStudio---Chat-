@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>zLowStudio Chat</title>
+    <title>Web Chat Global</title>
     <meta name="description" content="Chat en tiempo real con canales globales, mensajes directos, perfiles, multimedia y seguridad auditada." />
-    <meta property="og:title" content="zLowStudio Chat" />
+    <meta property="og:title" content="Web Chat Global" />
     <meta property="og:description" content="Chat en tiempo real con canales globales, mensajes directos, perfiles, multimedia y seguridad auditada." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -20,7 +20,7 @@
 <body>
 <!-- BOTONES CONTROLES SUPERIORES -->
     <div class="top-right-controls">
-        <button class="control-btn" id="admin-trigger">Admin Access</button>
+        <button class="control-btn" id="admin-trigger" style="display: none;">Admin Access</button>
         <button class="control-btn logout-btn-top" id="logout-btn" style="display: none;">Cerrar Sesión</button>
     </div>
 
@@ -610,8 +610,8 @@
         </div>
     </div>
 
-    <!-- PANTALLA DE BIENVENIDA -->
-    <div id="welcome-modal-overlay" class="modal-overlay">
+    <!-- PANTALLA DE BIENVENIDA (OCULTA PARA USUARIOS YA AUTENTICADOS) -->
+    <div id="welcome-modal-overlay" class="modal-overlay" style="display: none;">
         <div class="welcome-box">
             <h2 class="welcome-title">¡Bienvenido al Chat!</h2>
             <p class="welcome-sub">Personaliza tu perfil para comenzar a conversar</p>
