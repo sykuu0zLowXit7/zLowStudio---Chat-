@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -5,6 +6,21 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import {
+  initDatabase,
+  registerUser,
+  authenticateUser,
+  getUserByToken,
+  getUserByUid,
+  findUsersByQuery,
+  updateUserProfile,
+  getFriendsState as dbGetFriendsState,
+  addFriendRequest as dbAddFriendRequest,
+  removeFriendRequest as dbRemoveFriendRequest,
+  acceptFriendship as dbAcceptFriendship,
+  removeFriendship as dbRemoveFriendship,
+  getAllMemoryStore,
+} from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +46,109 @@ const ADMIN_DATA_FILE = path.join(DATA_DIR, 'admin-data.json');
 app.use(express.json({ limit: '4mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
+
+// ========================================================
+// RUTAS DE VISTAS Y AUTENTICACIÓN (Render Multi-Página)
+// ========================================================
+app.get('/login', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/main', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'main.html'));
+});
+
+app.get('/app', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'main.html'));
+});
+
+// Registro de cuenta persistente
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, nickname, password, avatar, bio } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
+    }
+    const result = await registerUser({ username, nickname, password, avatar, bio });
+    // result contiene { user, token }
+    profiles[result.user.uid] = {
+      ...result.user,
+      lastSeen: Date.now(),
+    };
+    return res.status(201).json({ user: result.user, token: result.token });
+  } catch (err) {
+    console.error('Error en /api/auth/register:', err.message);
+    return res.status(400).json({ error: err.message || 'Error al registrar usuario' });
+  }
+});
+
+// Inicio de sesión persistente
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
+    }
+    const result = await authenticateUser(username, password);
+    // result contiene { user, token }
+    profiles[result.user.uid] = {
+      ...result.user,
+      lastSeen: Date.now(),
+    };
+    return res.json({ user: result.user, token: result.token });
+  } catch (err) {
+    console.error('Error en /api/auth/login:', err.message);
+    return res.status(401).json({ error: err.message || 'Error al iniciar sesión' });
+  }
+});
+
+// Obtener datos del usuario actual por token (Guardia de sesión)
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.query.token;
+  if (!token) return res.status(401).json({ error: 'No autorizado' });
+
+  const user = getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'Sesión inválida o expirada' });
+  return res.json({ user });
+});
+
+// Cerrar sesión
+app.post('/api/auth/logout', (_req, res) => {
+  return res.json({ success: true });
+});
+
+// Actualizar perfil vía API
+app.post('/api/user/profile', async (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.body.token;
+  if (!token) return res.status(401).json({ error: 'No autorizado' });
+
+  const user = getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'Sesión inválida' });
+
+  const updated = await updateUserProfile(user.uid, req.body || {});
+  if (updated) {
+    profiles[user.uid] = { ...profiles[user.uid], ...updated };
+    notifyFriendsOf(user.uid);
+    io.emit('update-users', getCleanUsersList());
+    return res.json({ success: true, user: updated });
+  }
+  return res.status(400).json({ error: 'No se pudo actualizar el perfil' });
+});
+
+// Estado de amigos persistente
+app.get('/api/friends', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : req.query.token;
+  if (!token) return res.status(401).json({ error: 'No autorizado' });
+
+  const user = getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'Sesión no válida' });
+
+  const state = dbGetFriendsState(user.uid);
+  return res.json(state);
+});
 
 // Clave por defecto de Klipy protegida/obfuscada
 const _gk = Buffer.from('RXFLdmVLeWE2NzNTR0ROSzF2V3FabHFDZWN6ZkFZUGJSQzNLREQ5V0RXOGNWTVFLUEc2d1RuTVdjRW9xT2dsaw==', 'base64').toString('utf8');
@@ -741,6 +860,43 @@ function loadData() {
 }
 loadData();
 
+export async function syncFromDbStore() {
+  try {
+    const dbStore = getAllMemoryStore();
+    if (dbStore && dbStore.users) {
+      for (const [uid, u] of dbStore.users.entries()) {
+        if (!profiles[uid]) {
+          profiles[uid] = {
+            nickname: u.nickname || u.username,
+            avatar: u.avatar || null,
+            bannerImage: u.bannerImage || null,
+            bannerColor: u.bannerColor || null,
+            color: u.color || '#888888',
+            bio: u.bio || '',
+            memberSince: u.memberSince || Date.now(),
+            lastSeen: u.lastSeen || Date.now(),
+            userCode: u.userCode || '#0000',
+          };
+        }
+      }
+    }
+    if (dbStore && dbStore.friends) {
+      for (const [uid, set] of dbStore.friends.entries()) {
+        if (!friendsMap[uid]) friendsMap[uid] = new Set();
+        set.forEach((f) => friendsMap[uid].add(f));
+      }
+    }
+    if (dbStore && dbStore.requests) {
+      for (const [uid, set] of dbStore.requests.entries()) {
+        if (!requestsMap[uid]) requestsMap[uid] = new Set();
+        set.forEach((r) => requestsMap[uid].add(r));
+      }
+    }
+  } catch (err) {
+    console.warn('[DB] Error sincronizando almacén en memoria:', err.message);
+  }
+}
+
 let saveFriendsTimer = null;
 function saveFriendsData() {
   if (saveFriendsTimer) clearTimeout(saveFriendsTimer);
@@ -901,6 +1057,7 @@ function acceptFriendship(me, other) {
   friendsMap[me].add(other);
   friendsMap[other].add(me);
   saveFriendsData();
+  dbAcceptFriendship(me, other).catch(() => {});
   pushFriendsState(me);
   pushFriendsState(other);
   const myName = (profiles[me] && profiles[me].nickname) || 'Alguien';
@@ -992,10 +1149,12 @@ io.on('connection', (socket) => {
 
   socket.on('join', (userData) => {
     let token = userData && typeof userData.token === 'string' && userData.token.length >= 8 ? userData.token : null;
+    const dbUser = token ? getUserByToken(token) : null;
+    let uid = dbUser ? dbUser.uid : (token ? uidFromToken(token) : null);
     if (!token) {
       token = crypto.randomBytes(16).toString('hex');
+      uid = uidFromToken(token);
     }
-    const uid = uidFromToken(token);
 
     // Comprobar si está baneado
     const banInfo = isUserBanned(uid);
@@ -1009,10 +1168,10 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const nickname = userData && userData.nickname ? cleanName(userData.nickname) || 'Anónimo' : 'Anónimo';
-    const avatar = userData && userData.avatar ? cleanAvatar(userData.avatar) : null;
-    const bio = userData && userData.bio ? cleanBio(userData.bio) : '';
-    const userCode = getOrGenerateUserCode(uid);
+    const nickname = (dbUser && dbUser.nickname) ? dbUser.nickname : (userData && userData.nickname ? cleanName(userData.nickname) || 'Anónimo' : 'Anónimo');
+    const avatar = (dbUser && dbUser.avatar) ? dbUser.avatar : (userData && userData.avatar ? cleanAvatar(userData.avatar) : null);
+    const bio = (dbUser && dbUser.bio !== undefined) ? dbUser.bio : (userData && userData.bio ? cleanBio(userData.bio) : '');
+    const userCode = (dbUser && dbUser.userCode) ? dbUser.userCode : getOrGenerateUserCode(uid);
 
     // EXPULSIÓN DE MULTIPESTAÑAS / DUPLICADOS: Si ya existe una sesión con este mismo ID, desconectar la anterior
     const existingSockets = getSocketsForUid(uid);
@@ -1086,8 +1245,8 @@ io.on('connection', (socket) => {
     const isFirst = Object.keys(users).length === 0;
     socket.userColor = isFirst ? '#ffcc00' : getUniqueColor();
 
-    const bannerImage = (profiles[uid] && profiles[uid].bannerImage) || cleanBanner(userData && userData.bannerImage) || null;
-    const bannerColor = (profiles[uid] && profiles[uid].bannerColor) || cleanBannerColor(userData && userData.bannerColor) || null;
+    const bannerImage = (dbUser && dbUser.bannerImage) || (profiles[uid] && profiles[uid].bannerImage) || cleanBanner(userData && userData.bannerImage) || null;
+    const bannerColor = (dbUser && dbUser.bannerColor) || (profiles[uid] && profiles[uid].bannerColor) || cleanBannerColor(userData && userData.bannerColor) || null;
 
     users[socket.id] = {
       nickname: socket.nickname,
@@ -1137,6 +1296,7 @@ io.on('connection', (socket) => {
     requestsMap[to].add(me);
 
     saveFriendsData();
+    dbAddFriendRequest(me, to).catch(() => {});
     pushFriendsState(me);
     pushFriendsState(to);
     const myName = (users[socket.id] && users[socket.id].nickname) || 'Alguien';
@@ -1157,6 +1317,7 @@ io.on('connection', (socket) => {
     if (!me || typeof from !== 'string' || !requestsMap[me]) return;
     requestsMap[me].delete(from);
     saveFriendsData();
+    dbRemoveFriendRequest(from, me).catch(() => {});
     pushFriendsState(me);
     pushFriendsState(from);
   });
@@ -1167,6 +1328,7 @@ io.on('connection', (socket) => {
     if (!me || typeof to !== 'string' || !requestsMap[to]) return;
     requestsMap[to].delete(me);
     saveFriendsData();
+    dbRemoveFriendRequest(me, to).catch(() => {});
     pushFriendsState(me);
     pushFriendsState(to);
   });
@@ -1178,6 +1340,7 @@ io.on('connection', (socket) => {
     if (friendsMap[me]) friendsMap[me].delete(other);
     if (friendsMap[other]) friendsMap[other].delete(me);
     saveFriendsData();
+    dbRemoveFriendship(me, other).catch(() => {});
     pushFriendsState(me);
     pushFriendsState(other);
   });
@@ -1211,6 +1374,16 @@ io.on('connection', (socket) => {
       if (bc) u.bannerColor = bc;
     }
     if (typeof p.bio === 'string') u.bio = cleanBio(p.bio);
+
+    if (u.uid) {
+      updateUserProfile(u.uid, {
+        nickname: u.nickname,
+        avatar: u.avatar,
+        bannerImage: u.bannerImage,
+        bannerColor: u.bannerColor,
+        bio: u.bio,
+      }).catch((e) => console.error('[DB] Error persistiendo perfil:', e.message));
+    }
 
     if (newName && newName !== oldName) {
       io.emit('system-message', `${oldName} ahora se llama ${newName}.`);
@@ -2436,7 +2609,13 @@ server.on('error', (err) => {
   }
 });
 
-server.listen(TARGET_PORT, '0.0.0.0', () => {
+server.listen(TARGET_PORT, '0.0.0.0', async () => {
+  try {
+    await initDatabase();
+    await syncFromDbStore();
+  } catch (err) {
+    console.error('[DB] Error inicializando base de datos:', err);
+  }
   console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${TARGET_PORT}`);
 });
 

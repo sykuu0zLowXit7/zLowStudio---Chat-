@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - zLowStudio Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/discord.css">
+</head>
+<body class="auth-page-container">
+
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M19.5 21a3 3 0 0 0 3-3v-4.5a3 3 0 0 0-3-3h-1.5V6a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v4.5H1.5A1.5 1.5 0 0 0 0 12v6a3 3 0 0 0 3 3h16.5zM6 6a1.5 1.5 0 0 1 1.5-1.5h9A1.5 1.5 0 0 1 18 6v4.5H6V6zm-3 7.5h18a1.5 1.5 0 0 1 1.5 1.5V18a1.5 1.5 0 0 1-1.5 1.5H3A1.5 1.5 0 0 1 1.5 18v-3a1.5 1.5 0 0 1-1.5-1.5z"/>
+                </svg>
+            </div>
+            <h1 class="auth-title">zLowStudio Chat</h1>
+            <p class="auth-subtitle" id="auth-sub-msg">¡Te damos la bienvenida de nuevo!</p>
+            <div class="auth-db-badge">
+                <span>🛡️</span>
+                <span>Cuentas y Amigos 100% Persistentes</span>
+            </div>
+        </div>
+
+        <!-- Alertas de Error y Éxito -->
+        <div class="auth-error-alert" id="auth-error-alert"></div>
+        <div class="auth-success-alert" id="auth-success-alert"></div>
+
+        <!-- Pestañas de Alternancia -->
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab-btn active" id="tab-btn-login">Iniciar Sesión</button>
+            <button type="button" class="auth-tab-btn" id="tab-btn-register">Crear Cuenta</button>
+        </div>
+
+        <!-- FORMULARIO 1: INICIAR SESIÓN -->
+        <form id="form-login">
+            <div class="auth-form-group">
+                <label class="auth-label" for="login-username">Usuario o Apodo</label>
+                <div class="auth-input-wrap">
+                    <input type="text" id="login-username" class="auth-input" placeholder="ej: zlow_user" autocomplete="username" required>
+                </div>
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-label" for="login-password">Contraseña</label>
+                <div class="auth-input-wrap">
+                    <input type="password" id="login-password" class="auth-input" placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn-submit" id="btn-submit-login">Iniciar Sesión</button>
+
+            <div class="auth-switch-text">
+                ¿No tienes cuenta todavía? <span class="auth-switch-link" id="link-goto-register">Registrarse</span>
+            </div>
+        </form>
+
+        <!-- FORMULARIO 2: CREAR CUENTA -->
+        <form id="form-register" style="display: none;">
+            <div class="auth-avatar-picker">
+                <input type="file" id="reg-avatar-file" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                <div class="auth-avatar-box" id="reg-avatar-box" title="Haz clic para elegir foto de perfil">
+                    <span id="reg-avatar-placeholder" style="font-size: 2rem;">👤</span>
+                    <img id="reg-avatar-preview" class="auth-avatar-img" style="display: none;" alt="Avatar">
+                    <div class="auth-avatar-pencil">📷</div>
+                </div>
+                <span style="font-size: 0.74rem; color: var(--text-sub);">Foto de perfil (opcional)</span>
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-label" for="reg-username">Nombre de Usuario (Único)</label>
+                <div class="auth-input-wrap">
+                    <input type="text" id="reg-username" class="auth-input" placeholder="ej: sykuu0zlow" maxlength="24" autocomplete="username" required>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--text-sub); margin-top: 3px; display: block;">Solo letras, números, puntos y guiones.</span>
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-label" for="reg-nickname">Apodo en el Servidor (Nombre Visible)</label>
+                <div class="auth-input-wrap">
+                    <input type="text" id="reg-nickname" class="auth-input" placeholder="ej: zLow" maxlength="24" required>
+                </div>
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-label" for="reg-password">Contraseña</label>
+                <div class="auth-input-wrap">
+                    <input type="password" id="reg-password" class="auth-input" placeholder="Mínimo 5 caracteres" autocomplete="new-password" required>
+                </div>
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-label" for="reg-bio">Descripción / Sobre mí</label>
+                <div class="auth-input-wrap">
+                    <input type="text" id="reg-bio" class="auth-input" placeholder="Cuéntales algo sobre ti..." maxlength="150">
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn-submit" id="btn-submit-register">Crear Cuenta y Entrar</button>
+
+            <div class="auth-switch-text">
+                ¿Ya tienes cuenta? <span class="auth-switch-link" id="link-goto-login">Iniciar Sesión</span>
+            </div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { login, register, redirectIfAuthenticated } from '/js/auth.js';
+
+        // Redirigir a main.html si ya tiene sesión activa
+        redirectIfAuthenticated();
+
+        const tabBtnLogin = document.getElementById('tab-btn-login');
+        const tabBtnRegister = document.getElementById('tab-btn-register');
+        const formLogin = document.getElementById('form-login');
+        const formRegister = document.getElementById('form-register');
+        const subMsg = document.getElementById('auth-sub-msg');
+        const errAlert = document.getElementById('auth-error-alert');
+        const succAlert = document.getElementById('auth-success-alert');
+
+        const linkGotoRegister = document.getElementById('link-goto-register');
+        const linkGotoLogin = document.getElementById('link-goto-login');
+
+        const regAvatarFile = document.getElementById('reg-avatar-file');
+        const regAvatarBox = document.getElementById('reg-avatar-box');
+        const regAvatarPlaceholder = document.getElementById('reg-avatar-placeholder');
+        const regAvatarPreview = document.getElementById('reg-avatar-preview');
+        let chosenAvatarBase64 = null;
+
+        function showError(msg) {
+            errAlert.textContent = msg;
+            errAlert.style.display = 'block';
+            succAlert.style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            succAlert.textContent = msg;
+            succAlert.style.display = 'block';
+            errAlert.style.display = 'none';
+        }
+
+        function clearAlerts() {
+            errAlert.style.display = 'none';
+            succAlert.style.display = 'none';
+        }
+
+        function switchTab(mode) {
+            clearAlerts();
+            if (mode === 'login') {
+                tabBtnLogin.classList.add('active');
+                tabBtnRegister.classList.remove('active');
+                formLogin.style.display = 'block';
+                formRegister.style.display = 'none';
+                subMsg.textContent = '¡Te damos la bienvenida de nuevo!';
+                document.getElementById('login-username').focus();
+            } else {
+                tabBtnRegister.classList.add('active');
+                tabBtnLogin.classList.remove('active');
+                formRegister.style.display = 'block';
+                formLogin.style.display = 'none';
+                subMsg.textContent = 'Crea tu perfil protegido en segundos';
+                document.getElementById('reg-username').focus();
+            }
+        }
+
+        tabBtnLogin.addEventListener('click', () => switchTab('login'));
+        tabBtnRegister.addEventListener('click', () => switchTab('register'));
+        linkGotoRegister.addEventListener('click', () => switchTab('register'));
+        linkGotoLogin.addEventListener('click', () => switchTab('login'));
+
+        // Carga y compresión de imagen de avatar
+        regAvatarBox.addEventListener('click', () => regAvatarFile.click());
+        regAvatarFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 200;
+                        canvas.height = 200;
+                        const s = Math.min(img.width, img.height);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 200, 200);
+                        chosenAvatarBase64 = canvas.toDataURL('image/webp', 0.85);
+                        regAvatarPreview.src = chosenAvatarBase64;
+                        regAvatarPreview.style.display = 'block';
+                        regAvatarPlaceholder.style.display = 'none';
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Enviar Login
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value;
+            const btn = document.getElementById('btn-submit-login');
+
+            if (!u || !p) {
+                showError('Por favor completa todos los campos.');
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.textContent = 'Iniciando sesión...';
+                await login(u, p);
+                showSuccess('¡Bienvenido! Redirigiendo al chat...');
+                setTimeout(() => {
+                    window.location.replace('/main.html');
+                }, 400);
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Iniciar Sesión';
+                showError(err.message || 'Error al iniciar sesión.');
+            }
+        });
+
+        // Enviar Registro
+        formRegister.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts();
+            const username = document.getElementById('reg-username').value.trim();
+            const nickname = document.getElementById('reg-nickname').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const bio = document.getElementById('reg-bio').value.trim();
+            const btn = document.getElementById('btn-submit-register');
+
+            if (!username || !password) {
+                showError('El nombre de usuario y contraseña son obligatorios.');
+                return;
+            }
+            if (password.length < 5) {
+                showError('La contraseña debe tener al menos 5 caracteres.');
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.textContent = 'Creando cuenta...';
+                await register({
+                    username,
+                    nickname: nickname || username,
+                    password,
+                    avatar: chosenAvatarBase64,
+                    bio,
+                });
+                showSuccess('¡Cuenta creada con éxito! Entrando al servidor...');
+                setTimeout(() => {
+                    window.location.replace('/main.html');
+                }, 400);
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Crear Cuenta y Entrar';
+                showError(err.message || 'Error al registrar.');
+            }
+        });
+    </script>
+</body>
+</html>
