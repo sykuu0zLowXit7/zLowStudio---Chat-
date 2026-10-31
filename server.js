@@ -651,6 +651,21 @@ function cleanAvatar(a) {
   return null;
 }
 
+function cleanBanner(b) {
+  if (typeof b === 'string') {
+    if (b.startsWith('data:image/') && b.length <= 600000) return b;
+    if (isValidImageUrl(b)) return b;
+  }
+  return null;
+}
+
+function cleanBannerColor(c) {
+  if (typeof c === 'string' && c.trim().length > 0 && c.length <= 60) {
+    return c.trim();
+  }
+  return null;
+}
+
 function cleanMessageText(text) {
   return String(text || '')
     .replace(/[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '')
@@ -755,6 +770,8 @@ function saveFriendsData() {
           outProfiles[id] = {
             ...p,
             avatar: p.avatar && p.avatar.length <= 300000 ? p.avatar : null,
+            bannerImage: p.bannerImage && p.bannerImage.length <= 600000 ? p.bannerImage : null,
+            bannerColor: p.bannerColor || null,
           };
         }
       });
@@ -824,7 +841,7 @@ function friendStatus(id) {
 }
 
 function friendEntry(id) {
-  const p = profiles[id] || { nickname: 'Usuario', avatar: null, color: '#888888', bio: '', memberSince: 0, lastSeen: 0 };
+  const p = profiles[id] || { nickname: 'Usuario', avatar: null, color: '#888888', bio: '', memberSince: 0, lastSeen: 0, bannerImage: null, bannerColor: null };
   const sids = getSocketsForUid(id);
   const activeUser = sids.length > 0 && users[sids[0]] ? users[sids[0]] : null;
   const src = activeUser || p;
@@ -836,6 +853,8 @@ function friendEntry(id) {
     userCode,
     nickname: src.nickname || 'Usuario',
     avatar: src.avatar || null,
+    bannerImage: src.bannerImage || p.bannerImage || null,
+    bannerColor: src.bannerColor || p.bannerColor || null,
     color: src.color || '#888888',
     bio: src.bio || '',
     memberSince: src.memberSince || 0,
@@ -894,6 +913,8 @@ function syncProfileFromSocket(socketId) {
   profiles[u.uid] = {
     nickname: u.nickname,
     avatar: u.avatar,
+    bannerImage: u.bannerImage || null,
+    bannerColor: u.bannerColor || null,
     color: u.color,
     bio: u.bio,
     memberSince: u.memberSince,
@@ -1065,9 +1086,14 @@ io.on('connection', (socket) => {
     const isFirst = Object.keys(users).length === 0;
     socket.userColor = isFirst ? '#ffcc00' : getUniqueColor();
 
+    const bannerImage = (profiles[uid] && profiles[uid].bannerImage) || cleanBanner(userData && userData.bannerImage) || null;
+    const bannerColor = (profiles[uid] && profiles[uid].bannerColor) || cleanBannerColor(userData && userData.bannerColor) || null;
+
     users[socket.id] = {
       nickname: socket.nickname,
       avatar,
+      bannerImage,
+      bannerColor,
       color: socket.userColor,
       isFirst,
       status: 'online',
@@ -1171,6 +1197,18 @@ io.on('connection', (socket) => {
     } else if (typeof p.avatar === 'string') {
       const a = cleanAvatar(p.avatar);
       if (a) u.avatar = a;
+    }
+    if (p.bannerImage === null) {
+      u.bannerImage = null;
+    } else if (typeof p.bannerImage === 'string') {
+      const b = cleanBanner(p.bannerImage);
+      if (b) u.bannerImage = b;
+    }
+    if (p.bannerColor === null) {
+      u.bannerColor = null;
+    } else if (typeof p.bannerColor === 'string') {
+      const bc = cleanBannerColor(p.bannerColor);
+      if (bc) u.bannerColor = bc;
     }
     if (typeof p.bio === 'string') u.bio = cleanBio(p.bio);
 
