@@ -29,18 +29,21 @@ const ADMIN_DATA_FILE = path.join(DATA_DIR, 'admin-data.json');
 
 app.use(express.json({ limit: '4mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(__dirname));
 
-// Clave por defecto de Klipy protegida/obfuscada
-const _gk = Buffer.from('RXFLdmVLeWE2NzNTR0ROSzF2V3FabHFDZWN6ZkFZUGJSQzNLREQ5V0RXOGNWTVFLUEc2d1RuTVdjRW9xT2dsaw==', 'base64').toString('utf8');
-const GIF_API_KEY = process.env.GIF_API_KEY || _gk;
+const GIF_API_KEY = (process.env.GIF_API_KEY || '').trim();
+if (!GIF_API_KEY) {
+  console.warn('[Config] GIF_API_KEY no configurada. Búsqueda de GIFs desactivada.');
+}
 const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'klipy').toLowerCase();
 const GIF_PAGE_SIZE = 24;
 const GIF_CACHE_TTL = 5 * 60 * 1000;
 const gifCache = new Map();
 
-// Contraseña de administrador
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1509';
+// Contraseña de administrador (requiere configuración explícita)
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
+if (!ADMIN_PASSWORD) {
+  console.warn('[Config] ADMIN_PASSWORD no configurada. Panel de administración desactivado.');
+}
 
 // Dominios seguros permitidos para imágenes
 const ALLOWED_IMAGE_HOSTS = new Set([
@@ -194,12 +197,8 @@ let cachedMeteredIce = { timestamp: 0, servers: null };
 // Endpoint de configuración WebRTC ICE con STUN y TURN de alta disponibilidad
 // Diseñado para atravesar NATs simétricos, conexiones 4G/5G y routers entre distintos países
 app.get('/api/webrtc-config', async (_req, res) => {
-  const envApiKey = (process.env.METERED_API_KEY || '').trim();
-  const envDomain = (process.env.METERED_DOMAIN || '').trim();
-
-  // Valores predeterminados o configurados
-  const meteredApiKey = envApiKey || 'uNeARrTayh7WjmIgbiHYGBvdjwpClmQL-p2w6MpLcgxWfNSy';
-  let meteredDomain = envDomain || 'zlowstudio.metered.live';
+  const meteredApiKey = (process.env.METERED_API_KEY || '').trim();
+  let meteredDomain = (process.env.METERED_DOMAIN || '').trim();
 
   // Normalizar dominio eliminando protocolos y barras finales
   meteredDomain = meteredDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
@@ -391,6 +390,29 @@ const VOICE_CHANNELS = {
 
 // uid -> channelId
 const userCurrentVoiceChannel = new Map();
+
+function areUsersInActiveSession(uid1, uid2) {
+  if (!uid1 || !uid2) return false;
+  const callKey = [uid1, uid2].sort().join('__');
+  if (activeCalls.has(callKey)) return true;
+  const ch1 = userCurrentVoiceChannel.get(uid1);
+  const ch2 = userCurrentVoiceChannel.get(uid2);
+  if (ch1 && ch1 === ch2) return true;
+  return false;
+}
+
+const voiceStreamRateLimit = new Map(); // socket.id -> { count, resetAt }
+function checkVoiceStreamRateLimit(socketId) {
+  const now = Date.now();
+  let r = voiceStreamRateLimit.get(socketId);
+  if (!r || now > r.resetAt) {
+    r = { count: 1, resetAt: now + 1000 };
+    voiceStreamRateLimit.set(socketId, r);
+    return true;
+  }
+  r.count++;
+  return r.count <= 35;
+}
 
 function getVoiceChannelsPayload() {
   const channels = {};
@@ -644,26 +666,36 @@ function cleanBio(b) {
 }
 
 function cleanAvatar(a) {
-  if (typeof a === 'string') {
-    if (a.startsWith('data:image/') && a.length <= 300000) return a;
-    if (isValidImageUrl(a)) return a;
+  if (typeof a === 'string' && a.length <= 300000 && isValidImageUrl(a)) {
+    return a;
   }
   return null;
 }
 
 function cleanBanner(b) {
-  if (typeof b === 'string') {
-    if (b.startsWith('data:image/') && b.length <= 600000) return b;
-    if (isValidImageUrl(b)) return b;
+  if (typeof b === 'string' && b.length <= 600000 && isValidImageUrl(b)) {
+    return b;
   }
   return null;
 }
 
 function cleanBannerColor(c) {
-  if (typeof c === 'string' && c.trim().length > 0 && c.length <= 60) {
-    return c.trim();
+  if (typeof c !== 'string') return null;
+  const val = c.trim();
+  if (!val || val.length > 100) return null;
+  if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(val)) return val;
+  if (/^linear-gradient\(\s*(?:(?:to\s+(?:top|bottom|left|right)(?:\s+(?:top|bottom|left|right))?|\d{1,3}deg)\s*,\s*)?#[0-9a-fA-F]{3,8}(?:\s+\d{1,3}%)?(?:\s*,\s*#[0-9a-fA-F]{3,8}(?:\s+\d{1,3}%)?)+\s*\)$/i.test(val)) {
+    return val;
   }
   return null;
+}
+
+function isValidEmoji(emoji) {
+  if (typeof emoji !== 'string') return false;
+  const trimmed = emoji.trim();
+  if (trimmed.length === 0 || trimmed.length > 16) return false;
+  if (/[<>&"'\u0000-\u001F\u007F-\u009F]/.test(trimmed)) return false;
+  return true;
 }
 
 function cleanMessageText(text) {
@@ -939,10 +971,34 @@ function broadcastRecordingStatus() {
   io.emit('recording update', names);
 }
 
-const adminAuthAttempts = new Map(); // ip -> { count, lockedUntil }
+function getClientIp(socket) {
+  const xfwd = socket.handshake && socket.handshake.headers && socket.handshake.headers['x-forwarded-for'];
+  if (xfwd && typeof xfwd === 'string') {
+    return xfwd.split(',')[0].trim();
+  }
+  return (socket.handshake && socket.handshake.address) || 'ip_unknown';
+}
+
+const adminAuthAttempts = new Map(); // key -> { count, lockedUntil }
 
 // Sockets Events
 io.on('connection', (socket) => {
+  // Envoltorio común para registrar handlers seguros con try/catch y normalización de payload
+  const rawOn = socket.on.bind(socket);
+  socket.on = function (event, handler) {
+    if (typeof handler !== 'function') return rawOn(event, handler);
+    return rawOn(event, (...args) => {
+      try {
+        const safePayload = (args.length === 0 || args[0] === null || args[0] === undefined) && event !== 'disconnect'
+          ? {}
+          : args[0];
+        return handler(safePayload, ...args.slice(1));
+      } catch (err) {
+        console.error(`[Socket] Error no controlado en evento "${event}":`, err.message);
+      }
+    });
+  };
+
   socket.isAdmin = false;
 
   // Enviar estado actual de canales de voz inmediatamente al conectar
@@ -950,9 +1006,17 @@ io.on('connection', (socket) => {
 
   // Autenticación de admin en servidor con protección anti-fuerza bruta
   socket.on('admin auth', ({ password }) => {
-    const ip = socket.handshake.address || 'ip_unknown';
+    if (!ADMIN_PASSWORD) {
+      socket.emit('admin auth result', {
+        success: false,
+        message: 'Panel de administración desactivado: no se configuró ADMIN_PASSWORD en las variables de entorno.'
+      });
+      return;
+    }
+    const clientIp = getClientIp(socket);
+    const attemptKey = `${socket.uid || socket.id}_${clientIp}`;
     const now = Date.now();
-    const attempt = adminAuthAttempts.get(ip) || { count: 0, lockedUntil: 0 };
+    const attempt = adminAuthAttempts.get(attemptKey) || { count: 0, lockedUntil: 0 };
 
     if (attempt.lockedUntil > now) {
       const waitMins = Math.ceil((attempt.lockedUntil - now) / 60000);
@@ -965,7 +1029,7 @@ io.on('connection', (socket) => {
 
     const inputPass = String(password || '');
     if (inputPass.length > 0 && inputPass === ADMIN_PASSWORD) {
-      adminAuthAttempts.delete(ip);
+      adminAuthAttempts.delete(attemptKey);
       socket.isAdmin = true;
       socket.emit('admin auth result', { success: true, message: 'Autenticación exitosa' });
       socket.emit('admin:dashboard_data', buildAdminDashboardPayload());
@@ -974,13 +1038,13 @@ io.on('connection', (socket) => {
       attempt.count = (attempt.count || 0) + 1;
       if (attempt.count >= 5) {
         attempt.lockedUntil = now + 5 * 60 * 1000;
-        adminAuthAttempts.set(ip, attempt);
+        adminAuthAttempts.set(attemptKey, attempt);
         socket.emit('admin auth result', {
           success: false,
           message: 'Demasiados intentos erróneos. Acceso bloqueado por 5 minutos.'
         });
       } else {
-        adminAuthAttempts.set(ip, attempt);
+        adminAuthAttempts.set(attemptKey, attempt);
         const rem = 5 - attempt.count;
         socket.emit('admin auth result', {
           success: false,
@@ -1113,9 +1177,7 @@ io.on('connection', (socket) => {
     io.emit('update-users', getCleanUsersList());
     broadcastAdminUpdate();
 
-    Object.values(messagesStore).forEach((msg) => {
-      socket.emit('chat message', msg);
-    });
+    socket.emit('chat history', Object.values(messagesStore));
 
     socket.emit('voice-channels:state', getVoiceChannelsPayload());
     broadcastVoiceChannelsState();
@@ -1438,7 +1500,8 @@ io.on('connection', (socket) => {
 
   socket.on('add private reaction', ({ targetUid, msgId, emoji }) => {
     const me = socket.uid;
-    if (!me || !targetUid || !users[socket.id] || !emoji) return;
+    if (!me || !targetUid || !users[socket.id] || !isValidEmoji(emoji)) return;
+    const cleanEmoji = emoji.trim();
     const roomId = getDmRoomId(me, targetUid);
     const list = privateMessagesStore[roomId] || [];
     const msg = list.find((m) => m.id === msgId);
@@ -1449,7 +1512,7 @@ io.on('connection', (socket) => {
 
     Object.keys(msg.reactions).forEach((e) => {
       msg.reactions[e] = msg.reactions[e].filter((item) => {
-        if (item.uid === me && e === emoji) {
+        if (item.uid === me && e === cleanEmoji) {
           alreadyReacted = true;
           return false;
         }
@@ -1459,8 +1522,8 @@ io.on('connection', (socket) => {
     });
 
     if (!alreadyReacted) {
-      if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
-      msg.reactions[emoji].push({
+      if (!msg.reactions[cleanEmoji]) msg.reactions[cleanEmoji] = [];
+      msg.reactions[cleanEmoji].push({
         id: socket.id,
         uid: me,
         nickname: users[socket.id].nickname,
@@ -1529,7 +1592,8 @@ io.on('connection', (socket) => {
   socket.on('add reaction', ({ msgId, emoji }) => {
     const user = users[socket.id];
     const msg = messagesStore[msgId];
-    if (!user || !msg || !emoji) return;
+    if (!user || !msg || !isValidEmoji(emoji)) return;
+    const cleanEmoji = emoji.trim();
     const myUid = user.uid;
 
     if (!msg.reactions) msg.reactions = {};
@@ -1537,7 +1601,7 @@ io.on('connection', (socket) => {
     let alreadyReacted = false;
     Object.keys(msg.reactions).forEach((e) => {
       msg.reactions[e] = msg.reactions[e].filter((item) => {
-        if (item.uid === myUid && e === emoji) {
+        if (item.uid === myUid && e === cleanEmoji) {
           alreadyReacted = true;
           return false;
         }
@@ -1547,8 +1611,8 @@ io.on('connection', (socket) => {
     });
 
     if (!alreadyReacted) {
-      if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
-      msg.reactions[emoji].push({
+      if (!msg.reactions[cleanEmoji]) msg.reactions[cleanEmoji] = [];
+      msg.reactions[cleanEmoji].push({
         id: socket.id,
         uid: myUid,
         nickname: user.nickname,
@@ -2026,7 +2090,7 @@ io.on('connection', (socket) => {
   socket.on('call:signal', (payload) => {
     const myUid = socket.uid;
     const targetUid = payload && payload.targetUid;
-    if (!myUid || !targetUid) return;
+    if (!myUid || !targetUid || !areUsersInActiveSession(myUid, targetUid)) return;
 
     const signalData = (payload && payload.signal) || {
       offer: payload && payload.offer,
@@ -2271,6 +2335,8 @@ io.on('connection', (socket) => {
   socket.on('voice:stream-audio', (payload) => {
     const myUid = socket.uid;
     if (!myUid || !payload || !payload.audio) return;
+    if (typeof payload.audio !== 'string' || payload.audio.length > 65536) return;
+    if (!checkVoiceStreamRateLimit(socket.id)) return;
 
     // 1. Canal de voz grupal (Salas de voz 1, 2, 3)
     if (payload.channelId) {
@@ -2301,8 +2367,9 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // 2. Llamada privada 1 a 1
+    // 2. Llamada privada 1 a 1 (solo si existe llamada activa entre ambos)
     if (payload.targetUid) {
+      if (!areUsersInActiveSession(myUid, payload.targetUid)) return;
       const destSockets = getSocketsForUid(payload.targetUid);
       destSockets.forEach((sid) => {
         io.to(sid).emit('voice:stream-audio', {
@@ -2392,6 +2459,7 @@ io.on('connection', (socket) => {
       broadcastRecordingStatus();
 
       messageTimestampsBySocket.delete(socket.id);
+      voiceStreamRateLimit.delete(socket.id);
       delete users[socket.id];
 
       if (leavingUid) {
@@ -2410,10 +2478,9 @@ io.on('connection', (socket) => {
   });
 });
 
-app.get('*', (_req, res) => {
-  const rootIndex = path.join(__dirname, 'index.html');
-  if (fs.existsSync(rootIndex)) {
-    return res.sendFile(rootIndex);
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/data/') || /\.[a-zA-Z0-9]+$/.test(req.path)) {
+    return res.status(404).send('Not Found');
   }
   const publicIndex = path.join(__dirname, 'public', 'index.html');
   if (fs.existsSync(publicIndex)) {
@@ -2422,21 +2489,15 @@ app.get('*', (_req, res) => {
   res.status(404).send('index.html no encontrado');
 });
 
-const TARGET_PORT = Number(process.env.PORT) || 3000;
+const TARGET_PORT = 3000;
 
 server.on('error', (err) => {
-  if (err && err.code === 'EADDRINUSE' && TARGET_PORT !== 3000) {
-    console.warn(`Puerto ${TARGET_PORT} en uso, reintentando en puerto 3000...`);
-    server.listen(3000, '0.0.0.0', () => {
-      console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:3000`);
-    });
-  } else {
-    console.error('Error en el servidor:', err);
-    process.exit(1);
-  }
+  console.error('Error en el servidor:', err);
+  process.exit(1);
 });
 
 server.listen(TARGET_PORT, '0.0.0.0', () => {
   console.log(`zLowStudio Chat Server corriendo en http://0.0.0.0:${TARGET_PORT}`);
 });
+
 

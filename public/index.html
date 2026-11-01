@@ -5064,6 +5064,7 @@
                         <label class="volume-slider-wrap" title="Volumen individual de este usuario">
                             <span style="font-size: 0.72rem;">🔊</span>
                             <input type="range" id="peer-volume-slider" min="0" max="200" value="100">
+                            <span id="peer-volume-val" style="font-size: 0.72rem; color: var(--text-sub); margin-left: 4px;">100%</span>
                         </label>
                     </div>
                     <div class="participant-status-badges" id="call-peer-status-badges"></div>
@@ -5275,8 +5276,9 @@
 
     <!-- Modal de KICK -->
     <div id="kicked-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-box" style="border-color: #dc3545;">
+        <div class="modal-box" style="border-color: #dc3545; text-align: center;">
             <h2 style="color: #dc3545;">¡Has sido Expulsado!</h2>
+            <p id="kicked-reason-text" style="color: var(--text-sub); margin: 12px 0 18px 0; font-size: 0.95rem;"></p>
             <button class="main-btn" id="reconnect-btn" style="background: #dc3545;">Volver a Conectarte</button>
         </div>
     </div>
@@ -5851,6 +5853,7 @@
         const globalMessagesMap = new Map();
         const privateCache = {}; // targetUid -> []
         let hasJoined = false;
+        let isFirstConnect = true;
         let myUid = '';
         let myUserCode = '';
 
@@ -6323,14 +6326,14 @@
         function buildVoicePlayerHtml(data) {
             const wave = normalizeWave(data.waveform) || fallbackWave(data.id);
             const bars = wave.map(v => `<i style="height:${v}%"></i>`).join('');
-            const initial = data.user ? data.user.charAt(0).toUpperCase() : '?';
-            const avatar = data.avatar
-                ? `<img src="${data.avatar}" class="voice-avatar-img" alt="">`
+            const initial = data.user ? escapeHtml(data.user.charAt(0).toUpperCase()) : '?';
+            const avatar = isValidImageUrl(data.avatar)
+                ? `<img src="${escapeHtml(data.avatar)}" class="voice-avatar-img" alt="">`
                 : `<div class="voice-avatar-img" style="background: rgba(0,0,0,0.25)">${initial}</div>`;
             const dur = Number(data.duration) || 0;
 
             return `
-                <div class="voice-player" style="--bubble: ${data.color}">
+                <div class="voice-player" style="--bubble: ${safeColor(data.color)}">
                     <button class="voice-play-btn" type="button" aria-label="Reproducir">
                         <svg class="ic-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         <svg class="ic-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
@@ -6536,6 +6539,17 @@
 
         function safeColor(c) { return /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#888888'; }
 
+        function cleanBannerColor(c) {
+            if (typeof c !== 'string') return null;
+            const val = c.trim();
+            if (!val || val.length > 100) return null;
+            if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(val)) return val;
+            if (/^linear-gradient\(\s*(?:(?:to\s+(?:top|bottom|left|right)(?:\s+(?:top|bottom|left|right))?|\d{1,3}deg)\s*,\s*)?#[0-9a-fA-F]{3,8}(?:\s+\d{1,3}%)?(?:\s*,\s*#[0-9a-fA-F]{3,8}(?:\s+\d{1,3}%)?)+\s*\)$/i.test(val)) {
+                return val;
+            }
+            return null;
+        }
+
         function makeAvatarEl(u, cls) {
             if (u.avatar) {
                 const img = document.createElement('img');
@@ -6631,9 +6645,9 @@
             const bannerEl = profileCard.querySelector('.profile-banner');
             if (bannerEl) {
                 const bImg = p.bannerImage || (isSelf ? myBannerImage : null);
-                const bCol = p.bannerColor || (isSelf ? myBannerColor : null);
+                const bCol = cleanBannerColor(p.bannerColor || (isSelf ? myBannerColor : null));
                 if (bImg && isValidImageUrl(bImg)) {
-                    bannerEl.style.backgroundImage = `url("${bImg}")`;
+                    bannerEl.style.backgroundImage = `url("${escapeHtml(bImg)}")`;
                     bannerEl.style.backgroundSize = 'cover';
                     bannerEl.style.backgroundPosition = 'center';
                 } else if (bCol) {
@@ -6923,6 +6937,14 @@
             replyingTo = null;
             if (replyPreviewContainer) replyPreviewContainer.style.display = 'none';
             if (isRecording) stopRecording(true);
+            if (typingIndicator) {
+                if (friendTypingMap[uid]) {
+                    typingIndicator.style.display = 'flex';
+                    if (typingText) typingText.textContent = `${friendData.nickname || 'Amigo'} está escribiendo...`;
+                } else {
+                    typingIndicator.style.display = 'none';
+                }
+            }
 
             unreadDms[uid] = 0;
             updateFriendUnreadBadge(uid);
@@ -7559,11 +7581,65 @@
         // ====== ADJUNTAR IMÁGENES ======
         function prepareImagePreview(file) {
             if (!file || !file.type.startsWith('image/')) return;
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('La imagen es demasiado pesada (máximo 10 MB antes de procesar).');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
-                pendingImageBase64 = e.target.result;
-                previewImgElement.src = pendingImageBase64;
-                previewContainer.classList.add('show');
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        const maxDim = 1280;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                        let dataUrl = canvas.toDataURL(mimeType, 0.85);
+
+                        // Si en PNG supera 2 MB, comprimir a JPEG para optimizar red
+                        if (dataUrl.length > 2 * 1024 * 1024 && mimeType === 'image/png') {
+                            dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        }
+
+                        // Límite seguro estricto de 3MB para no saturar maxHttpBufferSize (4MB)
+                        if (dataUrl.length > 3 * 1024 * 1024) {
+                            showToast('La imagen supera el límite de 3 MB tras la compresión.');
+                            return;
+                        }
+
+                        pendingImageBase64 = dataUrl;
+                        previewImgElement.src = pendingImageBase64;
+                        previewContainer.classList.add('show');
+                    } catch (err) {
+                        console.error('Error comprimiendo imagen:', err);
+                        showToast('Error al procesar la imagen.');
+                    }
+                };
+                img.onerror = function() {
+                    showToast('No se pudo cargar la imagen seleccionada.');
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                showToast('Error al leer el archivo de imagen.');
             };
             reader.readAsDataURL(file);
         }
@@ -7783,6 +7859,8 @@
 
         socket.on('private typing update', ({ fromUid, fromName, isTyping }) => {
             friendTypingMap[fromUid] = !!isTyping;
+            const fObj = (friendsState && friendsState.friends ? friendsState.friends : []).find(f => f.uid === fromUid);
+            const status = fObj ? fObj.status : 'offline';
             const friendEl = friendsList.querySelector(`.friend-item[data-uid="${fromUid}"]`);
             if (friendEl) {
                 const sub = friendEl.querySelector('.friend-sub');
@@ -7806,8 +7884,8 @@
             }
 
             if (currentDmUser && currentDmUser.uid === fromUid) {
-                typingIndicator.style.display = isTyping ? 'flex' : 'none';
-                typingText.textContent = `${fromName} está escribiendo...`;
+                if (typingIndicator) typingIndicator.style.display = isTyping ? 'flex' : 'none';
+                if (typingText) typingText.textContent = `${fromName || (fObj ? fObj.nickname : 'Usuario')} está escribiendo...`;
             }
         });
 
@@ -7827,6 +7905,10 @@
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
+            if (pendingImageBase64 && pendingImageBase64.length > 3 * 1024 * 1024) {
+                showToast('La imagen supera el límite máximo permitido (3 MB).');
+                return;
+            }
             const hasText = input.value.trim();
             if (hasText || pendingImageBase64) {
                 const now = new Date();
@@ -8066,12 +8148,30 @@
             return item;
         }
 
+        // HISTORIAL PÚBLICO (Sin sonido y descartando duplicados por ID)
+        socket.on('chat history', (history) => {
+            if (!Array.isArray(history)) return;
+            history.forEach((data) => {
+                if (!data || !data.id) return;
+                globalMessagesMap.set(data.id, { type: 'msg', data: data });
+                if (!currentDmUser) {
+                    if (document.getElementById(data.id)) return;
+                    const item = renderMessageNode(data, false);
+                    messages.appendChild(item);
+                }
+            });
+            if (!currentDmUser) {
+                messages.scrollTop = messages.scrollHeight;
+            }
+        });
+
         // MENSAJES PÚBLICOS
         socket.on('chat message', (data) => {
-            // Audit #9: Guardar en Map para sincronización reactiva al cambiar de canal
+            if (!data || !data.id) return;
             globalMessagesMap.set(data.id, { type: 'msg', data: data });
-            const item = renderMessageNode(data, false);
             if (!currentDmUser) {
+                if (document.getElementById(data.id)) return;
+                const item = renderMessageNode(data, false);
                 const isMe = (data.senderId === socket.id) || (data.senderUid && data.senderUid === myUid);
                 if (!isMe) playMessageSound(false);
                 messages.appendChild(item);
@@ -8083,13 +8183,20 @@
         socket.on('private history', ({ targetUid, messages: hist }) => {
             if (currentDmUser && currentDmUser.uid === targetUid) {
                 messages.innerHTML = '';
-                hist.forEach(msg => messages.appendChild(renderMessageNode(msg, true)));
+                const seen = new Set();
+                (hist || []).forEach(msg => {
+                    if (!msg || !msg.id || seen.has(msg.id)) return;
+                    seen.add(msg.id);
+                    messages.appendChild(renderMessageNode(msg, true));
+                });
                 messages.scrollTop = messages.scrollHeight;
             }
         });
 
         // NUEVO MENSAJE PRIVADO
         socket.on('private message', (data) => {
+            if (!data || !data.id) return;
+            if (document.getElementById(data.id)) return;
             playMessageSound();
             const otherUid = (data.senderUid === myUid) ? data.targetUid : data.senderUid;
             if (currentDmUser && currentDmUser.uid === otherUid) {
@@ -8158,8 +8265,14 @@
                 const pill = document.createElement('div');
                 pill.className = 'reaction-pill';
                 if (usersList.some(u => u.uid === myUid || u.id === socket.id)) pill.classList.add('user-reacted');
-                pill.setAttribute('data-tooltip', usersList.map(u => u.nickname).join(', '));
-                pill.innerHTML = `<span>${emoji}</span> <span style="font-size:0.75rem; font-weight:bold;">${usersList.length}</span>`;
+                const emojiSpan = document.createElement('span');
+                emojiSpan.textContent = emoji;
+                const countSpan = document.createElement('span');
+                countSpan.style.fontSize = '0.75rem';
+                countSpan.style.fontWeight = 'bold';
+                countSpan.textContent = ` ${usersList.length}`;
+                pill.appendChild(emojiSpan);
+                pill.appendChild(countSpan);
                 pill.addEventListener('click', () => {
                     if (currentDmUser) {
                         socket.emit('add private reaction', { targetUid: currentDmUser.uid, msgId, emoji });
@@ -8306,12 +8419,13 @@
 
         function updatePeBannerPreview() {
             if (!peBannerWrap) return;
+            const safePeCol = cleanBannerColor(peBannerColor);
             if (peBannerImage && isValidImageUrl(peBannerImage)) {
-                peBannerWrap.style.backgroundImage = `url("${peBannerImage}")`;
+                peBannerWrap.style.backgroundImage = `url("${escapeHtml(peBannerImage)}")`;
                 peBannerWrap.style.backgroundSize = 'cover';
                 peBannerWrap.style.backgroundPosition = 'center';
-            } else if (peBannerColor) {
-                peBannerWrap.style.background = peBannerColor;
+            } else if (safePeCol) {
+                peBannerWrap.style.background = safePeCol;
                 peBannerWrap.style.backgroundImage = 'none';
             } else {
                 peBannerWrap.style.background = 'linear-gradient(135deg, #f472b6, #fb7185, #38bdf8)';
@@ -9318,17 +9432,22 @@
         const btnDeclineCall = document.getElementById('btn-decline-call');
 
         const activeCallOverlay = document.getElementById('active-call-overlay');
-        const activeCallDragHandle = document.getElementById('active-call-drag-handle');
+        const activeCallDragHandle = document.getElementById('private-call-drag-handle');
         const callMinimizeBtn = document.getElementById('call-minimize-btn');
-        const activeCallAvatarContainer = document.getElementById('active-call-avatar-container');
-        const activeCallName = document.getElementById('active-call-name');
+        const activeCallTitle = document.getElementById('active-call-title');
+        const callMyName = document.getElementById('call-my-name');
+        const callMyAvatar = document.getElementById('call-my-avatar');
+        const callPeerName = document.getElementById('call-peer-name');
+        const callPeerAvatar = document.getElementById('call-peer-avatar');
         const activeCallTimer = document.getElementById('active-call-timer');
         const callToggleMic = document.getElementById('call-toggle-mic');
         const callToggleDeafen = document.getElementById('call-toggle-deafen');
         const callHangupBtn = document.getElementById('call-hangup-btn');
         const remoteCallAudio = document.getElementById('remote-call-audio');
 
-        makeDraggable(activeCallOverlay, activeCallDragHandle);
+        if (activeCallOverlay && activeCallDragHandle) {
+            makeDraggable(activeCallOverlay, activeCallDragHandle);
+        }
 
         callMinimizeBtn.addEventListener('click', () => {
             minimizeCurrentCall('private');
@@ -9441,34 +9560,61 @@
         }
 
         function renderActiveCallOverlay(target, statusText) {
-            activeCallName.textContent = target.nickname || 'Usuario';
-            activeCallTimer.textContent = statusText || 'Conectando...';
-            activeCallOverlay.classList.remove('connected');
+            if (activeCallTitle) activeCallTitle.textContent = `Llamada con ${target.nickname || 'Usuario'}`;
+            if (activeCallTimer) activeCallTimer.textContent = statusText || 'Conectando...';
+            if (activeCallOverlay) activeCallOverlay.classList.remove('connected');
 
-            activeCallAvatarContainer.innerHTML = '';
-            if (target.avatar && isValidImageUrl(target.avatar)) {
-                const img = document.createElement('img');
-                img.src = target.avatar;
-                img.className = 'call-floating-avatar';
-                activeCallAvatarContainer.appendChild(img);
-            } else {
-                const div = document.createElement('div');
-                div.className = 'call-floating-initial';
-                div.style.background = safeColor(target.color || '#007bff');
-                div.textContent = target.nickname ? target.nickname.charAt(0).toUpperCase() : '?';
-                activeCallAvatarContainer.appendChild(div);
+            // Actualizar tarjeta del usuario local
+            if (callMyName) callMyName.textContent = myNickname || 'Tú';
+            if (callMyAvatar) {
+                callMyAvatar.innerHTML = '';
+                const myAv = getMyAvatar();
+                if (myAv && isValidImageUrl(myAv)) {
+                    const img = document.createElement('img');
+                    img.src = myAv;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    callMyAvatar.appendChild(img);
+                } else {
+                    callMyAvatar.style.background = getMyColor();
+                    callMyAvatar.textContent = myNickname ? myNickname.charAt(0).toUpperCase() : '👤';
+                }
             }
 
-            callToggleMic.classList.remove('active-muted');
-            callToggleDeafen.classList.remove('active-muted');
-            callToggleMic.innerHTML = SVG_CALL_ICONS.micOn;
-            callToggleDeafen.innerHTML = SVG_CALL_ICONS.deafenOn;
-            callHangupBtn.innerHTML = SVG_CALL_ICONS.hangup;
+            // Actualizar tarjeta del amigo remoto
+            if (callPeerName) callPeerName.textContent = target.nickname || 'Amigo';
+            if (callPeerAvatar) {
+                callPeerAvatar.innerHTML = '';
+                if (target.avatar && isValidImageUrl(target.avatar)) {
+                    const img = document.createElement('img');
+                    img.src = target.avatar;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    callPeerAvatar.appendChild(img);
+                } else {
+                    callPeerAvatar.style.background = safeColor(target.color || '#007bff');
+                    callPeerAvatar.textContent = target.nickname ? target.nickname.charAt(0).toUpperCase() : '?';
+                }
+            }
+
+            if (callToggleMic) {
+                callToggleMic.classList.remove('active-muted');
+                callToggleMic.innerHTML = SVG_CALL_ICONS.micOn;
+            }
+            if (callToggleDeafen) {
+                callToggleDeafen.classList.remove('active-muted');
+                callToggleDeafen.innerHTML = SVG_CALL_ICONS.deafenOn;
+            }
+            if (callHangupBtn) callHangupBtn.innerHTML = SVG_CALL_ICONS.hangup;
 
             callIsMicMuted = false;
             callIsDeafened = false;
 
-            activeCallOverlay.style.display = 'flex';
+            if (activeCallOverlay) activeCallOverlay.style.display = 'flex';
         }
 
         socket.on('call:incoming', ({ callerUid, callerName, callerAvatar, callerColor }) => {
@@ -10367,7 +10513,7 @@
         }
 
         function isOwnerOrAdmin() {
-            if (typeof isVerifiedAdmin !== 'undefined' && isVerifiedAdmin) return true;
+            if (typeof isAdmin !== 'undefined' && isAdmin) return true;
             if (typeof currentUsersData !== 'undefined' && currentUsersData && myUid) {
                 const u = currentUsersData[socket.id] || Object.values(currentUsersData).find(x => x && x.uid === myUid);
                 if (u && (u.isAdmin || u.isFirst)) return true;
@@ -10671,8 +10817,12 @@
             }
         });
 
-        // Audit #4: Reconexión transparente sin perder estado
+        // Reconexión transparente sin perder estado (evitando duplicar join en carga inicial)
         socket.on('connect', () => {
+            if (isFirstConnect) {
+                isFirstConnect = false;
+                return;
+            }
             if (hasJoined && myNickname) {
                 socket.emit('join', buildJoinPayload());
             }
@@ -10683,9 +10833,25 @@
         });
 
         socket.on('kicked', (adminName) => {
-            kickedReasonText.textContent = `El administrador "${adminName}" te ha expulsado.`;
-            kickedModal.style.display = 'flex';
+            if (kickedReasonText) {
+                kickedReasonText.textContent = `El administrador "${adminName}" te ha expulsado.`;
+            }
+            if (kickedModal) {
+                kickedModal.style.display = 'flex';
+            }
         });
+
+        if (reconnectBtn) {
+            reconnectBtn.addEventListener('click', () => {
+                if (kickedModal) kickedModal.style.display = 'none';
+                if (!socket.connected) {
+                    socket.connect();
+                } else if (hasJoined && myNickname) {
+                    socket.emit('join', buildJoinPayload());
+                }
+                showToast('Intentando reconectar...');
+            });
+        }
         // ========================================================
         // ====== DISCORD SOUND EFFECTS (SINTETIZADOR WEB AUDIO) ======
         // ========================================================
@@ -11524,7 +11690,7 @@
         // ====== PARIDAD LLAMADA PRIVADA: COMPARTIR PANTALLA Y VOLUMEN ======
         // ========================================================
         const callScreenShareBtn = document.getElementById('call-screen-share-btn');
-        const screenShareVideo = document.getElementById('screen-share-video');
+        const screenShareVideo = document.getElementById('call-screen-share-video');
         const peerVolumeSlider = document.getElementById('peer-volume-slider');
         const peerVolumeVal = document.getElementById('peer-volume-val');
         let callScreenStream = null;
