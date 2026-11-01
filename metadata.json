@@ -1,0 +1,6 @@
+{
+  "name": "zLowStudio - Chat",
+  "description": "Aplicación de chat en tiempo real con canales, mensajes directos, notas de voz, imágenes, GIFs y perfiles personalizables.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
