@@ -37,7 +37,10 @@ if (!process.env.ADMIN_PASSWORD) {
   process.env.ADMIN_PASSWORD = '1509';
 }
 if (!process.env.GIF_PROVIDER) {
-  process.env.GIF_PROVIDER = 'klipy';
+  process.env.GIF_PROVIDER = 'giphy';
+}
+if (!process.env.GIF_API_KEY) {
+  process.env.GIF_API_KEY = 'esak9k8tJViBBRscTHaFKmdWa1J7KPxS';
 }
 if (!process.env.METERED_DOMAIN && !process.env.TURN_USERNAME) {
   process.env.METERED_DOMAIN = 'openrelay.metered.ca';
@@ -70,10 +73,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
 const _gk = Buffer.from('RXFLdmVLeWE2NzNTR0ROSzF2V3FabHFDZWN6ZkFZUGJSQzNLREQ5V0RXOGNWTVFLUEc2d1RuTVdjRW9xT2dsaw==', 'base64').toString('utf8');
-const GIF_API_KEY = (process.env.GIF_API_KEY && process.env.GIF_API_KEY.trim() && process.env.GIF_API_KEY !== 'demo_preview')
-  ? process.env.GIF_API_KEY.trim()
-  : _gk;
-const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'klipy').toLowerCase();
+const envGifKey = (process.env.GIF_API_KEY || '').trim();
+const GIF_API_KEY = (envGifKey && envGifKey !== 'demo_preview')
+  ? envGifKey
+  : 'esak9k8tJViBBRscTHaFKmdWa1J7KPxS';
+const GIF_PROVIDER = (process.env.GIF_PROVIDER || (GIF_API_KEY.length === 32 ? 'giphy' : 'klipy')).toLowerCase();
 const GIF_PAGE_SIZE = 24;
 const GIF_CACHE_TTL = 5 * 60 * 1000;
 const gifCache = new Map();
@@ -208,8 +212,26 @@ app.get('/api/gifs', async (req, res) => {
   }
 
   try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!resp.ok) return res.status(502).json({ error: 'provider-' + resp.status, items: [] });
+    let resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) {
+      // Si la clave personalizada falla o es rechazada (ej. 401 Unauthorized o 404), recurrir de inmediato al respaldo funcional
+      if (GIF_API_KEY !== _gk) {
+        console.warn(`[GIFs] Clave personalizada no admitida por el proveedor (${resp.status}). Activando respaldo funcional...`);
+        const fallbackParams = new URLSearchParams({ page: String(page), per_page: String(GIF_PAGE_SIZE), customer_id: cid });
+        if (q) fallbackParams.set('q', q);
+        const fallbackUrl = `https://api.klipy.com/api/v1/${encodeURIComponent(_gk)}/gifs/${q ? 'search' : 'trending'}?${fallbackParams.toString()}`;
+        const fallbackResp = await fetch(fallbackUrl, { signal: AbortSignal.timeout(8000) });
+        if (fallbackResp.ok) {
+          const fallbackJson = await fallbackResp.json();
+          const parsed = normalizeKlipy(fallbackJson);
+          const data = { ...parsed, provider: 'KLIPY' };
+          if (gifCache.size > 300) gifCache.clear();
+          gifCache.set(cacheKey, { t: Date.now(), data });
+          return res.json(data);
+        }
+      }
+      return res.status(502).json({ error: 'provider-' + resp.status, items: [] });
+    }
     const json = await resp.json();
 
     const parsed =
@@ -223,6 +245,23 @@ app.get('/api/gifs', async (req, res) => {
     gifCache.set(cacheKey, { t: Date.now(), data });
     res.json(data);
   } catch {
+    // Si la llamada principal lanza excepción y hay clave personalizada, intentar también el respaldo
+    if (GIF_API_KEY !== _gk) {
+      try {
+        const fallbackParams = new URLSearchParams({ page: String(page), per_page: String(GIF_PAGE_SIZE), customer_id: cid });
+        if (q) fallbackParams.set('q', q);
+        const fallbackUrl = `https://api.klipy.com/api/v1/${encodeURIComponent(_gk)}/gifs/${q ? 'search' : 'trending'}?${fallbackParams.toString()}`;
+        const fallbackResp = await fetch(fallbackUrl, { signal: AbortSignal.timeout(8000) });
+        if (fallbackResp.ok) {
+          const fallbackJson = await fallbackResp.json();
+          const parsed = normalizeKlipy(fallbackJson);
+          const data = { ...parsed, provider: 'KLIPY' };
+          if (gifCache.size > 300) gifCache.clear();
+          gifCache.set(cacheKey, { t: Date.now(), data });
+          return res.json(data);
+        }
+      } catch {}
+    }
     res.status(502).json({ error: 'fetch-failed', items: [] });
   }
 });
