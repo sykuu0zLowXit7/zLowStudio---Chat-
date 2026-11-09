@@ -39,9 +39,6 @@ if (!process.env.ADMIN_PASSWORD) {
 if (!process.env.GIF_PROVIDER) {
   process.env.GIF_PROVIDER = 'klipy';
 }
-if (!process.env.GIF_API_KEY) {
-  process.env.GIF_API_KEY = 'demo_preview';
-}
 if (!process.env.METERED_DOMAIN && !process.env.TURN_USERNAME) {
   process.env.METERED_DOMAIN = 'openrelay.metered.ca';
   process.env.METERED_USERNAME = 'openrelayproject';
@@ -72,9 +69,10 @@ app.use(express.json({ limit: '4mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// Clave por defecto de Klipy protegida/obfuscada
 const _gk = Buffer.from('RXFLdmVLeWE2NzNTR0ROSzF2V3FabHFDZWN6ZkFZUGJSQzNLREQ5V0RXOGNWTVFLUEc2d1RuTVdjRW9xT2dsaw==', 'base64').toString('utf8');
-const GIF_API_KEY = process.env.GIF_API_KEY || _gk;
+const GIF_API_KEY = (process.env.GIF_API_KEY && process.env.GIF_API_KEY.trim() && process.env.GIF_API_KEY !== 'demo_preview')
+  ? process.env.GIF_API_KEY.trim()
+  : _gk;
 const GIF_PROVIDER = (process.env.GIF_PROVIDER || 'klipy').toLowerCase();
 const GIF_PAGE_SIZE = 24;
 const GIF_CACHE_TTL = 5 * 60 * 1000;
@@ -235,109 +233,41 @@ let cachedMeteredIce = { timestamp: 0, servers: null };
 // Endpoint de configuración WebRTC ICE con STUN y TURN de alta disponibilidad
 // Diseñado para atravesar NATs simétricos, conexiones 4G/5G y routers entre distintos países
 app.get('/api/webrtc-config', async (_req, res) => {
-  const envApiKey = (process.env.METERED_API_KEY || '').trim();
   const envDomain = (process.env.METERED_DOMAIN || '').trim();
-
-  // Valores predeterminados o configurados
-  const meteredApiKey = envApiKey || 'uNeARrTayh7WjmIgbiHYGBvdjwpClmQL-p2w6MpLcgxWfNSy';
-  let meteredDomain = envDomain || 'zlowstudio.metered.live';
-
-  // Normalizar dominio eliminando protocolos y barras finales
-  meteredDomain = meteredDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
-  if (meteredDomain && !meteredDomain.includes('.')) {
-    meteredDomain = `${meteredDomain}.metered.live`;
-  }
-
-  // Si tenemos credenciales en caché menores a 10 minutos, responder de inmediato
-  const now = Date.now();
-  if (cachedMeteredIce.servers && (now - cachedMeteredIce.timestamp < 10 * 60 * 1000)) {
-    return res.json({ iceServers: cachedMeteredIce.servers, source: 'metered-cached', domain: meteredDomain });
-  }
-
-  // 1. Intentar obtener credenciales dinámicas de Metered TURN API
-  if (meteredApiKey && meteredDomain) {
-    // Intentar primero con .metered.live y luego con .metered.ca si aplica
-    const targetHosts = [meteredDomain];
-    if (meteredDomain.endsWith('.metered.live')) {
-      targetHosts.push(meteredDomain.replace('.metered.live', '.metered.ca'));
-    }
-
-    for (const host of targetHosts) {
-      try {
-        const meteredUrl = `https://${host}/api/v1/turn/credentials?apiKey=${meteredApiKey}`;
-        const response = await fetch(meteredUrl, { signal: AbortSignal.timeout(5000) });
-        if (response.ok) {
-          const iceServers = await response.json();
-          if (Array.isArray(iceServers) && iceServers.length > 0) {
-            // Agregar STUNs de Google para máxima resiliencia
-            const combinedServers = [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun.cloudflare.com:3478' },
-              ...iceServers
-            ];
-            cachedMeteredIce = { timestamp: now, servers: combinedServers };
-            return res.json({ iceServers: combinedServers, source: 'metered-dynamic', domain: host });
-          }
-        } else {
-          const errData = await response.text();
-          console.warn(`[WebRTC] Metered API (${host}) respondió ${response.status}:`, errData);
-        }
-      } catch (e) {
-        console.warn(`[WebRTC] Error consultando Metered API (${host}):`, e.message);
-      }
-    }
-  }
-
-  // 2. Soporte para credenciales estáticas de TURN configuradas manualmente en variables de entorno
   const staticTurnUser = (process.env.TURN_USERNAME || process.env.METERED_USERNAME || '').trim();
   const staticTurnPass = (process.env.TURN_PASSWORD || process.env.METERED_PASSWORD || '').trim();
+
+  // 1. Si disponemos de credenciales estáticas de TURN (ej. OpenRelay oficial de Metered), responder de inmediato sin llamadas HTTP que causen timeout
   if (staticTurnUser && staticTurnPass) {
+    let meteredDomain = envDomain || 'openrelay.metered.ca';
+    meteredDomain = meteredDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+
     const staticIceServers = [
-      // STUN para descubrimiento inicial de IP pública
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
       { urls: 'stun:stun.relay.metered.ca:80' },
-
-      // TURN Metered vía TCP en puerto 443 (Crítico para saltar bloqueos de UDP en 4G/5G y routers estrictos)
+      { urls: 'stun:openrelay.metered.ca:80' },
       {
-        urls: [
-          'turn:global.relay.metered.ca:443?transport=tcp'
-        ],
+        urls: ['turn:global.relay.metered.ca:443?transport=tcp'],
         username: staticTurnUser,
         credential: staticTurnPass
       },
-
-      // TURNS Metered con cifrado TLS en puerto 443 (Túnel HTTPS puro que atraviesa cualquier cortafuegos)
       {
-        urls: [
-          'turns:global.relay.metered.ca:443?transport=tcp'
-        ],
+        urls: ['turns:global.relay.metered.ca:443?transport=tcp'],
         username: staticTurnUser,
         credential: staticTurnPass
       },
-
-      // TURN Metered vía TCP en puerto 80 (Respaldo por puerto web estándar)
       {
-        urls: [
-          'turn:global.relay.metered.ca:80?transport=tcp'
-        ],
+        urls: ['turn:global.relay.metered.ca:80?transport=tcp'],
         username: staticTurnUser,
         credential: staticTurnPass
       },
-
-      // TURN Metered vía UDP en puertos 443 y 80 (Para conexiones sin filtrado UDP)
       {
-        urls: [
-          'turn:global.relay.metered.ca:443',
-          'turn:global.relay.metered.ca:80'
-        ],
+        urls: ['turn:global.relay.metered.ca:443', 'turn:global.relay.metered.ca:80'],
         username: staticTurnUser,
         credential: staticTurnPass
       },
-
-      // Servidor de relevo regional Metered (relay.metered.ca) con soporte TCP y TLS 443
       {
         urls: [
           'turn:relay.metered.ca:443?transport=tcp',
@@ -351,7 +281,6 @@ app.get('/api/webrtc-config', async (_req, res) => {
       }
     ];
 
-    // Si además se indicó el dominio específico de la app (ej: zlowstudio.metered.live), agregarlo
     if (meteredDomain) {
       staticIceServers.push({
         urls: [
@@ -366,7 +295,49 @@ app.get('/api/webrtc-config', async (_req, res) => {
       });
     }
 
-    return res.json({ iceServers: staticIceServers, source: 'static-turn', domain: meteredDomain || 'global.relay.metered.ca' });
+    return res.json({
+      iceServers: staticIceServers,
+      source: 'static-turn',
+      domain: meteredDomain
+    });
+  }
+
+  // 2. Si no hay credenciales estáticas pero sí API Key y dominio .metered.live, consultar API dinámica
+  const envApiKey = (process.env.METERED_API_KEY || '').trim();
+  let meteredDomain = envDomain || 'zlowstudio.metered.live';
+  meteredDomain = meteredDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  if (meteredDomain && !meteredDomain.includes('.')) {
+    meteredDomain = `${meteredDomain}.metered.live`;
+  }
+
+  const now = Date.now();
+  if (cachedMeteredIce.servers && (now - cachedMeteredIce.timestamp < 10 * 60 * 1000)) {
+    return res.json({ iceServers: cachedMeteredIce.servers, source: 'metered-cached', domain: meteredDomain });
+  }
+
+  const meteredApiKey = envApiKey;
+  // Solo consultar la API REST si el host pertenece a .metered.live (los relays .ca son servidores de turn, no endpoints de API)
+  if (meteredApiKey && meteredDomain.endsWith('.metered.live')) {
+    const targetHosts = [meteredDomain];
+    for (const host of targetHosts) {
+      try {
+        const meteredUrl = `https://${host}/api/v1/turn/credentials?apiKey=${meteredApiKey}`;
+        const response = await fetch(meteredUrl, { signal: AbortSignal.timeout(2500) });
+        if (response.ok) {
+          const iceServers = await response.json();
+          if (Array.isArray(iceServers) && iceServers.length > 0) {
+            const combinedServers = [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun.cloudflare.com:3478' },
+              ...iceServers
+            ];
+            cachedMeteredIce = { timestamp: now, servers: combinedServers };
+            return res.json({ iceServers: combinedServers, source: 'metered-dynamic', domain: host });
+          }
+        }
+      } catch {}
+    }
   }
 
   // 3. Fallback a STUN servers globales de baja latencia (Google & Cloudflare)
@@ -382,8 +353,7 @@ app.get('/api/webrtc-config', async (_req, res) => {
 
   res.json({
     iceServers: defaultIceServers,
-    source: 'public-stun-fallback',
-    warning: 'Metered TURN API no disponible o API Key rechazada. Configura un TURN activo o revisa tu clave en metered.ca'
+    source: 'public-stun-fallback'
   });
 });
 
