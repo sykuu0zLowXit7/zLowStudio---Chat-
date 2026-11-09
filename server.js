@@ -9,6 +9,47 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Carga automática de variables de entorno desde .env si existe (sin dependencias adicionales)
+const envFilePath = path.join(__dirname, '.env');
+if (fs.existsSync(envFilePath)) {
+  try {
+    const rawEnv = fs.readFileSync(envFilePath, 'utf8');
+    rawEnv.split(/\r?\n/).forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx !== -1) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (key && (process.env[key] === undefined || process.env[key] === '')) {
+          process.env[key] = val;
+        }
+      }
+    });
+  } catch {}
+}
+
+// Configuración lista para usar de administración y WebRTC Metered (OpenRelay)
+if (!process.env.ADMIN_PASSWORD) {
+  process.env.ADMIN_PASSWORD = '1509';
+}
+if (!process.env.GIF_PROVIDER) {
+  process.env.GIF_PROVIDER = 'klipy';
+}
+if (!process.env.GIF_API_KEY) {
+  process.env.GIF_API_KEY = 'demo_preview';
+}
+if (!process.env.METERED_DOMAIN && !process.env.TURN_USERNAME) {
+  process.env.METERED_DOMAIN = 'openrelay.metered.ca';
+  process.env.METERED_USERNAME = 'openrelayproject';
+  process.env.METERED_PASSWORD = 'openrelayproject';
+  process.env.TURN_USERNAME = 'openrelayproject';
+  process.env.TURN_PASSWORD = 'openrelayproject';
+}
+
 const app = express();
 const server = http.createServer(app);
 
@@ -591,6 +632,17 @@ let messageIdCounter = 0;
 let messagesStore = {};
 const privateMessagesStore = {};
 
+function stripMediaForPersistence(msg) {
+  if (!msg || typeof msg !== 'object') return msg;
+  return {
+    ...msg,
+    image: null,
+    audio: null,
+    waveform: null,
+    duration: 0,
+  };
+}
+
 // Rate limiting
 const messageTimestampsBySocket = new Map();
 
@@ -712,9 +764,14 @@ function loadData() {
   try {
     if (fs.existsSync(MESSAGES_FILE)) {
       const raw = JSON.parse(fs.readFileSync(MESSAGES_FILE, 'utf8'));
-      messagesStore = raw.messagesStore || {};
+      messagesStore = {};
+      if (raw.messagesStore && typeof raw.messagesStore === 'object') {
+        Object.entries(raw.messagesStore).forEach(([k, m]) => {
+          messagesStore[k] = stripMediaForPersistence(m);
+        });
+      }
       Object.entries(raw.privateMessagesStore || {}).forEach(([k, v]) => {
-        privateMessagesStore[k] = v;
+        privateMessagesStore[k] = Array.isArray(v) ? v.map(stripMediaForPersistence) : [];
       });
       messageIdCounter = Number(raw.messageIdCounter) || Object.keys(messagesStore).length;
     }
@@ -800,9 +857,18 @@ function saveMessagesData() {
         }
       });
 
+      const sanitizedStore = {};
+      Object.entries(messagesStore).forEach(([id, m]) => {
+        sanitizedStore[id] = stripMediaForPersistence(m);
+      });
+      const sanitizedPrivate = {};
+      Object.entries(privateMessagesStore).forEach(([room, list]) => {
+        sanitizedPrivate[room] = Array.isArray(list) ? list.map(stripMediaForPersistence) : [];
+      });
+
       atomicWriteFile(
         MESSAGES_FILE,
-        JSON.stringify({ messageIdCounter, messagesStore, privateMessagesStore }, null, 2)
+        JSON.stringify({ messageIdCounter, messagesStore: sanitizedStore, privateMessagesStore: sanitizedPrivate }, null, 2)
       );
     } catch (err) {
       console.error('Error guardando mensajes:', err.message);
@@ -1314,7 +1380,7 @@ io.on('connection', (socket) => {
       reactions: {},
     };
 
-    messagesStore[msgId] = msgData;
+    messagesStore[msgId] = stripMediaForPersistence(msgData);
     saveMessagesData();
     io.emit('chat message', msgData);
   });
@@ -1392,7 +1458,7 @@ io.on('connection', (socket) => {
     };
 
     if (!privateMessagesStore[roomId]) privateMessagesStore[roomId] = [];
-    privateMessagesStore[roomId].push(msgData);
+    privateMessagesStore[roomId].push(stripMediaForPersistence(msgData));
     if (privateMessagesStore[roomId].length > 100) privateMessagesStore[roomId].shift();
     saveMessagesData();
 
